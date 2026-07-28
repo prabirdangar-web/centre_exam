@@ -279,7 +279,7 @@
                 </div>
                 <div class="kpi-card" style="border-left-color: #0284c7;">
                     <p>Total Receipts / Payments</p>
-                    <h3 id="kpi-recpay">₹4,00,26,699.25</h3>
+                    <h3 id="kpi-recpay">₹4,00,53,199.25</h3>
                 </div>
                 <div class="kpi-card" style="border-left-color: #15803d;">
                     <p>Total GPF Balance</p>
@@ -418,7 +418,7 @@
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Receipts & Payments Account (Page 3N & 4N)</h2>
-                            <span class="badge-autofetch">⚡ Auto-Fetched Salary Totals (5-5b Payment Sums) & Deductions</span>
+                            <span class="badge-autofetch">⚡ Auto-Fetched Salary Totals, Bonus & Deductions</span>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -430,26 +430,26 @@
                                 <tr>
                                     <td>1. Salary Grant Received</td>
                                     <td><input type="number" id="rec-sal-grant" class="table-input number-input rec-field" value="29727422.00" oninput="calculateRecPay()"></td>
-                                    <td>1. Teachers' Pay & Allowances</td>
+                                    <td>1. Teachers' Pay & Allowances (excl. Bonus)</td>
                                     <td><input type="number" id="pay-teachers" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td>
                                 </tr>
                                 <tr>
                                     <td>2. S.S.M. Grant Received</td>
                                     <td><input type="number" id="rec-ssm-grant" class="table-input number-input rec-field" value="25150.00" oninput="calculateRecPay()"></td>
-                                    <td>2. Clerks' Pay & Allowances</td>
+                                    <td>2. Clerks' Pay & Allowances (excl. Bonus)</td>
                                     <td><input type="number" id="pay-clerks" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td>
                                 </tr>
                                 <tr>
                                     <td>3. LAB & Library Grants</td>
                                     <td><input type="number" id="rec-lab-lib-grant" class="table-input number-input rec-field" value="195000.00" oninput="calculateRecPay()"></td>
-                                    <td>3. Class IV Staff Pay & Allowances</td>
+                                    <td>3. Class IV Staff Pay & Allowances (excl. Bonus)</td>
                                     <td><input type="number" id="pay-grd" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td>
                                 </tr>
                                 <tr>
                                     <td>4. Development & Exam Fees</td>
                                     <td><input type="number" id="rec-dev-exam-fees" class="table-input number-input rec-field" value="359923.00" oninput="calculateRecPay()"></td>
-                                    <td>4. Bonus to Staff</td>
-                                    <td><input type="number" id="pay-bonus" class="table-input number-input pay-field" value="31800.00" oninput="calculateRecPay()"></td>
+                                    <td>4. Bonus to Teaching & Non-teaching Staff</td>
+                                    <td><input type="number" id="pay-bonus" class="table-input number-input pay-field auto-fetched" value="31800.00" readonly></td>
                                 </tr>
                                 <tr>
                                     <td>5. Bank Interest Received</td>
@@ -477,51 +477,51 @@
                                 </tr>
                                 <tr>
                                     <td>9. Professional Tax Deducted</td>
-                                    <td><input type="number" id="rec-pt-tot" class="table-input number-input rec-field auto-fetched" value="0.00" readonly></td>
-                                    <td>9. PF Contributions Paid to Treasury</td>
-                                    <td><input type="number" id="pay-pf-tot" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td>
+                                    <td><input type="number" id="rec-pt-tot" class="table-input number-input rec-field" value="79560.00" oninput="calculateRecPay()"></td>
+                                    <td>9. Lab Grant Expenditure</td>
+                                    <td><input type="number" id="pay-lab-exp-rp" class="table-input number-input pay-field" value="95000.00" oninput="calculateRecPay()"></td>
                                 </tr>
                                 <tr>
                                     <td>10. Income Tax Deducted</td>
-                                    <td><input type="number" id="rec-it-tot" class="table-input number-input rec-field auto-fetched" value="0.00" readonly></td>
-                                    <td>10. Professional Tax Paid</td>
-                                    <td><input type="number" id="pay-pt-tot" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td>
+                                    <td><input type="number" id="rec-it-tot" class="table-input number-input rec-field" value="1091489.00" oninput="calculateRecPay()"></td>
+                                    <td>10. PF Contributions Paid to Treasury</td>
+                                    <td><input type="number" id="pay-pf-tot" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td>
                                 </tr>
                                 <tr>
                                     <td>11. Opening Cash & Bank Balance <span class="badge-autofetch" style="font-size:0.65rem;">⚡ FY Carry-Fwd</span></td>
                                     <td><input type="number" id="recpay-open-bal" class="table-input number-input rec-field auto-fetched" value="1115706.25" oninput="calculateRecPay()"></td>
-                                    <td>11. Income Tax Paid</td>
-                                    <td><input type="number" id="pay-it-tot" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td>
+                                    <td>11. Professional Tax Paid</td>
+                                    <td><input type="number" id="pay-pt-tot" class="table-input number-input pay-field" value="79560.00" oninput="calculateRecPay()"></td>
                                 </tr>
                                 <tr>
                                     <td>-</td><td>-</td>
-                                    <td>12. PF Transfer to Prev School</td>
+                                    <td>12. Income Tax Paid</td>
+                                    <td><input type="number" id="pay-it-tot" class="table-input number-input pay-field" value="1091489.00" oninput="calculateRecPay()"></td>
+                                </tr>
+                                <tr>
+                                    <td>-</td><td>-</td>
+                                    <td>13. PF Transfer to Prev School</td>
                                     <td><input type="number" id="pay-pf-transfer-prev" class="table-input number-input pay-field" value="35362.00" oninput="calculateRecPay()"></td>
                                 </tr>
                                 <tr>
                                     <td>-</td><td>-</td>
-                                    <td>13. Bank Charges</td>
+                                    <td>14. Bank Charges</td>
                                     <td><input type="number" id="pay-bank-charges" class="table-input number-input pay-field" value="205.00" oninput="calculateRecPay()"></td>
                                 </tr>
                                 <tr>
                                     <td>-</td><td>-</td>
-                                    <td>14. PF Loan/Withdrawal Disbursed</td>
+                                    <td>15. PF Loan/Withdrawal Disbursed</td>
                                     <td><input type="number" id="pay-pf-loan-disbursed" class="table-input number-input pay-field" value="3173229.00" oninput="calculateRecPay()"></td>
-                                </tr>
-                                <tr>
-                                    <td>-</td><td>-</td>
-                                    <td>15. Closing Cash & Bank Balance</td>
-                                    <td><input type="number" id="pay-closing-bal" class="table-input number-input pay-field auto-fetched" value="1127589.25" readonly></td>
                                 </tr>
                                 <tr>
                                     <td>16. Blank Entry (Manual Adjustment)</td>
                                     <td><input type="number" id="rec-blank" class="table-input number-input rec-field" value="0.00" placeholder="0.00" oninput="calculateRecPay()"></td>
-                                    <td>16. Blank Entry (Manual Adjustment)</td>
-                                    <td><input type="number" id="pay-blank" class="table-input number-input pay-field" value="0.00" placeholder="0.00" oninput="calculateRecPay()"></td>
+                                    <td>16. Closing Cash & Bank Balance</td>
+                                    <td><input type="number" id="pay-closing-bal" class="table-input number-input pay-field auto-fetched" value="1127589.25" readonly></td>
                                 </tr>
                                 <tr style="font-weight:bold; background-color:#e0f2fe;">
-                                    <td>TOTAL RECEIPTS</td><td><input type="number" id="rec-total" class="table-input number-input auto-fetched" value="40026699.25" readonly></td>
-                                    <td>TOTAL PAYMENTS</td><td><input type="number" id="pay-total" class="table-input number-input auto-fetched" value="40026699.25" readonly></td>
+                                    <td>TOTAL RECEIPTS</td><td><input type="number" id="rec-total" class="table-input number-input auto-fetched" value="40053199.25" readonly></td>
+                                    <td>TOTAL PAYMENTS</td><td><input type="number" id="pay-total" class="table-input number-input auto-fetched" value="40053199.25" readonly></td>
                                 </tr>
                                 <tr id="recpay-match-row">
                                     <td colspan="4" id="recpay-match-cell" style="text-align:center; font-weight:700; padding:8px;">-</td>
@@ -544,7 +544,7 @@
                             <tr><td>Add: PF, P.Tax & Income Tax Grant</td><td><input type="number" id="recon-tax-grant" class="table-input number-input audit-field" value="5365049.00" oninput="calculateSalaryReconciliation()"></td></tr>
                             <tr><td>Add: Bank Interest Earned</td><td><input type="number" id="recon-interest" class="table-input number-input audit-field" value="28.00" oninput="calculateSalaryReconciliation()"></td></tr>
                             <tr style="background-color:#f1f5f9;"><td><strong>TOTAL SALARY GRANT AVAILABLE</strong></td><td><input type="number" id="recon-total-avail" class="table-input number-input auto-fetched" value="29728303.55" readonly></td></tr>
-                            <tr><td>Less: Salaries Disbursed during FY 2024-25 <span id="disbursed-diff-badge" class="badge-autofetch" style="background-color:#fee2e2; color:#b91c1c; display:none;"></span></td><td>
+                            <tr><td>Less: Salaries Disbursed during FY 2024-25 (incl. Bonus) <span id="disbursed-diff-badge" class="badge-autofetch" style="background-color:#fee2e2; color:#b91c1c; display:none;"></span></td><td>
                                 <input type="number" id="recon-disbursed" class="table-input number-input" value="29727422.00" oninput="manualDisbursedOverride=true; calculateSalaryReconciliation();">
                                 <button type="button" class="btn btn-light" style="padding:2px 8px; font-size:0.7rem; margin-top:3px;" onclick="manualDisbursedOverride=false; recalculateMaster();">🔄 Sync from Payroll Total</button>
                             </td></tr>
@@ -702,11 +702,14 @@
     </div>
 
     <script>
+        const num = (v) => {
+            const parsed = parseFloat(v);
+            return isNaN(parsed) ? 0 : parsed;
+        };
+
         let isFormLocked = false;
         let manualDisbursedOverride = false;
 
-        // Master Staff Database (Single Source of Truth)
-        // All payment/allowance components (5-5b) & PF Ledger columns integrated
         const masterStaffData = [
             {sl:1, name:'PRABIR KUMAR DANGAR', desg:'HM', memo:'2252/S', bp:1169200, adr:6000, da:159868, hra:140304, ma:6000, ca:0, bonus:0, arrear:0, pt:2400, pf:270000, it:130000, pfMar24:22500, pfMar25:30000, gpfOpen:3687155, gpfTrIn:0, gpfInterest:270574, gpfDraw:0},
             {sl:2, name:'RANJAN KUMAR GHOSH', desg:'A.T.', memo:'1755/S', bp:1062400, adr:0, da:144944, hra:66000, ma:5500, ca:0, bonus:0, arrear:0, pt:2200, pf:150000, it:100000, pfMar24:30000, pfMar25:0, gpfOpen:3260068, gpfTrIn:0, gpfInterest:198212, gpfDraw:3173229},
@@ -766,6 +769,7 @@
 
         function renderPayroll() {
             const tbody = document.getElementById('payrollTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             masterStaffData.forEach((s, idx) => {
@@ -774,23 +778,23 @@
 
                 tr.innerHTML = `
                     <td>${s.sl}</td>
-                    <td><input type="text" class="table-input" value="${s.name}" oninput="updateMasterStaff(${idx}, 'name', this.value)"></td>
-                    <td>${s.desg}</td>
-                    <td><input type="number" class="table-input number-input" value="${s.bp}" oninput="updateMasterStaff(${idx}, 'bp', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.adr}" oninput="updateMasterStaff(${idx}, 'adr', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.da}" oninput="updateMasterStaff(${idx}, 'da', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.hra}" oninput="updateMasterStaff(${idx}, 'hra', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.ma}" oninput="updateMasterStaff(${idx}, 'ma', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.ca}" oninput="updateMasterStaff(${idx}, 'ca', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.bonus}" oninput="updateMasterStaff(${idx}, 'bonus', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.arrear}" oninput="updateMasterStaff(${idx}, 'arrear', this.value)"></td>
+                    <td><input type="text" class="table-input" value="${s.name || ''}" oninput="updateMasterStaff(${idx}, 'name', this.value)"></td>
+                    <td>${s.desg || ''}</td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.bp)}" oninput="updateMasterStaff(${idx}, 'bp', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.adr)}" oninput="updateMasterStaff(${idx}, 'adr', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.da)}" oninput="updateMasterStaff(${idx}, 'da', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.hra)}" oninput="updateMasterStaff(${idx}, 'hra', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.ma)}" oninput="updateMasterStaff(${idx}, 'ma', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.ca)}" oninput="updateMasterStaff(${idx}, 'ca', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.bonus)}" oninput="updateMasterStaff(${idx}, 'bonus', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.arrear)}" oninput="updateMasterStaff(${idx}, 'arrear', this.value)"></td>
                     <td id="gross-${idx}" class="number-cell auto-fetched">0.00</td>
-                    <td><input type="number" class="table-input number-input" value="${s.pt}" oninput="updateMasterStaff(${idx}, 'pt', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.pf}" oninput="updateMasterStaff(${idx}, 'pf', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.it}" oninput="updateMasterStaff(${idx}, 'it', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.pt)}" oninput="updateMasterStaff(${idx}, 'pt', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.pf)}" oninput="updateMasterStaff(${idx}, 'pf', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.it)}" oninput="updateMasterStaff(${idx}, 'it', this.value)"></td>
                     <td id="net-${idx}" class="number-cell auto-fetched">0.00</td>
-                    <td><input type="number" class="table-input number-input" value="${s.pfMar24}" oninput="updateMasterStaff(${idx}, 'pfMar24', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.pfMar25}" oninput="updateMasterStaff(${idx}, 'pfMar25', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.pfMar24)}" oninput="updateMasterStaff(${idx}, 'pfMar24', this.value)"></td>
+                    <td><input type="number" class="table-input number-input" value="${num(s.pfMar25)}" oninput="updateMasterStaff(${idx}, 'pfMar25', this.value)"></td>
                     <td id="pfledger-${idx}" class="number-cell auto-fetched">0.00</td>
                 `;
                 tbody.appendChild(tr);
@@ -802,7 +806,7 @@
             if (field === 'name' || field === 'memo') {
                 masterStaffData[index][field] = value;
             } else {
-                masterStaffData[index][field] = parseFloat(value) || 0;
+                masterStaffData[index][field] = num(value);
             }
             recalculateMaster();
         }
@@ -811,10 +815,16 @@
             let totBp = 0, totAdr = 0, totDa = 0, totHra = 0, totMa = 0, totCa = 0, totBonus = 0, totArrear = 0;
             let totGross = 0, totPt = 0, totPf = 0, totIt = 0, totNet = 0;
             let totPfMar24 = 0, totPfMar25 = 0, totPfLedger = 0;
-            let teacherGross = 0, clerkGross = 0, grdGross = 0;
+            let teacherSal = 0, clerkSal = 0, grdSal = 0;
 
             masterStaffData.forEach((s, idx) => {
-                const gross = s.bp + s.adr + s.da + s.hra + s.ma + s.ca + s.bonus + s.arrear;
+                s.bp = num(s.bp); s.adr = num(s.adr); s.da = num(s.da); s.hra = num(s.hra);
+                s.ma = num(s.ma); s.ca = num(s.ca); s.bonus = num(s.bonus); s.arrear = num(s.arrear);
+                s.pt = num(s.pt); s.pf = num(s.pf); s.it = num(s.it);
+                s.pfMar24 = num(s.pfMar24); s.pfMar25 = num(s.pfMar25);
+
+                const salWithoutBonus = s.bp + s.adr + s.da + s.hra + s.ma + s.ca + s.arrear;
+                const gross = salWithoutBonus + s.bonus;
                 const net = gross - (s.pf + s.it + s.pt);
                 const pfLedger = s.pf - s.pfMar24 + s.pfMar25;
 
@@ -830,9 +840,9 @@
                 totGross += gross; totPt += s.pt; totPf += s.pf; totIt += s.it; totNet += net;
                 totPfMar24 += s.pfMar24; totPfMar25 += s.pfMar25; totPfLedger += pfLedger;
 
-                if (s.desg === 'HM' || s.desg === 'A.T.') teacherGross += gross;
-                else if (s.desg === 'Clerk' || s.desg === 'Librarian') clerkGross += gross;
-                else if (s.desg === 'Group-D') grdGross += gross;
+                if (s.desg === 'HM' || s.desg === 'A.T.') teacherSal += salWithoutBonus;
+                else if (s.desg === 'Clerk' || s.desg === 'Librarian') clerkSal += salWithoutBonus;
+                else if (s.desg === 'Group-D') grdSal += salWithoutBonus;
             });
 
             document.getElementById('tot-bp').innerText = '₹' + totBp.toLocaleString('en-IN', {minimumFractionDigits:2});
@@ -854,15 +864,12 @@
 
             document.getElementById('kpi-gross').innerText = '₹' + totGross.toLocaleString('en-IN', {minimumFractionDigits:2});
 
-            document.getElementById('pay-teachers').value = teacherGross.toFixed(2);
-            document.getElementById('pay-clerks').value = clerkGross.toFixed(2);
-            document.getElementById('pay-grd').value = grdGross.toFixed(2);
+            document.getElementById('pay-teachers').value = teacherSal.toFixed(2);
+            document.getElementById('pay-clerks').value = clerkSal.toFixed(2);
+            document.getElementById('pay-grd').value = grdSal.toFixed(2);
+            document.getElementById('pay-bonus').value = totBonus.toFixed(2);
             document.getElementById('rec-pf-tot').value = totPfLedger.toFixed(2);
             document.getElementById('pay-pf-tot').value = totPfLedger.toFixed(2);
-            document.getElementById('rec-pt-tot').value = totPt.toFixed(2);
-            document.getElementById('pay-pt-tot').value = totPt.toFixed(2);
-            document.getElementById('rec-it-tot').value = totIt.toFixed(2);
-            document.getElementById('pay-it-tot').value = totIt.toFixed(2);
 
             if (!manualDisbursedOverride) {
                 document.getElementById('recon-disbursed').value = totGross.toFixed(2);
@@ -870,7 +877,7 @@
 
             const disbursedBadge = document.getElementById('disbursed-diff-badge');
             if (disbursedBadge) {
-                const disbursedVal = parseFloat(document.getElementById('recon-disbursed').value) || 0;
+                const disbursedVal = num(document.getElementById('recon-disbursed').value);
                 const gap = Math.round((disbursedVal - totGross) * 100) / 100;
                 if (Math.abs(gap) >= 0.01) {
                     disbursedBadge.style.display = 'inline';
@@ -887,19 +894,28 @@
 
         function renderGPF() {
             const tbody = document.getElementById('gpfTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             let totOpen = 0, totTrIn = 0, totContrib = 0, totInterest = 0, totDraw = 0, totClose = 0;
 
             masterStaffData.forEach((s, idx) => {
                 const tr = document.createElement('tr');
+                s.pf = num(s.pf);
+                s.pfMar24 = num(s.pfMar24);
+                s.pfMar25 = num(s.pfMar25);
+                s.gpfOpen = num(s.gpfOpen);
+                s.gpfTrIn = num(s.gpfTrIn);
+                s.gpfInterest = num(s.gpfInterest);
+                s.gpfDraw = num(s.gpfDraw);
+
                 const pfContribLedger = s.pf - s.pfMar24 + s.pfMar25;
                 const closeBal = s.gpfOpen + s.gpfTrIn + pfContribLedger + s.gpfInterest - s.gpfDraw;
 
                 tr.innerHTML = `
                     <td>${s.sl === 0 ? '-' : s.sl}</td>
-                    <td><strong>${s.name}</strong></td>
-                    <td>${s.memo}</td>
+                    <td><strong>${s.name || ''}</strong></td>
+                    <td>${s.memo || ''}</td>
                     <td><input type="number" class="table-input number-input" value="${s.gpfOpen}" oninput="updateGPFProp(${idx}, 'gpfOpen', this.value)"></td>
                     <td><input type="number" class="table-input number-input" value="${s.gpfTrIn}" oninput="updateGPFProp(${idx}, 'gpfTrIn', this.value)"></td>
                     <td class="number-cell auto-fetched">₹${pfContribLedger.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
@@ -912,6 +928,12 @@
                 totOpen += s.gpfOpen; totTrIn += s.gpfTrIn; totContrib += pfContribLedger;
                 totInterest += s.gpfInterest; totDraw += s.gpfDraw; totClose += closeBal;
             });
+
+            suspenseAccount.gpfOpen = num(suspenseAccount.gpfOpen);
+            suspenseAccount.gpfTrIn = num(suspenseAccount.gpfTrIn);
+            suspenseAccount.pf = num(suspenseAccount.pf);
+            suspenseAccount.gpfInterest = num(suspenseAccount.gpfInterest);
+            suspenseAccount.gpfDraw = num(suspenseAccount.gpfDraw);
 
             const susClose = suspenseAccount.gpfOpen + suspenseAccount.gpfTrIn + suspenseAccount.pf + suspenseAccount.gpfInterest - suspenseAccount.gpfDraw;
             const susTr = document.createElement('tr');
@@ -943,30 +965,31 @@
         }
 
         function updateGPFProp(index, prop, value) {
-            masterStaffData[index][prop] = parseFloat(value) || 0;
+            masterStaffData[index][prop] = num(value);
             renderGPF();
         }
 
         function updateSuspense(prop, value) {
-            suspenseAccount[prop] = parseFloat(value) || 0;
+            suspenseAccount[prop] = num(value);
             renderGPF();
         }
 
         function renderStudents() {
             const tbody = document.getElementById('studentTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
             studentData.forEach((st, idx) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>${st.m}</strong></td>
-                    <td><input type="number" class="table-input number-input student-input" value="${st.v}" oninput="updateStudentProp(${idx}, 'v', this.value)"></td>
-                    <td><input type="number" class="table-input number-input student-input" value="${st.vi}" oninput="updateStudentProp(${idx}, 'vi', this.value)"></td>
-                    <td><input type="number" class="table-input number-input student-input" value="${st.vii}" oninput="updateStudentProp(${idx}, 'vii', this.value)"></td>
-                    <td><input type="number" class="table-input number-input student-input" value="${st.viii}" oninput="updateStudentProp(${idx}, 'viii', this.value)"></td>
-                    <td><input type="number" class="table-input number-input student-input" value="${st.ix}" oninput="updateStudentProp(${idx}, 'ix', this.value)"></td>
-                    <td><input type="number" class="table-input number-input student-input" value="${st.x}" oninput="updateStudentProp(${idx}, 'x', this.value)"></td>
-                    <td><input type="number" class="table-input number-input student-input" value="${st.xi}" oninput="updateStudentProp(${idx}, 'xi', this.value)"></td>
-                    <td><input type="number" class="table-input number-input student-input" value="${st.xii}" oninput="updateStudentProp(${idx}, 'xii', this.value)"></td>
+                    <td><input type="number" class="table-input number-input student-input" value="${num(st.v)}" oninput="updateStudentProp(${idx}, 'v', this.value)"></td>
+                    <td><input type="number" class="table-input number-input student-input" value="${num(st.vi)}" oninput="updateStudentProp(${idx}, 'vi', this.value)"></td>
+                    <td><input type="number" class="table-input number-input student-input" value="${num(st.vii)}" oninput="updateStudentProp(${idx}, 'vii', this.value)"></td>
+                    <td><input type="number" class="table-input number-input student-input" value="${num(st.viii)}" oninput="updateStudentProp(${idx}, 'viii', this.value)"></td>
+                    <td><input type="number" class="table-input number-input student-input" value="${num(st.ix)}" oninput="updateStudentProp(${idx}, 'ix', this.value)"></td>
+                    <td><input type="number" class="table-input number-input student-input" value="${num(st.x)}" oninput="updateStudentProp(${idx}, 'x', this.value)"></td>
+                    <td><input type="number" class="table-input number-input student-input" value="${num(st.xi)}" oninput="updateStudentProp(${idx}, 'xi', this.value)"></td>
+                    <td><input type="number" class="table-input number-input student-input" value="${num(st.xii)}" oninput="updateStudentProp(${idx}, 'xii', this.value)"></td>
                     <td id="st-total-${idx}" class="number-cell auto-fetched">0</td>
                 `;
                 tbody.appendChild(tr);
@@ -975,15 +998,18 @@
         }
 
         function updateStudentProp(index, prop, value) {
-            studentData[index][prop] = parseInt(value) || 0;
+            studentData[index][prop] = Math.round(num(value));
             recalculateStudentTotals();
         }
 
         function recalculateStudentTotals() {
             let sumV = 0, sumVI = 0, sumVII = 0, sumVIII = 0, sumIX = 0, sumX = 0, sumXI = 0, sumXII = 0, grandTotal = 0;
             studentData.forEach((st, idx) => {
+                st.v = num(st.v); st.vi = num(st.vi); st.vii = num(st.vii); st.viii = num(st.viii);
+                st.ix = num(st.ix); st.x = num(st.x); st.xi = num(st.xi); st.xii = num(st.xii);
                 const monthSum = st.v + st.vi + st.vii + st.viii + st.ix + st.x + st.xi + st.xii;
-                document.getElementById(`st-total-${idx}`).innerText = monthSum.toLocaleString('en-IN');
+                const totEl = document.getElementById(`st-total-${idx}`);
+                if (totEl) totEl.innerText = monthSum.toLocaleString('en-IN');
                 sumV += st.v; sumVI += st.vi; sumVII += st.vii; sumVIII += st.viii;
                 sumIX += st.ix; sumX += st.x; sumXI += st.xi; sumXII += st.xii;
                 grandTotal += monthSum;
@@ -995,50 +1021,51 @@
             document.getElementById('tot-xi').innerText = sumXI; document.getElementById('tot-xii').innerText = sumXII;
             document.getElementById('tot-student-all').innerText = grandTotal;
 
-            const cnt = studentData.length;
+            const cnt = studentData.length || 1;
             document.getElementById('avg-v').innerText = Math.round(sumV/cnt); document.getElementById('avg-vi').innerText = Math.round(sumVI/cnt);
             document.getElementById('avg-vii').innerText = Math.round(sumVII/cnt); document.getElementById('avg-viii').innerText = Math.round(sumVIII/cnt);
             document.getElementById('avg-ix').innerText = Math.round(sumIX/cnt); document.getElementById('avg-x').innerText = Math.round(sumX/cnt);
             document.getElementById('avg-xi').innerText = Math.round(sumXI/cnt); document.getElementById('avg-xii').innerText = Math.round(sumXII/cnt);
             document.getElementById('avg-student-all').innerText = Math.round(grandTotal/cnt);
 
-            document.getElementById('kpi-students').innerText = (studentData[cnt-1].v + studentData[cnt-1].vi + studentData[cnt-1].vii + studentData[cnt-1].viii + studentData[cnt-1].ix + studentData[cnt-1].x + studentData[cnt-1].xi + studentData[cnt-1].xii) + " Students";
+            const lastSt = studentData[cnt-1] || {v:0,vi:0,vii:0,viii:0,ix:0,x:0,xi:0,xii:0};
+            document.getElementById('kpi-students').innerText = (lastSt.v + lastSt.vi + lastSt.vii + lastSt.viii + lastSt.ix + lastSt.x + lastSt.xi + lastSt.xii) + " Students";
         }
 
         function calcSubsidiaries() {
-            const devOpen = parseFloat(document.getElementById('dev-open').value) || 0;
-            const devTrf = parseFloat(document.getElementById('dev-trf').value) || 0;
-            const devLabRec = parseFloat(document.getElementById('dev-lab-rec').value) || 0;
-            const devLibRec = parseFloat(document.getElementById('dev-lib-rec').value) || 0;
-            const devInt = parseFloat(document.getElementById('dev-int').value) || 0;
+            const devOpen = num(document.getElementById('dev-open').value);
+            const devTrf = num(document.getElementById('dev-trf').value);
+            const devLabRec = num(document.getElementById('dev-lab-rec').value);
+            const devLibRec = num(document.getElementById('dev-lib-rec').value);
+            const devInt = num(document.getElementById('dev-int').value);
             const devTotRec = devOpen + devTrf + devLabRec + devLibRec + devInt;
             document.getElementById('dev-tot-rec').value = devTotRec.toFixed(2);
 
-            const devExp = parseFloat(document.getElementById('dev-exp').value) || 0;
-            const devLabExp = parseFloat(document.getElementById('dev-lab-exp').value) || 0;
-            const devChg = parseFloat(document.getElementById('dev-chg').value) || 0;
+            const devExp = num(document.getElementById('dev-exp').value);
+            const devLabExp = num(document.getElementById('dev-lab-exp').value);
+            const devChg = num(document.getElementById('dev-chg').value);
             const devClose = devTotRec - (devExp + devLabExp + devChg);
             document.getElementById('dev-close').value = devClose.toFixed(2);
             document.getElementById('dev-tot-pay').value = (devExp + devLabExp + devChg + devClose).toFixed(2);
 
-            const hostelOpen = parseFloat(document.getElementById('hostel-open').value) || 0;
-            const hostelInt = parseFloat(document.getElementById('hostel-int').value) || 0;
+            const hostelOpen = num(document.getElementById('hostel-open').value);
+            const hostelInt = num(document.getElementById('hostel-int').value);
             const hostelTotRec = hostelOpen + hostelInt;
             document.getElementById('hostel-tot-rec').value = hostelTotRec.toFixed(2);
 
-            const hostelExp = parseFloat(document.getElementById('hostel-exp').value) || 0;
-            const hostelChg = parseFloat(document.getElementById('hostel-chg').value) || 0;
+            const hostelExp = num(document.getElementById('hostel-exp').value);
+            const hostelChg = num(document.getElementById('hostel-chg').value);
             const hostelClose = hostelTotRec - (hostelExp + hostelChg);
             document.getElementById('hostel-close').value = hostelClose.toFixed(2);
             document.getElementById('hostel-tot-pay').value = (hostelExp + hostelChg + hostelClose).toFixed(2);
 
-            const ssmOpen = parseFloat(document.getElementById('ssm-open').value) || 0;
-            const ssmComp = parseFloat(document.getElementById('ssm-comp').value) || 0;
-            const ssmInt = parseFloat(document.getElementById('ssm-int').value) || 0;
+            const ssmOpen = num(document.getElementById('ssm-open').value);
+            const ssmComp = num(document.getElementById('ssm-comp').value);
+            const ssmInt = num(document.getElementById('ssm-int').value);
             const ssmTotRec = ssmOpen + ssmComp + ssmInt;
             document.getElementById('ssm-tot-rec').value = ssmTotRec.toFixed(2);
 
-            const ssmExp = parseFloat(document.getElementById('ssm-exp').value) || 0;
+            const ssmExp = num(document.getElementById('ssm-exp').value);
             const ssmClose = ssmTotRec - ssmExp;
             document.getElementById('ssm-close').value = ssmClose.toFixed(2);
             document.getElementById('ssm-tot-pay').value = (ssmExp + ssmClose).toFixed(2);
@@ -1056,19 +1083,19 @@
         }
 
         function calculateSalaryReconciliation() {
-            const open = parseFloat(document.getElementById('recon-open').value) || 0;
-            const tr = parseFloat(document.getElementById('recon-tr').value) || 0;
-            const taxGrant = parseFloat(document.getElementById('recon-tax-grant').value) || 0;
-            const interest = parseFloat(document.getElementById('recon-interest').value) || 0;
+            const open = num(document.getElementById('recon-open').value);
+            const tr = num(document.getElementById('recon-tr').value);
+            const taxGrant = num(document.getElementById('recon-tax-grant').value);
+            const interest = num(document.getElementById('recon-interest').value);
 
             const totalAvail = open + tr + taxGrant + interest;
             document.getElementById('recon-total-avail').value = totalAvail.toFixed(2);
 
-            const disbursed = parseFloat(document.getElementById('recon-disbursed').value) || 0;
+            const disbursed = num(document.getElementById('recon-disbursed').value);
             const closingPre = totalAvail - disbursed;
             document.getElementById('recon-closing-pre').value = closingPre.toFixed(2);
 
-            const charges = parseFloat(document.getElementById('recon-charges').value) || 0;
+            const charges = num(document.getElementById('recon-charges').value);
             const actualBal = closingPre - charges;
             document.getElementById('recon-actual-bal').value = actualBal.toFixed(2);
 
@@ -1078,7 +1105,7 @@
             const disbursedBadge = document.getElementById('disbursed-diff-badge');
             const totGrossEl = document.getElementById('tot-gross');
             if (disbursedBadge && totGrossEl) {
-                const totGross = parseFloat(totGrossEl.innerText.replace(/[₹,]/g, '')) || 0;
+                const totGross = num(totGrossEl.innerText.replace(/[₹,]/g, ''));
                 const gap = Math.round((disbursed - totGross) * 100) / 100;
                 if (Math.abs(gap) >= 0.01) {
                     disbursedBadge.style.display = 'inline';
@@ -1092,10 +1119,10 @@
         }
 
         function updatePage9GrandTotal() {
-            const sal = parseFloat(document.getElementById('recon-actual-bal').value) || 0;
-            const dev = parseFloat(document.getElementById('dev-close').value) || 0;
-            const hostel = parseFloat(document.getElementById('hostel-close').value) || 0;
-            const ssm = parseFloat(document.getElementById('ssm-close').value) || 0;
+            const sal = num(document.getElementById('recon-actual-bal').value);
+            const dev = num(document.getElementById('dev-close').value);
+            const hostel = num(document.getElementById('hostel-close').value);
+            const ssm = num(document.getElementById('ssm-close').value);
 
             const grand = sal + dev + hostel + ssm;
             document.getElementById('cbal-grand-bank').innerText = '₹' + grand.toLocaleString('en-IN', {minimumFractionDigits:2});
@@ -1107,8 +1134,8 @@
 
         function calculateRecPay() {
             let sumRec = 0, sumPay = 0;
-            document.querySelectorAll('.rec-field').forEach(i => sumRec += parseFloat(i.value) || 0);
-            document.querySelectorAll('.pay-field').forEach(i => sumPay += parseFloat(i.value) || 0);
+            document.querySelectorAll('.rec-field').forEach(i => sumRec += num(i.value));
+            document.querySelectorAll('.pay-field').forEach(i => sumPay += num(i.value));
 
             document.getElementById('rec-total').value = sumRec.toFixed(2);
             document.getElementById('pay-total').value = sumPay.toFixed(2);
@@ -1210,9 +1237,9 @@
             'hostel-open','hostel-int','hostel-exp','hostel-chg',
             'ssm-open','ssm-comp','ssm-int','ssm-exp',
             'rec-sal-grant','rec-ssm-grant','rec-lab-lib-grant','rec-dev-exam-fees','rec-bank-interest',
-            'rec-pf-withdrawal','rec-pf-transfer-prev','recpay-open-bal','rec-blank','pay-blank',
-            'pay-bonus','pay-dev-exp-rp','pay-exam-fees','pay-hostel-exp-rp','pay-ssm-infra',
-            'pay-pf-transfer-prev','pay-bank-charges','pay-pf-loan-disbursed',
+            'rec-pf-withdrawal','rec-pf-transfer-prev','recpay-open-bal','rec-blank','rec-pt-tot','rec-it-tot',
+            'pay-blank','pay-bonus','pay-dev-exp-rp','pay-exam-fees','pay-hostel-exp-rp','pay-ssm-infra','pay-lab-exp-rp',
+            'pay-pf-transfer-prev','pay-bank-charges','pay-pf-loan-disbursed','pay-pt-tot','pay-it-tot',
             'appb-1','appb-2','appb-3','appb-4','appb-5',
             'asset-1','asset-2','asset-3','asset-4','asset-5'
         ];
@@ -1224,7 +1251,7 @@
             'ssm-comp','ssm-int','ssm-exp',
             'rec-sal-grant','rec-ssm-grant','rec-lab-lib-grant','rec-dev-exam-fees','rec-bank-interest',
             'rec-pf-withdrawal','rec-pf-transfer-prev','rec-blank','pay-blank',
-            'pay-bonus','pay-dev-exp-rp','pay-exam-fees','pay-hostel-exp-rp','pay-ssm-infra',
+            'pay-bonus','pay-dev-exp-rp','pay-exam-fees','pay-hostel-exp-rp','pay-ssm-infra','pay-lab-exp-rp',
             'pay-pf-transfer-prev','pay-bank-charges','pay-pf-loan-disbursed'
         ];
 
@@ -1254,9 +1281,39 @@
                     if (el) el.value = state.generic[id];
                 });
             }
-            if (state.masterStaffData) { masterStaffData.length = 0; state.masterStaffData.forEach(s => masterStaffData.push(s)); }
+            if (state.masterStaffData && Array.isArray(state.masterStaffData)) {
+                masterStaffData.length = 0;
+                state.masterStaffData.forEach(s => {
+                    masterStaffData.push({
+                        sl: num(s.sl),
+                        name: s.name || '',
+                        desg: s.desg || '',
+                        memo: s.memo || '',
+                        bp: num(s.bp),
+                        adr: num(s.adr),
+                        da: num(s.da),
+                        hra: num(s.hra),
+                        ma: num(s.ma),
+                        ca: num(s.ca),
+                        bonus: num(s.bonus),
+                        arrear: num(s.arrear),
+                        pt: num(s.pt),
+                        pf: num(s.pf),
+                        it: num(s.it),
+                        pfMar24: num(s.pfMar24),
+                        pfMar25: num(s.pfMar25),
+                        gpfOpen: num(s.gpfOpen),
+                        gpfTrIn: num(s.gpfTrIn),
+                        gpfInterest: num(s.gpfInterest),
+                        gpfDraw: num(s.gpfDraw)
+                    });
+                });
+            }
             if (state.suspenseAccount) { Object.assign(suspenseAccount, state.suspenseAccount); }
-            if (state.studentData) { studentData.length = 0; state.studentData.forEach(s => studentData.push(s)); }
+            if (state.studentData && Array.isArray(state.studentData)) { 
+                studentData.length = 0; 
+                state.studentData.forEach(s => studentData.push(s)); 
+            }
 
             renderPayroll();
             renderStudents();
@@ -1343,11 +1400,11 @@
                 return;
             }
 
-            const salaryClose = parseFloat(document.getElementById('recon-actual-bal').value) || 0;
-            const devClose = parseFloat(document.getElementById('dev-close').value) || 0;
-            const hostelClose = parseFloat(document.getElementById('hostel-close').value) || 0;
-            const ssmClose = parseFloat(document.getElementById('ssm-close').value) || 0;
-            const bankGrandClose = parseFloat(document.getElementById('pay-closing-bal').value) || 0;
+            const salaryClose = num(document.getElementById('recon-actual-bal').value);
+            const devClose = num(document.getElementById('dev-close').value);
+            const hostelClose = num(document.getElementById('hostel-close').value);
+            const ssmClose = num(document.getElementById('ssm-close').value);
+            const bankGrandClose = num(document.getElementById('pay-closing-bal').value);
 
             const newState = JSON.parse(JSON.stringify(collectState()));
 
@@ -1362,11 +1419,11 @@
             newState.generic['cover-fy'] = newFY;
 
             newState.masterStaffData = masterStaffData.map(s => {
-                const pfContribLedger = s.pf - s.pfMar24 + s.pfMar25;
-                const closeBal = s.gpfOpen + s.gpfTrIn + pfContribLedger + s.gpfInterest - s.gpfDraw;
+                const pfContribLedger = num(s.pf) - num(s.pfMar24) + num(s.pfMar25);
+                const closeBal = num(s.gpfOpen) + num(s.gpfTrIn) + pfContribLedger + num(s.gpfInterest) - num(s.gpfDraw);
                 return { ...s, gpfOpen: Math.round(closeBal), gpfTrIn: 0, gpfInterest: 0, gpfDraw: 0 };
             });
-            const susClose = suspenseAccount.gpfOpen + suspenseAccount.gpfTrIn + suspenseAccount.pf + suspenseAccount.gpfInterest - suspenseAccount.gpfDraw;
+            const susClose = num(suspenseAccount.gpfOpen) + num(suspenseAccount.gpfTrIn) + num(suspenseAccount.pf) + num(suspenseAccount.gpfInterest) - num(suspenseAccount.gpfDraw);
             newState.suspenseAccount = { ...suspenseAccount, gpfOpen: Math.round(susClose), gpfTrIn: 0, gpfInterest: 0, gpfDraw: 0 };
 
             newState.studentData = studentData.map(st => ({ ...st, v:0, vi:0, vii:0, viii:0, ix:0, x:0, xi:0, xii:0 }));
