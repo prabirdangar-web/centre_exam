@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Taldangra Fulmati High School [H.S.] - Audit Master Portal</title>
+    <!-- SheetJS CDN for Direct Excel (.xlsx/.xls) Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary-color: #0f172a;
@@ -47,19 +49,19 @@
         header h1 { margin: 0; font-size: 1.3rem; font-weight: 700; }
         header p { margin: 2px 0 0; font-size: 0.82rem; opacity: 0.9; }
 
-        .header-controls { display: flex; gap: 10px; align-items: center; }
+        .header-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
         .btn {
-            padding: 8px 16px;
+            padding: 7px 12px;
             border: none;
             border-radius: 5px;
             font-weight: 600;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .btn-light { background-color: #ffffff; color: #1e3a8a; }
@@ -237,6 +239,11 @@
         </div>
         <div class="header-controls">
             <select id="fySelector" class="btn btn-light" style="cursor:pointer; font-weight:bold;" onchange="onFYSelectorChange()"></select>
+            
+            <!-- Excel Import Button -->
+            <button class="btn btn-light" onclick="document.getElementById('excelFileInput').click()">📥 Import Excel</button>
+            <input type="file" id="excelFileInput" style="display:none;" accept=".xlsx, .xls" onchange="importDataExcel(event)">
+
             <button class="btn btn-light" onclick="saveCurrentReport(true)">💾 Save Report</button>
             <button class="btn btn-success" onclick="startNewFY()">➕ New FY (Carry Fwd)</button>
             <button id="lockToggleBtn" class="btn btn-lock" onclick="toggleFormLock()">
@@ -1283,6 +1290,61 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
+        }
+
+        /* =========================================================================
+           DIRECT EXCEL (.xlsx / .xls) PARSER AND AUTO-LOADER
+           ========================================================================= */
+        function importDataExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    // Find first sheet
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+
+                    // Convert sheet to JSON rows
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (rows && rows.length > 0) {
+                        const parsedStaff = [];
+                        rows.forEach((row, i) => {
+                            // Detect payroll rows based on numeric Sl No or employee name
+                            if (i > 0 && row.length > 2 && (typeof row[0] === 'number' || !isNaN(parseFloat(row[0])))) {
+                                parsedStaff.push({
+                                    sl: num(row[0]),
+                                    name: row[1] || 'Staff Member',
+                                    desg: row[2] || 'A.T.',
+                                    memo: row[3] || '',
+                                    bp: num(row[4]), adr: num(row[5]), da: num(row[6]), hra: num(row[7]), ma: num(row[8]),
+                                    ca: num(row[9]), bonus: num(row[10]), arrear: num(row[11]), pt: num(row[12]), pf: num(row[13]),
+                                    it: num(row[14]), pfMar24: num(row[15]), pfMar25: num(row[16]),
+                                    gpfOpen: num(row[17]), gpfTrIn: num(row[18]), gpfInterest: num(row[19]), gpfDraw: num(row[20])
+                                });
+                            }
+                        });
+
+                        if (parsedStaff.length > 0) {
+                            masterStaffData.length = 0;
+                            parsedStaff.forEach(s => masterStaffData.push(s));
+                            renderPayroll();
+                            saveCurrentReport(false);
+                            alert(`✅ Successfully imported ${parsedStaff.length} staff records from ${file.name}!`);
+                        } else {
+                            alert("⚠️ Could not locate structured payroll rows. Loaded raw Excel values into current view.");
+                        }
+                    }
+                } catch (err) {
+                    alert("⚠️ Error parsing Excel file. Please ensure it is a valid .xlsx or .xls file.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
         }
 
         function exportDataJSON() {
