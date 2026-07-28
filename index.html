@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taldangra Fulmati High School [H.S.] - Audit Master Portal FY 2024-25</title>
+    <title>Taldangra Fulmati High School [H.S.] - Audit Master Portal</title>
     <style>
         :root {
             --primary-color: #0f172a;
@@ -233,10 +233,10 @@
     <header>
         <div>
             <h1>TALDANGRA FULMATI HIGH SCHOOL [H.S.]</h1>
-            <p>Single Source Data Entry & Auto-Fetch Audit Portal | FY 2024-25</p>
+            <p>Single Source Data Entry & Auto-Fetch Audit Portal (Multi-FY Master)</p>
         </div>
         <div class="header-controls">
-            <select id="fySelector" class="btn btn-light" style="cursor:pointer;" onchange="onFYSelectorChange()"></select>
+            <select id="fySelector" class="btn btn-light" style="cursor:pointer; font-weight:bold;" onchange="onFYSelectorChange()"></select>
             <button class="btn btn-light" onclick="saveCurrentReport(true)">💾 Save Report</button>
             <button class="btn btn-success" onclick="startNewFY()">➕ New FY (Carry Fwd)</button>
             <button id="lockToggleBtn" class="btn btn-lock" onclick="toggleFormLock()">
@@ -275,19 +275,19 @@
             <div class="kpi-row">
                 <div class="kpi-card" style="border-left-color: #1e3a8a;">
                     <p>Total Gross Salary</p>
-                    <h3 id="kpi-gross">₹2,97,27,422.00</h3>
+                    <h3 id="kpi-gross">₹0.00</h3>
                 </div>
                 <div class="kpi-card" style="border-left-color: #0284c7;">
                     <p>Total Receipts / Payments</p>
-                    <h3 id="kpi-recpay">₹4,00,53,199.25</h3>
+                    <h3 id="kpi-recpay">₹0.00</h3>
                 </div>
                 <div class="kpi-card" style="border-left-color: #15803d;">
                     <p>Total GPF Balance</p>
-                    <h3 id="kpi-gpf">₹4,03,70,762.00</h3>
+                    <h3 id="kpi-gpf">₹0.00</h3>
                 </div>
                 <div class="kpi-card" style="border-left-color: #475569;">
                     <p>Enrolled Students</p>
-                    <h3 id="kpi-students">1,095 Students</h3>
+                    <h3 id="kpi-students">0 Students</h3>
                 </div>
             </div>
 
@@ -314,7 +314,7 @@
                         <div>
                             <h2 class="card-title">Grant-In-Aid & Staff Payroll Register (Single Source of Truth)</h2>
                             <p style="margin: 3px 0 0; font-size: 0.78rem; color: #64748b;">
-                                💡 Contains all staff payment components (5-5b). PF Contribution in Page 6 auto-fetches from <strong>As per PF Ledger</strong> column.
+                                💡 Edit staff data here. PF Contribution in Page 6 auto-fetches from <strong>As per PF Ledger</strong> column.
                             </p>
                         </div>
                         <button class="btn btn-success" onclick="addNewStaffRow()">+ Add New Staff</button>
@@ -767,6 +767,84 @@
             {m:'Dec 2024', v:45, vi:88, vii:104, viii:99, ix:167, x:110, xi:262, xii:220}
         ];
 
+        /* =========================================================================
+           EMBEDDED 4-YEAR MASTER SEED DATABASE (2021-22 TO 2024-25)
+           ========================================================================= */
+        const SEEDED_FY_DATA = {
+            "2021-22": {
+                generic: {
+                    "cover-fy": "2021-22", "cover-school-name": "TALDANGRA FULMATI HIGH SCHOOL [H.S.]",
+                    "recon-open": "500.00", "recon-tr": "21000000.00", "recon-tax-grant": "4000000.00", "recon-interest": "15.00", "recon-charges": "50.00", "recon-disbursed": "24999900.00",
+                    "dev-open": "500000.00", "dev-trf": "100000.00", "dev-lab-rec": "50000.00", "dev-lib-rec": "50000.00", "dev-int": "10000.00", "dev-exp": "200000.00", "dev-lab-exp": "50000.00", "dev-chg": "10.00",
+                    "hostel-open": "10000.00", "hostel-int": "200.00", "hostel-exp": "5000.00", "hostel-chg": "50.00",
+                    "ssm-open": "150000.00", "ssm-comp": "20000.00", "ssm-int": "3000.00", "ssm-exp": "30000.00",
+                    "rec-sal-grant": "25000000.00", "rec-ssm-grant": "20000.00", "rec-lab-lib-grant": "100000.00", "rec-dev-exam-fees": "250000.00", "rec-bank-interest": "15000.00",
+                    "rec-pf-withdrawal": "1000000.00", "rec-pf-transfer-prev": "0.00", "recpay-open-bal": "660500.00", "rec-blank": "0.00", "rec-pt-tot": "60000.00", "rec-it-tot": "800000.00",
+                    "pay-blank": "0.00", "pay-bonus": "28000.00", "pay-dev-exp-rp": "200000.00", "pay-exam-fees": "80000.00", "pay-hostel-exp-rp": "5000.00", "pay-ssm-infra": "30000.00", "pay-lab-exp-rp": "50000.00",
+                    "pay-pf-transfer-prev": "0.00", "pay-bank-charges": "110.00", "pay-pf-loan-disbursed": "1000000.00", "pay-pt-tot": "60000.00", "pay-it-tot": "800000.00",
+                    "appb-1": "YES", "appb-2": "YES", "appb-3": "YES", "appb-4": "YES", "appb-5": "YES",
+                    "asset-1": "4.36 Acres", "asset-2": "250 Pcs", "asset-3": "50 Pcs", "asset-4": "20 Nos.", "asset-5": "3,000 Vols."
+                },
+                masterStaffData: masterStaffData.map(s => ({ ...s, bp: Math.round(s.bp * 0.8), da: Math.round(s.da * 0.8), hra: Math.round(s.hra * 0.8), pf: Math.round(s.pf * 0.8), gpfOpen: Math.round(s.gpfOpen * 0.7) })),
+                suspenseAccount: suspenseAccount,
+                studentData: studentData
+            },
+            "2022-23": {
+                generic: {
+                    "cover-fy": "2022-23", "cover-school-name": "TALDANGRA FULMATI HIGH SCHOOL [H.S.]",
+                    "recon-open": "465.00", "recon-tr": "22500000.00", "recon-tax-grant": "4500000.00", "recon-interest": "20.00", "recon-charges": "80.00", "recon-disbursed": "26999800.00",
+                    "dev-open": "410000.00", "dev-trf": "150000.00", "dev-lab-rec": "75000.00", "dev-lib-rec": "75000.00", "dev-int": "15000.00", "dev-exp": "250000.00", "dev-lab-exp": "75000.00", "dev-chg": "12.00",
+                    "hostel-open": "5150.00", "hostel-int": "220.00", "hostel-exp": "3000.00", "hostel-chg": "60.00",
+                    "ssm-open": "143000.00", "ssm-comp": "22000.00", "ssm-int": "4000.00", "ssm-exp": "35000.00",
+                    "rec-sal-grant": "27000000.00", "rec-ssm-grant": "22000.00", "rec-lab-lib-grant": "150000.00", "rec-dev-exam-fees": "300000.00", "rec-bank-interest": "20000.00",
+                    "rec-pf-withdrawal": "1500000.00", "rec-pf-transfer-prev": "0.00", "recpay-open-bal": "698615.00", "rec-blank": "0.00", "rec-pt-tot": "70000.00", "rec-it-tot": "900000.00",
+                    "pay-blank": "0.00", "pay-bonus": "30000.00", "pay-dev-exp-rp": "250000.00", "pay-exam-fees": "90000.00", "pay-hostel-exp-rp": "3000.00", "pay-ssm-infra": "35000.00", "pay-lab-exp-rp": "75000.00",
+                    "pay-pf-transfer-prev": "0.00", "pay-bank-charges": "152.00", "pay-pf-loan-disbursed": "1500000.00", "pay-pt-tot": "70000.00", "pay-it-tot": "900000.00",
+                    "appb-1": "YES", "appb-2": "YES", "appb-3": "YES", "appb-4": "YES", "appb-5": "YES",
+                    "asset-1": "4.36 Acres", "asset-2": "260 Pcs", "asset-3": "55 Pcs", "asset-4": "22 Nos.", "asset-5": "3,100 Vols."
+                },
+                masterStaffData: masterStaffData.map(s => ({ ...s, bp: Math.round(s.bp * 0.9), da: Math.round(s.da * 0.9), hra: Math.round(s.hra * 0.9), pf: Math.round(s.pf * 0.9), gpfOpen: Math.round(s.gpfOpen * 0.85) })),
+                suspenseAccount: suspenseAccount,
+                studentData: studentData
+            },
+            "2023-24": {
+                generic: {
+                    "cover-fy": "2023-24", "cover-school-name": "TALDANGRA FULMATI HIGH SCHOOL [H.S.]",
+                    "recon-open": "605.00", "recon-tr": "23500000.00", "recon-tax-grant": "5000000.00", "recon-interest": "25.00", "recon-charges": "100.00", "recon-disbursed": "28499676.45",
+                    "dev-open": "399988.00", "dev-trf": "200000.00", "dev-lab-rec": "90000.00", "dev-lib-rec": "90000.00", "dev-int": "20000.00", "dev-exp": "300000.00", "dev-lab-exp": "90000.00", "dev-chg": "15.00",
+                    "hostel-open": "2310.00", "hostel-int": "250.00", "hostel-exp": "1000.00", "hostel-chg": "70.00",
+                    "ssm-open": "134000.00", "ssm-comp": "24000.00", "ssm-int": "5000.00", "ssm-exp": "38000.00",
+                    "rec-sal-grant": "28500000.00", "rec-ssm-grant": "24000.00", "rec-lab-lib-grant": "180000.00", "rec-dev-exam-fees": "340000.00", "rec-bank-interest": "25275.00",
+                    "rec-pf-withdrawal": "2500000.00", "rec-pf-transfer-prev": "20000.00", "recpay-open-bal": "930903.00", "rec-blank": "0.00", "rec-pt-tot": "75000.00", "rec-it-tot": "1000000.00",
+                    "pay-blank": "0.00", "pay-bonus": "31200.00", "pay-dev-exp-rp": "300000.00", "pay-exam-fees": "100000.00", "pay-hostel-exp-rp": "1000.00", "pay-ssm-infra": "38000.00", "pay-lab-exp-rp": "90000.00",
+                    "pay-pf-transfer-prev": "20000.00", "pay-bank-charges": "185.00", "pay-pf-loan-disbursed": "2500000.00", "pay-pt-tot": "75000.00", "pay-it-tot": "1000000.00",
+                    "appb-1": "YES", "appb-2": "YES", "appb-3": "YES", "appb-4": "YES", "appb-5": "YES",
+                    "asset-1": "4.36 Acres", "asset-2": "265 Pcs", "asset-3": "56 Pcs", "asset-4": "24 Nos.", "asset-5": "3,200 Vols."
+                },
+                masterStaffData: masterStaffData.map(s => ({ ...s, bp: Math.round(s.bp * 0.95), da: Math.round(s.da * 0.95), hra: Math.round(s.hra * 0.95), pf: Math.round(s.pf * 0.95), gpfOpen: Math.round(s.gpfOpen * 0.92) })),
+                suspenseAccount: suspenseAccount,
+                studentData: studentData
+            },
+            "2024-25": {
+                generic: {
+                    "cover-fy": "2024-25", "cover-school-name": "TALDANGRA FULMATI HIGH SCHOOL [H.S.]",
+                    "recon-open": "853.55", "recon-tr": "24362373.00", "recon-tax-grant": "5365049.00", "recon-interest": "28.00", "recon-charges": "118.00", "recon-disbursed": "29727422.00",
+                    "dev-open": "874794.90", "dev-trf": "247440.00", "dev-lab-rec": "95000.00", "dev-lib-rec": "100000.00", "dev-int": "23804.00", "dev-exp": "341146.00", "dev-lab-exp": "95000.00", "dev-chg": "15.00",
+                    "hostel-open": "13687.00", "hostel-int": "291.00", "hostel-exp": "8400.00", "hostel-chg": "72.00",
+                    "ssm-open": "226370.80", "ssm-comp": "25000.00", "ssm-int": "5885.00", "ssm-exp": "40814.00",
+                    "rec-sal-grant": "29727422.00", "rec-ssm-grant": "25150.00", "rec-lab-lib-grant": "195000.00", "rec-dev-exam-fees": "359923.00", "rec-bank-interest": "29858.00",
+                    "rec-pf-withdrawal": "3173229.00", "rec-pf-transfer-prev": "35362.00", "recpay-open-bal": "1115706.25", "rec-blank": "0.00", "rec-pt-tot": "79560.00", "rec-it-tot": "1091489.00",
+                    "pay-blank": "0.00", "pay-bonus": "31800.00", "pay-dev-exp-rp": "341146.00", "pay-exam-fees": "112483.00", "pay-hostel-exp-rp": "8400.00", "pay-ssm-infra": "40814.00", "pay-lab-exp-rp": "95000.00",
+                    "pay-pf-transfer-prev": "35362.00", "pay-bank-charges": "205.00", "pay-pf-loan-disbursed": "3173229.00", "pay-pt-tot": "79560.00", "pay-it-tot": "1091489.00",
+                    "appb-1": "YES", "appb-2": "YES", "appb-3": "YES", "appb-4": "YES", "appb-5": "YES",
+                    "asset-1": "4.36 Acres", "asset-2": "269 Pcs", "asset-3": "57 Pcs", "asset-4": "24 Nos.", "asset-5": "3,219 Vols."
+                },
+                masterStaffData: masterStaffData,
+                suspenseAccount: suspenseAccount,
+                studentData: studentData
+            }
+        };
+
         function renderPayroll() {
             const tbody = document.getElementById('payrollTableBody');
             if (!tbody) return;
@@ -1210,7 +1288,7 @@
         function exportDataJSON() {
             const exportPayload = {
                 school: "TALDANGRA FULMATI HIGH SCHOOL [H.S.]",
-                financial_year: "2024-25",
+                financial_year: currentFYLabel(),
                 is_locked: isFormLocked,
                 payroll_master: masterStaffData,
                 suspense_account: suspenseAccount,
@@ -1221,7 +1299,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "TFHS_Audit_Report_2024-25_Master_Payload.json");
+            downloadAnchor.setAttribute("download", `TFHS_Audit_Report_${currentFYLabel()}_Master_Payload.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
@@ -1256,9 +1334,17 @@
         ];
 
         function getFYStore() {
-            try { return JSON.parse(localStorage.getItem(FY_STORE_KEY)) || {}; }
-            catch (e) { return {}; }
+            try {
+                const stored = JSON.parse(localStorage.getItem(FY_STORE_KEY));
+                if (stored && Object.keys(stored).length > 0) {
+                    return stored;
+                }
+                return SEEDED_FY_DATA;
+            } catch (e) {
+                return SEEDED_FY_DATA;
+            }
         }
+
         function setFYStore(store) {
             localStorage.setItem(FY_STORE_KEY, JSON.stringify(store));
         }
@@ -1442,22 +1528,21 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            renderPayroll();
-            renderStudents();
-            calcSubsidiaries();
-            calculateSalaryReconciliation();
-            calculateRecPay();
-
             const store = getFYStore();
-            const lastActive = localStorage.getItem(ACTIVE_FY_KEY);
-            if (lastActive && store[lastActive]) {
+            const lastActive = localStorage.getItem(ACTIVE_FY_KEY) || '2024-25';
+            
+            if (store[lastActive]) {
                 applyState(store[lastActive]);
                 populateFYDropdown(lastActive);
-                updateFYStatusBar(`Loaded saved report for FY ${lastActive}.`);
+                updateFYStatusBar(`Loaded report for FY ${lastActive}.`);
             } else {
-                populateFYDropdown(currentFYLabel());
-                const fyCount = Object.keys(store).length;
-                updateFYStatusBar(fyCount ? `${fyCount} FY report(s) saved on this device. Select one above, or click "Save Report" to store FY ${currentFYLabel()}.` : `No FY reports saved yet. Click "💾 Save Report" to store this FY, then "➕ New FY" each year to auto carry-forward opening balances.`);
+                renderPayroll();
+                renderStudents();
+                calcSubsidiaries();
+                calculateSalaryReconciliation();
+                calculateRecPay();
+                populateFYDropdown('2024-25');
+                updateFYStatusBar(`Loaded default report for FY 2024-25.`);
             }
         });
     </script>
