@@ -1,1068 +1,380 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Year Audit & GPF Portal | Taldangra Fulmati High School [H.S.]</title>
+    <title>শ্রমিকের মজুরী প্রদানের মাষ্টার রোল</title>
     <style>
-        :root {
-            --primary-color: #0f172a;
-            --secondary-color: #0284c7;
-            --accent-color: #15803d;
-            --warning-color: #b45309;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-color: #0f172a;
-            --border-color: #cbd5e1;
-            --input-bg: #ffffff;
-            --input-focus: #f0f9ff;
-            --locked-bg: #f1f5f9;
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+        
+        @page {
+            size: A4 landscape;
+            margin: 0;
         }
 
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { margin: 0; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; min-height: 100vh; }
-
-        header {
-            background: linear-gradient(135deg, #1e3a8a, #0284c7);
-            color: white;
-            padding: 12px 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        body {
+            font-family: 'Hind Siliguri', Arial, sans-serif;
+            background-color: #555;
+            margin: 0;
+            padding: 10px;
+            color: #000;
         }
 
-        header h1 { margin: 0; font-size: 1.25rem; font-weight: 700; }
-        header p { margin: 2px 0 0; font-size: 0.8rem; opacity: 0.9; }
-
-        .header-controls { display: flex; gap: 8px; align-items: center; }
-
-        .fy-select {
-            padding: 6px 12px;
-            border-radius: 5px;
-            border: 1px solid var(--border-color);
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: var(--primary-color);
+        .controls {
+            text-align: center;
+            margin-bottom: 15px;
             background: #fff;
-            cursor: pointer;
-        }
-
-        .btn {
-            padding: 7px 14px;
-            border: none;
+            padding: 8px;
             border-radius: 5px;
-            font-weight: 600;
-            font-size: 0.8rem;
+            max-width: 297mm;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .controls select, .controls button {
+            padding: 6px 12px;
+            font-size: 14px;
+            font-family: 'Hind Siliguri', Arial, sans-serif;
             cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+            margin: 0 5px;
         }
 
-        .btn-light { background-color: #ffffff; color: #1e3a8a; }
-        .btn-light:hover { background-color: #f1f5f9; }
-        .btn-success { background-color: var(--accent-color); color: white; }
-        .btn-rollover { background-color: #d97706; color: white; }
-        .btn-lock { background-color: #ef4444; color: white; }
-        .btn-lock.locked { background-color: #22c55e; }
-
-        .status-banner {
-            background-color: #e0f2fe;
-            color: #0369a1;
-            padding: 8px 25px;
-            font-size: 0.8rem;
-            font-weight: 600;
+        .page {
+            width: 297mm;
+            height: 210mm;
+            padding: 10mm 15mm;
+            margin: 0 auto;
+            background: #ffffff;
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
             display: flex;
+            flex-direction: column;
             justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #bae6fd;
+            position: relative;
         }
 
-        .app-body { display: flex; flex: 1; }
-
-        .sidebar {
-            width: 270px;
-            background-color: var(--primary-color);
-            color: #94a3b8;
-            padding: 15px 0;
-            flex-shrink: 0;
+        .header {
+            text-align: center;
+            margin-bottom: 6px;
         }
 
-        .sidebar-heading {
-            padding: 0 20px 10px;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #64748b;
+        .header h3, .header h4 {
+            margin: 1px 0;
+        }
+
+        .header h3 {
+            font-size: 16px;
             font-weight: 700;
         }
 
-        .tab-btn {
-            display: block;
-            width: 100%;
-            padding: 10px 20px;
-            background: transparent;
-            color: #94a3b8;
-            border: none;
-            text-align: left;
-            font-size: 0.82rem;
-            cursor: pointer;
-            border-left: 4px solid transparent;
-            transition: all 0.15s ease;
-        }
-
-        .tab-btn:hover { background-color: #1e293b; color: #f8fafc; }
-        .tab-btn.active {
-            background-color: #1e293b;
-            color: #38bdf8;
-            border-left-color: #38bdf8;
+        .header h4 {
+            font-size: 13px;
             font-weight: 600;
         }
 
-        .content-area { flex: 1; padding: 20px 25px; overflow-y: auto; }
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
-
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            padding: 18px;
-            margin-bottom: 18px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .card-header {
+        .meta-info {
             display: flex;
             justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .meta-group {
+            width: 48%;
+        }
+
+        .meta-row {
+            margin-bottom: 3px;
+            display: flex;
             align-items: center;
-            border-bottom: 2px solid var(--bg-color);
-            padding-bottom: 8px;
-            margin-bottom: 12px;
         }
 
-        .card-title { margin: 0; color: #1e3a8a; font-size: 1.05rem; font-weight: 700; }
+        .meta-row label {
+            font-weight: 500;
+            margin-right: 5px;
+            white-space: nowrap;
+        }
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 4px; }
-        .form-group input { padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.82rem; }
-
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 8px; }
-        th, td { border: 1px solid var(--border-color); padding: 6px 8px; text-align: left; }
-        th { background-color: #f1f5f9; color: #1e3a8a; font-weight: 700; white-space: nowrap; }
-        tr:nth-child(even) { background-color: #f8fafc; }
-
-        input.table-input {
+        input[type="text"] {
+            border: none;
+            border-bottom: 1px dotted #000;
+            font-family: 'Hind Siliguri', Arial, sans-serif;
+            font-size: 12px;
+            outline: none;
             width: 100%;
-            border: 1px solid transparent;
             background: transparent;
-            font-size: 0.8rem;
-            font-family: inherit;
+            padding: 1px 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        th, td {
+            border: 1px solid #000;
             padding: 2px 4px;
-            border-radius: 3px;
+            text-align: center;
+            vertical-align: middle;
         }
 
-        input.table-input:hover:not([readonly]):not([disabled]) { border-color: var(--border-color); background-color: #fff; }
-        input.table-input:focus { outline: none; border-color: var(--secondary-color); background-color: var(--input-focus); }
-        input.number-input { text-align: right; font-family: monospace; }
-        .auto-fetched { background-color: #f1f5f9 !important; font-weight: 700; color: #0f172a; text-align: right; }
-
-        body.is-form-locked input, body.is-form-locked select {
-            background-color: var(--locked-bg) !important;
-            border-color: #e2e8f0 !important;
-            color: #475569 !important;
-            cursor: not-allowed !important;
-            pointer-events: none !important;
+        th {
+            background-color: #f0f0f0;
+            font-weight: 600;
         }
 
-        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
-        .kpi-card {
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-left: 5px solid var(--secondary-color);
-            border-radius: 6px;
-            padding: 10px 12px;
+        td input[type="text"] {
+            border: none;
+            text-align: center;
+            width: 100%;
+            font-size: 11px;
         }
 
-        .kpi-card p { margin: 0; font-size: 0.68rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
-        .kpi-card h3 { margin: 3px 0 0; font-size: 1.1rem; color: #1e3a8a; }
-
-        .badge-autofetch {
-            background-color: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;
+        td input.text-left {
+            text-align: left;
         }
 
-        @media print { .sidebar, header, .status-banner, .btn { display: none !important; } }
+        .bottom-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .note-and-summary {
+            width: 55%;
+        }
+
+        .note {
+            font-size: 11px;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .summary-section {
+            width: 100%;
+        }
+
+        .summary-title {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .declaration {
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .sig-box {
+            width: 23%;
+            padding-top: 2px;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .controls {
+                display: none;
+            }
+            .page {
+                box-shadow: none;
+                margin: 0;
+                width: 297mm;
+                height: 210mm;
+                page-break-after: avoid;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <div>
-            <h1>TALDANGRA FULMATI HIGH SCHOOL [H.S.]</h1>
-            <p>Multi-Year Audit Database Portal (Full Staff Salary, PF Loan Ref & GPF Loaded)</p>
-        </div>
-        <div class="header-controls">
-            <label style="font-size: 0.8rem; font-weight: 600;">Active Audit Year:</label>
-            <select id="fySelector" class="fy-select" onchange="switchFinancialYear(this.value)">
-                <option value="2021-22" selected>FY 2021-22 (Audited)</option>
-                <option value="2022-23">FY 2022-23 (Audited)</option>
-                <option value="2023-24">FY 2023-24 (Audited)</option>
-                <option value="2024-25">FY 2024-25 (Audited)</option>
-                <option value="2025-26">FY 2025-26 (Next FY)</option>
-                <option value="2026-27">FY 2026-27 (Next FY)</option>
-            </select>
-            <button class="btn btn-light" onclick="resetToOriginalSeed()">🔄 Reset FY Data</button>
-            <button class="btn btn-success" onclick="saveFYReport()">💾 Save FY Audit</button>
-            <button class="btn btn-rollover" onclick="rolloverNextFY()">⏩ Auto-Rollover to Next FY</button>
-            <button id="lockToggleBtn" class="btn btn-lock" onclick="toggleLock()"><span id="lockBtnIcon">🔓</span> <span id="lockBtnText">Lock Report</span></button>
-        </div>
-    </header>
-
-    <div id="statusBanner" class="status-banner">
-        <span>Active Audit Year: <strong id="activeFYText">2021-22</strong> | Individual Staff Salary & Head 6 Loan Recovery Loaded</span>
-        <span id="lockStatusBadge">🔓 Edit Mode Unlocked</span>
+    <div class="controls">
+        <label for="formatSelect">ফরম্যাট নির্বাচন করুন: </label>
+        <select id="formatSelect" onchange="toggleFormat()">
+            <option value="with-ssm">সর্বশিক্ষা মিশন সহ (With SSM)</option>
+            <option value="without-ssm">সর্বশিক্ষা মিশন ছাড়া (Without SSM)</option>
+        </select>
+        <button onclick="window.print()">প্রিন্ট করুন (Print)</button>
     </div>
 
-    <div class="app-body">
-        <nav class="sidebar">
-            <div class="sidebar-heading">Audit Forms & Ledgers</div>
-            <button class="tab-btn active" onclick="showTab('tab-cover')">1. Cover & Metadata</button>
-            <button class="tab-btn" onclick="showTab('tab-payroll')">2. Master Payroll (Salary Register)</button>
-            <button class="tab-btn" onclick="showTab('tab-gpf')">3. Page 6 (GPF Statement II)</button>
-            <button class="tab-btn" onclick="showTab('tab-recpay')">4. Page 3N & 4N (Receipts & Payments)</button>
-            <button class="tab-btn" onclick="showTab('tab-obs')">5. Page 2 (Salary Reconciliation)</button>
-            <button class="tab-btn" onclick="showTab('tab-subsidiary')">6. Subsidiary Funds (Dev, Hostel, SSM)</button>
-            <button class="tab-btn" onclick="showTab('tab-closing')">7. Page 9 (Fund Closing Balances)</button>
-        </nav>
-
-        <main class="content-area">
-
-            <!-- Real-Time Auto KPI Dashboard -->
-            <div class="kpi-row">
-                <div class="kpi-card" style="border-left-color: #1e3a8a;">
-                    <p>Total Gross Salary</p><h3 id="kpi-gross">₹0.00</h3>
-                </div>
-                <div class="kpi-card" style="border-left-color: #0284c7;">
-                    <p>Total Receipts / Payments</p><h3 id="kpi-recpay">₹0.00</h3>
-                </div>
-                <div class="kpi-card" style="border-left-color: #15803d;">
-                    <p>GPF Closing Balance</p><h3 id="kpi-gpf">₹0.00</h3>
-                </div>
-                <div class="kpi-card" style="border-left-color: #475569;">
-                    <p>Total Cash & Bank Balance</p><h3 id="kpi-fund">₹0.00</h3>
-                </div>
+    <div class="page" id="masterRollPage">
+        <div>
+            <!-- Header Section -->
+            <div class="header" id="headerSection">
+                <h4 id="ssmSub1">সর্বশিক্ষা অভিযান</h4>
+                <h3 id="ssmSub2">সর্বশিক্ষা মিশন, বাঁকুড়া (বাস্তু বিভাগ)</h3>
+                <h4>শ্রমিকের মজুরী প্রদানের মাষ্টার রোল</h4>
             </div>
 
-            <!-- Page 1 Metadata -->
-            <div id="tab-cover" class="tab-panel active">
-                <div class="card">
-                    <div class="card-header"><h2 class="card-title">School Audit Details & Historical Grants</h2></div>
-                    <form class="form-grid">
-                        <div class="form-group"><label>School Name</label><input type="text" id="meta-school" value="TALDANGRA FULMATI HIGH SCHOOL [H.S.]"></div>
-                        <div class="form-group"><label>Financial Year</label><input type="text" id="meta-fy" value="2021-22" readonly style="background:#f1f5f9;"></div>
-                        <div class="form-group"><label>District & PIN</label><input type="text" value="BANKURA, PIN: 722152"></div>
-                        <div class="form-group"><label>Auditor Firm</label><input type="text" value="M/S BISWAJIT DAS & ASSOCIATES, CA"></div>
-                    </form>
-                </div>
-
-                <div class="card">
-                    <div class="card-header"><h2 class="card-title">Historical Salary Grants Received (Page 1 Clause 10)</h2></div>
-                    <table>
-                        <thead>
-                            <tr><th>Financial Year</th><th>Salary Grant Received (Rs.)</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr style="background:#e0f2fe;"><td><strong>2021-22</strong></td><td class="number-cell">2,50,46,332.00</td></tr>
-                            <tr><td><strong>2022-23</strong></td><td class="number-cell">2,74,84,725.00</td></tr>
-                            <tr><td><strong>2023-24</strong></td><td class="number-cell">2,89,91,926.00</td></tr>
-                            <tr><td><strong>2024-25</strong></td><td class="number-cell">2,97,27,422.00</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tab 2: Master Payroll Register -->
-            <div id="tab-payroll" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Master Payroll Register (Includes PF Loan Ref Column)</h2>
-                            <p style="margin:2px 0 0; font-size:0.75rem; color:#64748b;">
-                                💡 Net Pay = Gross - (PF Contrib + PF Loan Ref [Head 6] + I.Tax + P.Tax).
-                            </p>
-                        </div>
+            <!-- Meta Information -->
+            <div class="meta-info">
+                <div class="meta-group">
+                    <div class="meta-row">
+                        <label>বিদ্যালয়ের নাম:</label>
+                        <input type="text" value="">
                     </div>
-                    <div class="table-responsive">
+                    <div class="meta-row">
+                        <label>কাজ আরম্ভের তারিখ:</label>
+                        <input type="text" placeholder="দিন/মাস/বছর">
+                    </div>
+                    <div class="meta-row">
+                        <label>মজুরী প্রদানের তারিখ:</label>
+                        <input type="text" placeholder="দিন/মাস/বছর">
+                    </div>
+                </div>
+                <div class="meta-group">
+                    <div class="meta-row">
+                        <label>চক্রের নাম:</label>
+                        <input type="text" value="">
+                    </div>
+                    <div class="meta-row">
+                        <label>কাজ সমাপ্তির তারিখ:</label>
+                        <input type="text" placeholder="দিন/মাস/বছর">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Table (10 Rows) -->
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">ক্রমিক সংখ্যা</th>
+                        <th style="width: 26%;">শ্রমিকের নাম, পিতা/স্বামীর নাম ও ঠিকানা</th>
+                        <th style="width: 9%;">কাজের তারিখ</th>
+                        <th style="width: 5%;">মোট দিন</th>
+                        <th style="width: 15%;">কাজের বিবরণ</th>
+                        <th style="width: 8%;">মজুরীর হার</th>
+                        <th style="width: 8%;">মোট পাওনা</th>
+                        <th style="width: 14%;">প্রাপ্তি অন্তে প্রাপকের স্বাক্ষর/টিপসই</th>
+                        <th style="width: 11%;">টিপসই শনাক্তকারী</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>১</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td>২</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td>৩</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td>৪</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td>৫</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td>৬</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td>৭</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td>৮</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td>৯</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td>১০</td><td><input type="text" class="text-left"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                </tbody>
+            </table>
+
+            <!-- Bottom Layout: Note and Summary Table -->
+            <div class="bottom-section">
+                <div class="note-and-summary">
+                    <div class="note">
+                        • মাষ্টার রোলে বর্ণিত শ্রমিকদের কাজের পরিমাণ সঠিক আছে।
+                    </div>
+                    <div class="summary-section">
+                        <div class="summary-title">এক নজরে</div>
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Sl</th><th>Employee Name</th><th>Desg.</th><th>Memo No.</th>
-                                    <th style="width:90px;">Basic Pay</th><th style="width:70px;">ADR (Spl.)</th>
-                                    <th style="width:70px;">DA</th><th style="width:70px;">HRA</th><th style="width:60px;">MA</th>
-                                    <th style="width:60px;">Bonus</th><th style="width:60px;">Arrear</th>
-                                    <th style="width:95px;">Gross Pay</th><th style="width:80px;">PF Contrib</th>
-                                    <th style="width:80px; background-color:#fef3c7; color:#92400e;">PF Loan Ref (Head 6)</th>
-                                    <th style="width:70px;">I.Tax</th><th style="width:60px;">P.Tax</th>
-                                    <th style="width:95px;">Net Pay</th>
+                                    <th>শ্রমিকের ধরন</th>
+                                    <th>সংখ্যা</th>
+                                    <th>মোট প্রদেয় অর্থ</th>
                                 </tr>
-                            </thead>
-                            <tbody id="payrollTableBody"></tbody>
-                            <tfoot>
-                                <tr style="font-weight:bold; background-color:#e0f2fe;">
-                                    <td colspan="4">GRAND TOTAL PAYROLL</td>
-                                    <td id="tot-bp" class="number-cell">0.00</td><td id="tot-adr" class="number-cell">0.00</td>
-                                    <td id="tot-da" class="number-cell">0.00</td><td id="tot-hra" class="number-cell">0.00</td>
-                                    <td id="tot-ma" class="number-cell">0.00</td><td id="tot-bonus" class="number-cell">0.00</td><td id="tot-arrear" class="number-cell">0.00</td>
-                                    <td id="tot-gross" class="number-cell">0.00</td><td id="tot-pf" class="number-cell">0.00</td>
-                                    <td id="tot-pfloan" class="number-cell" style="background-color:#fef3c7; color:#92400e;">0.00</td>
-                                    <td id="tot-it" class="number-cell">0.00</td><td id="tot-pt" class="number-cell">0.00</td><td id="tot-net" class="number-cell">0.00</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 3: GPF Statement II -->
-            <div id="tab-gpf" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">General Provident Fund (GPF) Statement II (Page 6)</h2>
-                            <span class="badge-autofetch">⚡ Auto-Fetched Individual Subscriber Names, Memos & Contributions</span>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Sl</th><th>Subscriber Name</th><th>Memo No.</th>
-                                    <th style="width:120px;">Opening Bal</th><th style="width:90px;">Trf In</th>
-                                    <th style="width:110px;">Net Contrib</th><th style="width:90px;">Interest</th>
-                                    <th style="width:100px;">Loan Refund</th>
-                                    <th style="width:100px;">Withdrawal</th><th style="width:120px;">Closing Bal (Auto)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="gpfTableBody"></tbody>
-                            <tfoot>
-                                <tr style="font-weight:bold; background-color:#e0f2fe;">
-                                    <td colspan="3">GRAND TOTAL GPF (SCHOOL A/C)</td>
-                                    <td id="gpf-tot-open" class="number-cell">0.00</td><td id="gpf-tot-trin" class="number-cell">0.00</td>
-                                    <td id="gpf-tot-contrib" class="number-cell">0.00</td><td id="gpf-tot-interest" class="number-cell">0.00</td>
-                                    <td id="gpf-tot-loanrefund" class="number-cell">0.00</td>
-                                    <td id="gpf-tot-draw" class="number-cell">0.00</td><td id="gpf-tot-close" class="number-cell">0.00</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 4: Receipts & Payments -->
-            <div id="tab-recpay" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Receipts & Payments Account (Page 3N & 4N)</h2>
-                            <span class="badge-autofetch">⚡ Auto-Fetched Salaries, Contras, PF Loan Refunds & Closing Balances</span>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr><th>Receipt Head</th><th style="width:140px; text-align:right;">Amount (Rs.)</th><th>Payment Head</th><th style="width:140px; text-align:right;">Amount (Rs.)</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td>1. Salary Grant Received</td><td><input type="number" id="rec-sal-grant" class="table-input number-input rec-field" value="25046332.00" oninput="calcRecPay()"></td><td>1. Teachers' Pay & Allowances</td><td><input type="number" id="pay-teachers" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td></tr>
-                                <tr><td>2. S.S.M. Grant Received</td><td><input type="number" id="rec-ssm-grant" class="table-input number-input rec-field" value="175000.00" oninput="calcRecPay()"></td><td>2. Clerks' Pay & Allowances</td><td><input type="number" id="pay-clerks" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td></tr>
-                                <tr><td>3. LAB & Library Grants</td><td><input type="number" id="rec-lab-grant" class="table-input number-input rec-field" value="260000.00" oninput="calcRecPay()"></td><td>3. Class IV Staff Pay & Allowances</td><td><input type="number" id="pay-grd" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td></tr>
-                                <tr><td>4. Development Fees</td><td><input type="number" id="rec-dev-fees" class="table-input number-input rec-field" value="263760.00" oninput="calcRecPay()"></td><td>4. Bonus to Staff</td><td><input type="number" class="table-input number-input pay-field" value="27000.00" oninput="calcRecPay()"></td></tr>
-                                <tr><td>5. Bank Interest Received</td><td><input type="number" id="rec-bank-int" class="table-input number-input rec-field" value="25390.00" oninput="calcRecPay()"></td><td>5. Development Expenditure</td><td><input type="number" class="table-input number-input pay-field" value="86880.00" oninput="calcRecPay()"></td></tr>
-                                <tr><td>6. PF Contributions & Loan Refund Received (Head 6)</td><td><input type="number" id="rec-pf-tot" class="table-input number-input rec-field auto-fetched" value="0.00"></td><td>6. Board/Council Exam Fees Paid</td><td><input type="number" class="table-input number-input pay-field" value="0.00" oninput="calcRecPay()"></td></tr>
-                                <tr><td>7. PF Withdrawal from Treasury</td><td><input type="number" id="rec-pf-draw" class="table-input number-input rec-field" value="2227815.00" oninput="calcRecPay()"></td><td>7. Hostel Expenditure</td><td><input type="number" class="table-input number-input pay-field" value="0.00" oninput="calcRecPay()"></td></tr>
-                                <tr><td>8. PF Transfer from Prev School</td><td><input type="number" class="table-input number-input rec-field" value="0.00" oninput="calcRecPay()"></td><td>8. SSM Infrastructure Expenditure</td><td><input type="number" class="table-input number-input pay-field" value="44683.50" oninput="calcRecPay()"></td></tr>
-                                <tr><td>9. Professional Tax Deducted</td><td><input type="number" id="rec-pt-tot" class="table-input number-input rec-field auto-fetched" value="0.00" readonly></td><td>9. PF Contributions Paid to Treasury</td><td><input type="number" id="pay-pf-tot" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td></tr>
-                                <tr><td>10. Income Tax Deducted</td><td><input type="number" id="rec-it-tot" class="table-input number-input rec-field auto-fetched" value="0.00" readonly></td><td>10. Professional Tax Paid</td><td><input type="number" id="pay-pt-tot" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td></tr>
-                                <tr><td>11. Opening Cash & Bank Balances</td><td><input type="number" id="rec-open-cashbank" class="table-input number-input rec-field auto-fetched" value="1268177.20" oninput="calcRecPay()"></td><td>11. Income Tax Paid</td><td><input type="number" id="pay-it-tot" class="table-input number-input pay-field auto-fetched" value="0.00" readonly></td></tr>
-                                <tr><td>-</td><td>-</td><td>12. PF Transfer / Charges / Withdrawals</td><td><input type="number" id="pay-pf-draw" class="table-input number-input pay-field" value="2227815.00" oninput="calcRecPay()"></td></tr>
-                                <tr><td>-</td><td>-</td><td>13. Closing Cash & Bank Balance (Page 9)</td><td><input type="number" id="pay-closing-bal" class="table-input number-input pay-field auto-fetched" value="1350753.25" readonly></td></tr>
-                                <tr style="font-weight:bold; background-color:#e0f2fe;">
-                                    <td>TOTAL RECEIPTS</td><td><input type="number" id="rec-total" class="table-input number-input auto-fetched" value="37385388.75" readonly></td>
-                                    <td>TOTAL PAYMENTS</td><td><input type="number" id="pay-total" class="table-input number-input auto-fetched" value="37385388.75" readonly></td>
+                                <tr>
+                                    <td style="text-align: left; padding-left: 5px;">দক্ষ</td>
+                                    <td><input type="text"></td>
+                                    <td><input type="text"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left; padding-left: 5px;">অর্ধ দক্ষ</td>
+                                    <td><input type="text"></td>
+                                    <td><input type="text"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left; padding-left: 5px;">সাধারণ</td>
+                                    <td><input type="text"></td>
+                                    <td><input type="text"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left; padding-left: 5px;"><strong>মোট</strong></td>
+                                    <td><input type="text"></td>
+                                    <td><input type="text"></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Tab 5: Page 2 Salary Reconciliation -->
-            <div id="tab-obs" class="tab-panel">
-                <div class="card">
-                    <div class="card-header"><h2 class="card-title">Statement of Salary Grants Reconciliation (Page 2 Item 10)</h2></div>
-                    <table>
-                        <thead><tr><th>Reconciliation Component</th><th style="width:200px; text-align:right;">Amount (Rs.)</th></tr></thead>
-                        <tbody>
-                            <tr><td>Opening Balance in Salary A/C (01.04)</td><td><input type="number" id="recon-open" class="table-input number-input" value="771.55" oninput="calcRecon()"></td></tr>
-                            <tr><td>Add: Salary Grants Online Transfer</td><td><input type="number" id="recon-tr" class="table-input number-input" value="20651431.00" oninput="calcRecon()"></td></tr>
-                            <tr><td>Add: PF, P.Tax & Income Tax Grant</td><td><input type="number" id="recon-tax-grant" class="table-input number-input" value="4394901.00" oninput="calcRecon()"></td></tr>
-                            <tr><td>Add: Bank Interest Earned</td><td><input type="number" id="recon-interest" class="table-input number-input" value="29.00" oninput="calcRecon()"></td></tr>
-                            <tr style="background-color:#f1f5f9;"><td><strong>TOTAL SALARY GRANT AVAILABLE</strong></td><td><input type="number" id="recon-total-avail" class="table-input number-input auto-fetched" value="25047132.55" readonly></td></tr>
-                            <tr><td>Less: Salaries Disbursed (Auto-Fetched from Payroll)</td><td><input type="number" id="recon-disbursed" class="table-input number-input auto-fetched" value="25046332.00" readonly></td></tr>
-                            <tr><td>Closing Balance before Charges</td><td><input type="number" id="recon-closing-pre" class="table-input number-input auto-fetched" value="800.55" readonly></td></tr>
-                            <tr><td>Less: Bank Charges / Interest Refund (TR7)</td><td><input type="number" id="recon-charges" class="table-input number-input" value="0.00" oninput="calcRecon()"></td></tr>
-                            <tr style="background-color:#e0f2fe; font-weight:bold;"><td><strong>ACTUAL BANK BAL IN SALARY A/C (31.03)</strong></td><td><input type="number" id="recon-actual-bal" class="table-input number-input auto-fetched" value="800.55" readonly></td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <div>
+            <div class="declaration" id="declarationText">
+                শ্রমিকগণ আমার সাক্ষাতে স্বাক্ষর করিয়া নিজ নিজ মজুরী বুঝিয়া পাইলেন।
             </div>
 
-            <!-- Tab 6: Subsidiary Funds -->
-            <div id="tab-subsidiary" class="tab-panel">
-                <div class="card">
-                    <div class="card-header"><h2 class="card-title">Development Fund Ledger</h2></div>
-                    <table>
-                        <tr><th>Opening Bank Balance</th><td><input type="number" id="dev-open" class="table-input number-input" value="927934.90" oninput="calcSubs()"></td><th>Expenditure during Year</th><td><input type="number" id="dev-exp" class="table-input number-input" value="86880.00" oninput="calcSubs()"></td></tr>
-                        <tr><th>Trf from General Fund</th><td><input type="number" id="dev-trf" class="table-input number-input" value="263760.00" oninput="calcSubs()"></td><th>Lab Grant Expenditure</th><td><input type="number" id="dev-lab-exp" class="table-input number-input" value="260000.00" oninput="calcSubs()"></td></tr>
-                        <tr><th>Lab Grant Received</th><td><input type="number" id="dev-lab-rec" class="table-input number-input" value="0.00" oninput="calcSubs()"></td><th>Bank Charges</th><td><input type="number" id="dev-chg" class="table-input number-input" value="39.00" oninput="calcSubs()"></td></tr>
-                        <tr><th>Library Grant Received</th><td><input type="number" id="dev-lib-rec" class="table-input number-input" value="0.00" oninput="calcSubs()"></td><th>Closing Bank Balance</th><td><input type="number" id="dev-close" class="table-input number-input auto-fetched" value="870165.90" readonly></td></tr>
-                        <tr><th>Bank Interest Received</th><td><input type="number" id="dev-int" class="table-input number-input" value="25390.00" oninput="calcSubs()"></td><th>-</th><td>-</td></tr>
-                        <tr style="font-weight:bold; background-color:#e0f2fe;">
-                            <th>TOTAL RECEIPTS</th><td><input type="number" id="dev-tot-rec" class="table-input number-input auto-fetched" value="1217084.90" readonly></td>
-                            <th>TOTAL PAYMENTS</th><td><input type="number" id="dev-tot-pay" class="table-input number-input auto-fetched" value="1217084.90" readonly></td>
-                        </tr>
-                    </table>
+            <!-- Signatures Section -->
+            <div class="signatures" id="signatureSection">
+                <div class="sig-box" id="sig1">
+                    সংশ্লিষ্ট অবর সহ-বাস্তুকার
                 </div>
-
-                <div class="card">
-                    <div class="card-header"><h2 class="card-title">SC & ST Hostel Fund Ledger</h2></div>
-                    <table>
-                        <tr><th>Opening Bank Balance</th><td><input type="number" id="hostel-open" class="table-input number-input" value="3165.00" oninput="calcSubs()"></td><th>Hostel Expenditure</th><td><input type="number" id="hostel-exp" class="table-input number-input" value="0.00" oninput="calcSubs()"></td></tr>
-                        <tr><th>Bank Interest</th><td><input type="number" id="hostel-int" class="table-input number-input" value="119.00" oninput="calcSubs()"></td><th>Bank Charge</th><td><input type="number" id="hostel-chg" class="table-input number-input" value="72.00" oninput="calcSubs()"></td></tr>
-                        <tr><th>-</th><td>-</td><th>Closing Bank Balance</th><td><input type="number" id="hostel-close" class="table-input number-input auto-fetched" value="3212.00" readonly></td></tr>
-                        <tr style="font-weight:bold; background-color:#e0f2fe;">
-                            <th>TOTAL RECEIPTS</th><td><input type="number" id="hostel-tot-rec" class="table-input number-input auto-fetched" value="3284.00" readonly></td>
-                            <th>TOTAL PAYMENTS</th><td><input type="number" id="hostel-tot-pay" class="table-input number-input auto-fetched" value="3284.00" readonly></td>
-                        </tr>
-                    </table>
+                <div class="sig-box" id="sig2">
+                    জেলা বাস্তুকার দ্বারা পরীক্ষিত<br>(শীলমোহর সহ স্বাক্ষর)
                 </div>
-
-                <div class="card">
-                    <div class="card-header"><h2 class="card-title">SSA / SSM Fund Ledger</h2></div>
-                    <table>
-                        <tr><th>Opening Bank Balance</th><td><input type="number" id="ssm-open" class="table-input number-input" value="337077.30" oninput="calcSubs()"></td><th>Infrastructure Expenditure</th><td><input type="number" id="ssm-exp" class="table-input number-input" value="44683.50" oninput="calcSubs()"></td></tr>
-                        <tr><th>Composite Grant</th><td><input type="number" id="ssm-comp" class="table-input number-input" value="175000.00" oninput="calcSubs()"></td><th>Closing Bank Balance</th><td><input type="number" id="ssm-close" class="table-input number-input auto-fetched" value="476574.80" readonly></td></tr>
-                        <tr><th>Bank Interest & Other</th><td><input type="number" id="ssm-int" class="table-input number-input" value="9181.00" oninput="calcSubs()"></td><th>-</th><td>-</td></tr>
-                        <tr style="font-weight:bold; background-color:#e0f2fe;">
-                            <th>TOTAL SSM RECEIPTS</th><td><input type="number" id="ssm-tot-rec" class="table-input number-input auto-fetched" value="521258.30" readonly></td>
-                            <th>TOTAL SSM PAYMENTS</th><td><input type="number" id="ssm-tot-pay" class="table-input number-input auto-fetched" value="521258.30" readonly></td>
-                        </tr>
-                    </table>
+                <div class="sig-box" id="sig3">
+                    ভি.ইসি/ডলুইসি-র সম্পাদক/প্রধান শিক্ষক<br>(শীলমোহর সহ স্বাক্ষর)
+                </div>
+                <div class="sig-box" id="sig4">
+                    ভি.ইসি/ডলুইসি-র সভাপতি/এম.সি-র সম্পাদক<br>(শীলমোহর সহ স্বাক্ষর)
                 </div>
             </div>
-
-            <!-- Tab 7: Closing Balances -->
-            <div id="tab-closing" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Closing Balance of Various Funds on 31.03 (Page 9)</h2>
-                            <span class="badge-autofetch">⚡ Auto-Fetched Closing Balances from Recon & Subsidiary Ledgers</span>
-                        </div>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr><th>Sl</th><th>Name of Fund</th><th>Cash in Hand</th><th>Bank Amount (Auto-Fetched)</th><th>Total Balance (Rs.)</th><th>Bank Account Details</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>1</td><td>SALARY FUND</td><td>0.00</td><td id="cbal-sal" class="number-cell auto-fetched">800.55</td><td id="cbal-sal-tot" class="number-cell auto-fetched">800.55</td><td>BDCC A/C 606113041421</td></tr>
-                            <tr><td>2</td><td>HOSTEL FUND</td><td>0.00</td><td id="cbal-hostel" class="number-cell auto-fetched">3,212.00</td><td id="cbal-hostel-tot" class="number-cell auto-fetched">3,212.00</td><td>BDCC A/C 606113025908</td></tr>
-                            <tr><td>3</td><td>DEVELOPMENT FUND</td><td>0.00</td><td id="cbal-dev" class="number-cell auto-fetched">8,70,165.90</td><td id="cbal-dev-tot" class="number-cell auto-fetched">8,70,165.90</td><td>BGVB A/C 5536011000624</td></tr>
-                            <tr><td>4</td><td>S.S.A. / S.S.M. FUND</td><td>0.00</td><td id="cbal-ssm" class="number-cell auto-fetched">4,76,574.80</td><td id="cbal-ssm-tot" class="number-cell auto-fetched">4,76,574.80</td><td>SBI A/C 32452532658</td></tr>
-                            <tr style="font-weight:bold; background-color:#e0f2fe;">
-                                <td colspan="2">TOTAL FUND BALANCE</td><td>₹0.00</td>
-                                <td id="cbal-grand-bank" class="number-cell auto-fetched">₹13,50,753.25</td>
-                                <td id="cbal-grand-tot" class="number-cell auto-fetched">₹13,50,753.25</td>
-                                <td>Passbooks Verified</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </main>
+        </div>
     </div>
 
     <script>
-        let currentFY = "2021-22";
-        let isLocked = false;
-
-        // Clean Staff Seed Data with PF Loan Ref (Head 6) Included
-        const staffData_2021_22 = [
-            {sl:1, name:'PRABIR KUMAR DANGAR', desg:'HM', memo:'2252/S/02.08.19', bp:1101600, adr:6000, da:33048, hra:132192, ma:6000, bonus:0, arrear:0, pf:249000, pfLoanRef:0, it:148750, pt:2400, gpfOpen:2342237, gpfTrIn:0, gpfContrib:248250, gpfInterest:174402, gpfDraw:0},
-            {sl:2, name:'KANAI CHANDRA SAMANTA', desg:'AHM', memo:'3028/S/01.10.85', bp:0, adr:0, da:0, hra:0, ma:0, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:0, pt:0, gpfOpen:19406, gpfTrIn:0, gpfContrib:0, gpfInterest:0, gpfDraw:19406},
-            {sl:3, name:'RANJAN KUMAR GHOSH', desg:'A.T.', memo:'1755/S/25.07.95', bp:1061200, adr:0, da:31836, hra:72000, ma:6000, bonus:0, arrear:0, pf:180000, pfLoanRef:0, it:118000, pt:2400, gpfOpen:2049631, gpfTrIn:0, gpfContrib:185000, gpfInterest:151381, gpfDraw:0},
-            {sl:4, name:'AMAL CHANDRA SARDAR', desg:'A.T.', memo:'2953/S/21.12.95', bp:1061200, adr:0, da:31836, hra:127344, ma:6000, bonus:0, arrear:0, pf:144000, pfLoanRef:0, it:134000, pt:2400, gpfOpen:1567628, gpfTrIn:0, gpfContrib:144000, gpfInterest:115988, gpfDraw:0},
-            {sl:5, name:'KANAI LAL GHOSH', desg:'A.T.', memo:'598/S/17.02.97', bp:1061200, adr:0, da:31836, hra:79200, ma:6000, bonus:0, arrear:0, pf:216000, pfLoanRef:0, it:115500, pt:2400, gpfOpen:1968051, gpfTrIn:0, gpfContrib:218000, gpfInterest:146761, gpfDraw:0},
-            {sl:6, name:'SWAPAN KUMAR MAJI', desg:'A.T.', memo:'2540/S/31.07.98', bp:993600, adr:0, da:29808, hra:119232, ma:6000, bonus:0, arrear:0, pf:180000, pfLoanRef:0, it:110500, pt:2400, gpfOpen:1747594, gpfTrIn:0, gpfContrib:180000, gpfInterest:129937, gpfDraw:0},
-            {sl:7, name:'TAPAS KUMAR GARAI', desg:'A.T.', memo:'595/S/26.02.99', bp:1000400, adr:0, da:30012, hra:120048, ma:6000, bonus:0, arrear:0, pf:144000, pfLoanRef:0, it:90000, pt:2400, gpfOpen:1662179, gpfTrIn:0, gpfContrib:147000, gpfInterest:122701, gpfDraw:0},
-            {sl:8, name:'TUSHAR KANTI TAPADAR', desg:'A.T.', memo:'1087/S/2.04.04', bp:0, adr:0, da:0, hra:0, ma:0, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:0, pt:0, gpfOpen:14830, gpfTrIn:0, gpfContrib:0, gpfInterest:0, gpfDraw:14830},
-            {sl:9, name:'PARTHA KUMAR PATRA', desg:'A.T.', memo:'3295/S/29.10.07', bp:618000, adr:0, da:18540, hra:74160, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:0, pt:2400, gpfOpen:470551, gpfTrIn:0, gpfContrib:73000, gpfInterest:35752, gpfDraw:0},
-            {sl:10, name:'MAHIM KUMAR PAINE', desg:'A.T.', memo:'3881/S/31.10.08', bp:744000, adr:0, da:22320, hra:72000, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:5500, pt:2400, gpfOpen:517608, gpfTrIn:0, gpfContrib:73000, gpfInterest:39093, gpfDraw:0},
-            {sl:11, name:'KABITA MANDAL', desg:'A.T.', memo:'3881/S/31.10.08', bp:744000, adr:0, da:22320, hra:72000, ma:6000, bonus:0, arrear:0, pf:120000, pfLoanRef:0, it:42000, pt:2400, gpfOpen:848620, gpfTrIn:0, gpfContrib:120000, gpfInterest:64157, gpfDraw:0},
-            {sl:12, name:'TAPAS KUNDU', desg:'A.T.', memo:'585/S/24.02.09', bp:722400, adr:0, da:21672, hra:86688, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:41000, pt:2400, gpfOpen:467466, gpfTrIn:0, gpfContrib:61000, gpfInterest:35143, gpfDraw:0},
-            {sl:13, name:'MRINMAYEE CHAKRABORTY', desg:'A.T.', memo:'127/S/11.01.10', bp:722400, adr:0, da:21672, hra:72000, ma:6000, bonus:0, arrear:0, pf:102000, pfLoanRef:0, it:0, pt:2400, gpfOpen:894262, gpfTrIn:0, gpfContrib:103500, gpfInterest:66812, gpfDraw:0},
-            {sl:14, name:'BIDHAN CHANDRA GHOSH', desg:'A.T.', memo:'2711/S/08.10.09', bp:722400, adr:0, da:21672, hra:86688, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:2400, gpfOpen:517935, gpfTrIn:0, gpfContrib:60000, gpfInterest:38726, gpfDraw:0},
-            {sl:15, name:'SAHADEB BASKEY', desg:'A.T.', memo:'2309/S/29.07.11', bp:680800, adr:0, da:20424, hra:81696, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:2400, gpfOpen:595383, gpfTrIn:0, gpfContrib:60000, gpfInterest:44225, gpfDraw:0},
-            {sl:16, name:'TANMOY CHAKRABORTY', desg:'A.T.', memo:'2189/S/25.07.11', bp:680800, adr:0, da:20424, hra:81696, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:26000, pt:2400, gpfOpen:503240, gpfTrIn:0, gpfContrib:72000, gpfInterest:38073, gpfDraw:0},
-            {sl:17, name:'SUJATA MAHATA', desg:'A.T.', memo:'51/S/03.01.14', bp:641600, adr:0, da:19248, hra:74112, ma:6000, bonus:0, arrear:0, pf:48000, pfLoanRef:0, it:0, pt:2400, gpfOpen:382949, gpfTrIn:0, gpfContrib:48000, gpfInterest:28751, gpfDraw:0},
-            {sl:18, name:'PARTHA MISHRA', desg:'A.T.', memo:'4802/S/08.12.17', bp:502800, adr:0, da:15084, hra:60336, ma:6000, bonus:0, arrear:0, pf:48000, pfLoanRef:0, it:0, pt:2400, gpfOpen:205235, gpfTrIn:0, gpfContrib:48500, gpfInterest:16134, gpfDraw:0},
-            {sl:19, name:'BELA MAHATA', desg:'A.T.', memo:'204/S/16.01.15', bp:837600, adr:0, da:25128, hra:100512, ma:6000, bonus:0, arrear:0, pf:168000, pfLoanRef:0, it:72000, pt:2400, gpfOpen:1042270, gpfTrIn:0, gpfContrib:168000, gpfInterest:79468, gpfDraw:0},
-            {sl:20, name:'PAPIYA MAJI', desg:'A.T.', memo:'3762/S/05.10.18', bp:553600, adr:0, da:16608, hra:66432, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:2400, gpfOpen:75528, gpfTrIn:0, gpfContrib:60000, gpfInterest:7315, gpfDraw:0},
-            {sl:21, name:'SUMANTA MANDAL', desg:'A.T.', memo:'3762/S/05.10.18', bp:553600, adr:0, da:16608, hra:66432, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:2400, gpfOpen:50593, gpfTrIn:0, gpfContrib:63000, gpfInterest:5545, gpfDraw:0},
-            {sl:22, name:'SAMPA PATI', desg:'A.T.', memo:'278/S/28.01.19', bp:420800, adr:0, da:12624, hra:50496, ma:6000, bonus:4500, arrear:0, pf:72000, pfLoanRef:0, it:0, pt:2400, gpfOpen:49891, gpfTrIn:0, gpfContrib:76000, gpfInterest:5885, gpfDraw:0},
-            {sl:23, name:'SANJOY DANGAR', desg:'A.T.', memo:'278/S/28.01.19', bp:502800, adr:0, da:15084, hra:60336, ma:6000, bonus:0, arrear:0, pf:36000, pfLoanRef:0, it:0, pt:2400, gpfOpen:45285, gpfTrIn:0, gpfContrib:36000, gpfInterest:4387, gpfDraw:0},
-            {sl:24, name:'PURNIMA PATRA', desg:'A.T.', memo:'544/S/02.03.21', bp:943600, adr:0, da:28308, hra:72000, ma:6000, bonus:0, arrear:0, pf:360000, pfLoanRef:0, it:99000, pt:2400, gpfOpen:30000, gpfTrIn:2667958, gpfContrib:330000, gpfInterest:140128, gpfDraw:0},
-            {sl:25, name:'ANTARA GHORAI', desg:'A.T.', memo:'543/S/02.03.21', bp:656000, adr:0, da:19680, hra:74880, ma:6000, bonus:0, arrear:0, pf:120000, pfLoanRef:0, it:6500, pt:2400, gpfOpen:10000, gpfTrIn:844374, gpfContrib:125000, gpfInterest:49578, gpfDraw:0},
-            {sl:26, name:'MALATI TUDU', desg:'A.T.', memo:'712/S/10.03.21', bp:511200, adr:0, da:15336, hra:61344, ma:6000, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:0, pt:2400, gpfOpen:0, gpfTrIn:0, gpfContrib:3000, gpfInterest:0, gpfDraw:0},
-            {sl:27, name:'SASANKA SAREN', desg:'A.T.', memo:'712/S/10.03.21', bp:511200, adr:0, da:15336, hra:61344, ma:6000, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:0, pt:2400, gpfOpen:0, gpfTrIn:0, gpfContrib:3000, gpfInterest:0, gpfDraw:0},
-            {sl:28, name:'SWAPNA MAHANTI', desg:'A.T.', memo:'1787/S/05.10.21', bp:304000, adr:0, da:9120, hra:30000, ma:2500, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:25891, pt:1000, gpfOpen:0, gpfTrIn:0, gpfContrib:72000, gpfInterest:1065, gpfDraw:0},
-            {sl:29, name:'KANTI MALLA', desg:'A.T.', memo:'2246/S/24.11.21', bp:151500, adr:0, da:4545, hra:18180, ma:1500, bonus:0, arrear:0, pf:21000, pfLoanRef:0, it:0, pt:600, gpfOpen:0, gpfTrIn:0, gpfContrib:28000, gpfInterest:249, gpfDraw:0},
-            {sl:30, name:'SABYASACHI MANDAL', desg:'A.T.', memo:'66/S/06.01.22', bp:64500, adr:0, da:1935, hra:7740, ma:500, bonus:0, arrear:0, pf:6000, pfLoanRef:0, it:22000, pt:200, gpfOpen:0, gpfTrIn:0, gpfContrib:12000, gpfInterest:36, gpfDraw:0},
-            {sl:31, name:'SK ABDUR ROUF', desg:'A.T.', memo:'2021-22/MEMO', bp:0, adr:0, da:0, hra:0, ma:0, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:0, pt:0, gpfOpen:16869, gpfTrIn:0, gpfContrib:0, gpfInterest:0, gpfDraw:16869},
-            {sl:32, name:'TUHIN SUBHRA PATRA', desg:'Librarian', memo:'1793/S/05.10.21', bp:210000, adr:0, da:6300, hra:25200, ma:2500, bonus:0, arrear:0, pf:32500, pfLoanRef:0, it:0, pt:1000, gpfOpen:0, gpfTrIn:0, gpfContrib:39500, gpfInterest:577, gpfDraw:0},
-            {sl:33, name:'NIRMAL CHANDRA NANDI', desg:'Clerk', memo:'2021-22/MEMO', bp:336000, adr:0, da:10080, hra:40320, ma:3500, bonus:0, arrear:0, pf:80000, pfLoanRef:0, it:0, pt:1400, gpfOpen:1766710, gpfTrIn:0, gpfContrib:60000, gpfInterest:64138, gpfDraw:1826710},
-            {sl:34, name:'SUBHENDU KARMAKAR', desg:'Clerk', memo:'1220/S/04.05.00', bp:546800, adr:0, da:16404, hra:65616, ma:6000, bonus:0, arrear:0, pf:132000, pfLoanRef:0, it:0, pt:2400, gpfOpen:767252, gpfTrIn:0, gpfContrib:136000, gpfInterest:56700, gpfLoanRefund:350000, gpfDraw:350000},
-            {sl:35, name:'SUMANTA DULE', desg:'Clerk', memo:'2086/S/11.05.18', bp:294800, adr:0, da:8844, hra:35376, ma:6000, bonus:4500, arrear:0, pf:24000, pfLoanRef:0, it:0, pt:1800, gpfOpen:38033, gpfTrIn:0, gpfContrib:24000, gpfInterest:3481, gpfDraw:0},
-            {sl:36, name:'TAPAN KUMAR DIYASI', desg:'Group-D', memo:'1086/S/03.05.95', bp:412400, adr:0, da:12372, hra:49488, ma:6000, bonus:4500, arrear:0, pf:96000, pfLoanRef:0, it:0, pt:2200, gpfOpen:539119, gpfTrIn:0, gpfContrib:98000, gpfInterest:41401, gpfDraw:0},
-            {sl:37, name:'NIRANJAN MURMU', desg:'Group-D', memo:'1403/S/23.07.98', bp:400400, adr:0, da:12012, hra:48048, ma:6000, bonus:4500, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:1800, gpfOpen:524053, gpfTrIn:0, gpfContrib:63000, gpfInterest:39160, gpfDraw:0},
-            {sl:38, name:'PRAKASH SARDAR', desg:'Group-D', memo:'4848/S/31.12.12', bp:270800, adr:0, da:8124, hra:32496, ma:6000, bonus:4500, arrear:0, pf:24000, pfLoanRef:0, it:0, pt:1800, gpfOpen:79172, gpfTrIn:0, gpfContrib:24000, gpfInterest:6402, gpfDraw:0},
-            {sl:39, name:'KEYA DEY', desg:'Group-D', memo:'2234/S/18.05.18', bp:220000, adr:0, da:6600, hra:26400, ma:6000, bonus:4500, arrear:0, pf:24000, pfLoanRef:0, it:0, pt:1560, gpfOpen:31799, gpfTrIn:0, gpfContrib:24000, gpfInterest:3039, gpfDraw:0}
-        ];
-
-        const staffData_2022_23 = [
-            {sl:1, name:'PRABIR KUMAR DANGAR', desg:'HM', memo:'2252/S; 02-08-2019', bp:1134800, adr:6000, da:34044, hra:136176, ma:6000, bonus:0, arrear:0, pf:240000, pfLoanRef:0, it:150000, pt:2400, gpfOpen:2764889, gpfTrIn:0, gpfContrib:240000, gpfInterest:204117, gpfDraw:0},
-            {sl:2, name:'RANJAN KUMAR GHOSH', desg:'A.T.', memo:'1755/S; 25-07-1995', bp:1031000, adr:0, da:30930, hra:60000, ma:5500, bonus:0, arrear:0, pf:150000, pfLoanRef:0, it:90000, pt:2200, gpfOpen:3028868, gpfTrIn:0, gpfContrib:150000, gpfInterest:225700, gpfDraw:0},
-            {sl:3, name:'AMAL CHANDRA SARDAR', desg:'A.T.', memo:'2953/S; 21-12-1995', bp:1125800, adr:0, da:33774, hra:135096, ma:6000, bonus:0, arrear:0, pf:240000, pfLoanRef:0, it:136000, pt:2400, gpfOpen:2163848, gpfTrIn:0, gpfContrib:240000, gpfInterest:163200, gpfDraw:0},
-            {sl:4, name:'KANAI LAL GHOSH', desg:'A.T.', memo:'598/S; 17-02-1997', bp:1001200, adr:0, da:30036, hra:72600, ma:5500, bonus:0, arrear:0, pf:100000, pfLoanRef:0, it:80000, pt:2200, gpfOpen:2332812, gpfTrIn:0, gpfContrib:100000, gpfInterest:141575, gpfDraw:2412812},
-            {sl:5, name:'SWAPAN KUMAR MAJI', desg:'A.T.', memo:'2540/S; 31-07-1997', bp:1085400, adr:0, da:32562, hra:130248, ma:6000, bonus:0, arrear:0, pf:300000, pfLoanRef:0, it:90000, pt:2400, gpfOpen:2470922, gpfTrIn:0, gpfContrib:300000, gpfInterest:183000, gpfDraw:0},
-            {sl:6, name:'TAPAS KUMAR GARAI', desg:'A.T.', memo:'595/S; 26-02-1999', bp:1030400, adr:0, da:30912, hra:123648, ma:6000, bonus:0, arrear:0, pf:180000, pfLoanRef:0, it:97000, pt:2400, gpfOpen:1931880, gpfTrIn:0, gpfContrib:180000, gpfInterest:143021, gpfDraw:0},
-            {sl:7, name:'PARTHA KUMAR PATRA', desg:'A.T.', memo:'3295/S; 29-10-2007', bp:642200, adr:0, da:19266, hra:77064, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:26000, pt:2400, gpfOpen:757870, gpfTrIn:0, gpfContrib:72000, gpfInterest:57370, gpfDraw:0},
-            {sl:8, name:'MAHIM KUMAR PAINE', desg:'A.T.', memo:'3881/S; 31-10-2008', bp:788800, adr:0, da:23664, hra:60000, ma:6000, bonus:0, arrear:0, pf:108000, pfLoanRef:0, it:31000, pt:2400, gpfOpen:776999, gpfTrIn:0, gpfContrib:108000, gpfInterest:59380, gpfDraw:0},
-            {sl:9, name:'KABITA MANDAL', desg:'A.T.', memo:'3881/S; 31-10-2008', bp:788800, adr:0, da:23664, hra:60000, ma:6000, bonus:0, arrear:0, pf:120000, pfLoanRef:0, it:52000, pt:2400, gpfOpen:1285601, gpfTrIn:0, gpfContrib:120000, gpfInterest:96244, gpfDraw:0},
-            {sl:10, name:'TAPAS KUNDU', desg:'A.T.', memo:'585/S;24-02-2009', bp:765800, adr:0, da:22974, hra:91896, ma:6000, bonus:0, arrear:0, pf:84000, pfLoanRef:0, it:40000, pt:2400, gpfOpen:709702, gpfTrIn:0, gpfContrib:84000, gpfInterest:53975, gpfDraw:0},
-            {sl:11, name:'MRINMAYEE CHAKRABORTY', desg:'A.T.', memo:'127/S;11-01-2010', bp:765800, adr:0, da:22974, hra:60000, ma:6000, bonus:0, arrear:0, pf:120000, pfLoanRef:0, it:32000, pt:2400, gpfOpen:1346195, gpfTrIn:0, gpfContrib:120000, gpfInterest:100523, gpfDraw:0},
-            {sl:12, name:'BIDHAN CHANDRA GHOSH', desg:'A.T.', memo:'2711/S;08-10-2009', bp:765800, adr:0, da:22974, hra:91896, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:37000, pt:2400, gpfOpen:771244, gpfTrIn:0, gpfContrib:60000, gpfInterest:56595, gpfDraw:0},
-            {sl:13, name:'SAHADEB BASKEY', desg:'A.T.', memo:'2309/S; 29-07-2011', bp:722000, adr:0, da:21660, hra:86640, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:21000, pt:2400, gpfOpen:868800, gpfTrIn:0, gpfContrib:60000, gpfInterest:63383, gpfDraw:0},
-            {sl:14, name:'TANMOY CHAKRABORTY', desg:'A.T.', memo:'2189/S; 25-07-2011', bp:722000, adr:0, da:21660, hra:86640, ma:6000, bonus:0, arrear:0, pf:96000, pfLoanRef:0, it:31000, pt:2400, gpfOpen:214044, gpfTrIn:0, gpfContrib:96000, gpfInterest:18682, gpfDraw:0},
-            {sl:15, name:'SUJATA MAHATA', desg:'A.T.', memo:'51/S; 03-01-2014', bp:660800, adr:0, da:19824, hra:73440, ma:6000, bonus:0, arrear:0, pf:48000, pfLoanRef:0, it:0, pt:2400, gpfOpen:459700, gpfTrIn:0, gpfContrib:48000, gpfInterest:34201, gpfDraw:0},
-            {sl:16, name:'PARTHA MISHRA', desg:'A.T.', memo:'4802/S; 08-12-2017', bp:518000, adr:0, da:15540, hra:62160, ma:6000, bonus:0, arrear:0, pf:54000, pfLoanRef:0, it:0, pt:2400, gpfOpen:269869, gpfTrIn:0, gpfContrib:54000, gpfInterest:20918, gpfDraw:0},
-            {sl:17, name:'BELA MAHATA', desg:'A.T.', memo:'204/S; 16-01-2015', bp:700800, adr:0, da:21024, hra:84096, ma:6000, bonus:0, arrear:0, pf:240000, pfLoanRef:0, it:41000, pt:2400, gpfOpen:1533145, gpfTrIn:0, gpfContrib:168000, gpfInterest:115956, gpfDraw:0},
-            {sl:18, name:'PAPIYA MAJI', desg:'A.T.', memo:'3762/S ;05-10-2018', bp:570400, adr:0, da:17112, hra:68448, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:2400, gpfOpen:216397, gpfTrIn:0, gpfContrib:60000, gpfInterest:17448, gpfDraw:0},
-            {sl:19, name:'SUMANTA MANDAL', desg:'A.T.', memo:'3762/S05-10-2018', bp:570400, adr:0, da:17112, hra:68448, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:5000, pt:2400, gpfOpen:216864, gpfTrIn:0, gpfContrib:96000, gpfInterest:17894, gpfDraw:0},
-            {sl:20, name:'SAMPA PATI', desg:'A.T.', memo:'278/S; 28-01-2019', bp:433600, adr:0, da:13008, hra:52032, ma:6000, bonus:4800, arrear:0, pf:120000, pfLoanRef:0, it:0, pt:2400, gpfOpen:258684, gpfTrIn:0, gpfContrib:120000, gpfInterest:22776, gpfDraw:0},
-            {sl:21, name:'SANJOY DANGAR', desg:'A.T.', memo:'278/S; 28-01-2019', bp:532000, adr:0, da:15960, hra:63840, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:2400, gpfOpen:85672, gpfTrIn:67828, gpfContrib:36000, gpfInterest:16509, gpfDraw:0},
-            {sl:0, name:'PURNIMA PATRA', desg:'A.T.', memo:'544/S;02-03-2021', bp:0, adr:0, da:0, hra:0, ma:0, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:0, pt:0, gpfOpen:3168086, gpfTrIn:0, gpfContrib:0, gpfInterest:18745, gpfDraw:3168086},
-            {sl:22, name:'ANTARA GHORAI', desg:'A.T.', memo:'543/S; 02-03-2021', bp:707400, adr:0, da:21222, hra:71112, ma:6000, bonus:0, arrear:0, pf:180000, pfLoanRef:0, it:21891, pt:2400, gpfOpen:1314836, gpfTrIn:14988, gpfContrib:180000, gpfInterest:100355, gpfDraw:0},
-            {sl:23, name:'MALATI TUDU', desg:'A.T.', memo:'712/S ;10-03-2021', bp:525600, adr:0, da:15768, hra:63072, ma:6000, bonus:0, arrear:0, pf:84000, pfLoanRef:0, it:0, pt:2400, gpfOpen:86982, gpfTrIn:0, gpfContrib:36000, gpfInterest:9295, gpfDraw:0},
-            {sl:24, name:'SASANKA SAREN', desg:'A.T.', memo:'712/S ;10-03-2021', bp:525600, adr:0, da:15768, hra:63072, ma:6000, bonus:0, arrear:0, pf:48000, pfLoanRef:0, it:0, pt:2400, gpfOpen:49704, gpfTrIn:0, gpfContrib:36000, gpfInterest:5181, gpfDraw:0},
-            {sl:25, name:'SWAPNA MAHANTI', desg:'A.T.', memo:'1787/S ;05-10-2021', bp:749600, adr:0, da:22488, hra:68400, ma:6000, bonus:0, arrear:0, pf:135000, pfLoanRef:0, it:28000, pt:2400, gpfOpen:73065, gpfTrIn:1405251, gpfContrib:144000, gpfInterest:101332, gpfDraw:0},
-            {sl:26, name:'KANTI MALLA', desg:'A.T.', memo:'2246/S; 24-11-2021', bp:622800, adr:0, da:18684, hra:74736, ma:6000, bonus:0, arrear:0, pf:96000, pfLoanRef:0, it:19000, pt:2400, gpfOpen:28249, gpfTrIn:680263, gpfContrib:84000, gpfInterest:64000, gpfDraw:0},
-            {sl:27, name:'SABYASACHI MANDAL', desg:'A.T.', memo:'66/S;06-01-2022', bp:795400, adr:0, da:23862, hra:92280, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:39000, pt:2400, gpfOpen:12036, gpfTrIn:680822, gpfContrib:72000, gpfInterest:63442, gpfDraw:0},
-            {sl:28, name:'SHEPHALI MAJI', desg:'A.T.', memo:'1953/S;04-07-2022', bp:796400, adr:0, da:23892, hra:68400, ma:6000, bonus:0, arrear:0, pf:180000, pfLoanRef:0, it:33000, pt:2400, gpfOpen:1413353, gpfTrIn:1277534, gpfContrib:160000, gpfInterest:106822, gpfDraw:0},
-            {sl:29, name:'DIPTIMAN SAHA', desg:'A.T.', memo:'1954/S;04-07-2022', bp:622800, adr:0, da:18684, hra:68400, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:18000, pt:2400, gpfOpen:307456, gpfTrIn:710724, gpfContrib:40000, gpfInterest:24287, gpfDraw:0},
-            {sl:30, name:'TUHIN SUBHRA PATRA', desg:'Librarian', memo:'1793/S ;05-10-2021', bp:533400, adr:0, da:16002, hra:64008, ma:6000, bonus:0, arrear:0, pf:102000, pfLoanRef:0, it:0, pt:2400, gpfOpen:40077, gpfTrIn:453827, gpfContrib:84000, gpfInterest:32430, gpfDraw:0},
-            {sl:31, name:'SUBHENDU KARMAKAR', desg:'Clerk', memo:'1220/S; 04-05-2000', bp:567400, adr:0, da:17022, hra:68088, ma:6000, bonus:0, arrear:0, pf:162000, pfLoanRef:0, it:0, pt:2400, gpfOpen:705916, gpfTrIn:0, gpfContrib:180000, gpfInterest:56148, gpfDraw:0},
-            {sl:32, name:'SUMANTA DULE', desg:'Clerk', memo:'2086/S; 11-05-2018', bp:328600, adr:0, da:9858, hra:39432, ma:6000, bonus:4800, arrear:0, pf:24000, pfLoanRef:0, it:0, pt:1800, gpfOpen:24852, gpfTrIn:0, gpfContrib:24000, gpfInterest:2005, gpfDraw:0},
-            {sl:33, name:'TAPAN KUMAR DIYASI', desg:'Group-D', memo:'1086/S; 03-05-1995', bp:424400, adr:0, da:12732, hra:50928, ma:6000, bonus:4800, arrear:0, pf:144000, pfLoanRef:0, it:0, pt:2400, gpfOpen:818944, gpfTrIn:0, gpfContrib:120000, gpfInterest:52080, gpfDraw:0},
-            {sl:34, name:'NIRANJAN MURMU', desg:'Group-D', memo:'1403/S; 23-07-1998', bp:412400, adr:0, da:12372, hra:49488, ma:6000, bonus:4800, arrear:0, pf:96000, pfLoanRef:0, it:0, pt:2200, gpfOpen:626213, gpfTrIn:0, gpfContrib:96000, gpfInterest:28948, gpfDraw:350000},
-            {sl:35, name:'PRAKASH SARDAR', desg:'Group-D', memo:'4848/S; 31-12-2012', bp:281533, adr:0, da:8446, hra:33784, ma:6000, bonus:4800, arrear:0, pf:24000, pfLoanRef:0, it:0, pt:1800, gpfOpen:109574, gpfTrIn:0, gpfContrib:24000, gpfInterest:8561, gpfDraw:0},
-            {sl:36, name:'KEYA DEY', desg:'Group-D', memo:'2234/S; 18-05-2018', bp:207700, adr:0, da:6231, hra:24924, ma:5500, bonus:4800, arrear:0, pf:22000, pfLoanRef:0, it:0, pt:1430, gpfOpen:58838, gpfTrIn:0, gpfContrib:22000, gpfInterest:4947, gpfDraw:0},
-            {sl:0, name:'ARREAR(S PATI)', desg:'A.T.', memo:'2022-23/MEMO', bp:9460, adr:0, da:11825, hra:1419, ma:223, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:2292, pt:130, gpfOpen:0, gpfTrIn:0, gpfContrib:0, gpfInterest:0, gpfDraw:0},
-            {sl:0, name:'ARREAR [MOYNODDIN MALLICK]', desg:'A.T.', memo:'2022-23/MEMO', bp:11927, adr:0, da:14909, hra:1789, ma:281, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:2891, pt:150, gpfOpen:0, gpfTrIn:0, gpfContrib:0, gpfInterest:0, gpfDraw:0}
-        ];
-
-        const staffData_2023_24 = JSON.parse(JSON.stringify(staffData_2022_23)).map(s => {
-            return {
-                ...s,
-                bp: Math.round(s.bp * 1.03),
-                pfLoanRef: s.pfLoanRef || 0,
-                gpfOpen: s.gpfOpen + s.gpfTrIn + (s.gpfContrib !== undefined ? s.gpfContrib : s.pf) + s.gpfInterest - s.gpfDraw,
-                gpfInterest: Math.round((s.gpfOpen + s.pf) * 0.071)
-            };
-        });
-
-        const staffData_2024_25 = [
-            {sl:1, name:'PRABIR KUMAR DANGAR', desg:'HM', memo:'2252/S; 02-08-2019', bp:1169200, adr:6000, da:159868, hra:140304, ma:6000, bonus:0, arrear:0, pf:270000, pfLoanRef:0, it:130000, pt:2400, gpfOpen:3687155, gpfTrIn:0, gpfContrib:277500, gpfInterest:270574, gpfDraw:0},
-            {sl:2, name:'RANJAN KUMAR GHOSH', desg:'A.T.', memo:'1755/S; 25-07-1995', bp:1062400, adr:0, da:144944, hra:66000, ma:5500, bonus:0, arrear:0, pf:150000, pfLoanRef:0, it:100000, pt:2200, gpfOpen:3260068, gpfTrIn:0, gpfContrib:120000, gpfInterest:198212, gpfDraw:3173229},
-            {sl:3, name:'AMAL CHANDRA SARDAR', desg:'A.T.', memo:'2953/S; 21-12-1995', bp:1160000, adr:0, da:158608, hra:139200, ma:6000, bonus:0, arrear:0, pf:240000, pfLoanRef:0, it:123000, pt:2400, gpfOpen:2487048, gpfTrIn:0, gpfContrib:250000, gpfInterest:184390, gpfDraw:0},
-            {sl:0, name:'KANAI LAL GHOSH', desg:'A.T.', memo:'598/S; 17-02-1997', bp:0, adr:0, da:0, hra:0, ma:0, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:0, pt:0, gpfOpen:3351, gpfTrIn:0, gpfContrib:0, gpfInterest:0, gpfDraw:0},
-            {sl:4, name:'SWAPAN KUMAR MAJI', desg:'A.T.', memo:'2540/S; 31-07-1997', bp:1118400, adr:6000, da:152920, hra:134208, ma:6000, bonus:0, arrear:0, pf:300000, pfLoanRef:0, it:100000, pt:2400, gpfOpen:2823922, gpfTrIn:0, gpfContrib:300000, gpfInterest:210261, gpfDraw:0},
-            {sl:0, name:'TAPAS KUMAR GARAI', desg:'A.T.', memo:'595/S; 26-02-1999', bp:0, adr:0, da:0, hra:0, ma:0, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:0, pt:0, gpfOpen:150307, gpfTrIn:0, gpfContrib:0, gpfInterest:0, gpfDraw:0},
-            {sl:5, name:'PARTHA KUMAR PATRA', desg:'A.T.', memo:'3295/S; 29-10-2007', bp:676000, adr:0, da:92432, hra:81120, ma:6000, bonus:0, arrear:0, pf:96000, pfLoanRef:0, it:30500, pt:2400, gpfOpen:851340, gpfTrIn:0, gpfContrib:98000, gpfInterest:63569, gpfDraw:0},
-            {sl:6, name:'MAHIM KUMAR PAINE', desg:'A.T.', memo:'3881/S; 31-10-2008', bp:812800, adr:0, da:111136, hra:72000, ma:6000, bonus:0, arrear:0, pf:108000, pfLoanRef:0, it:36000, pt:2400, gpfOpen:916379, gpfTrIn:0, gpfContrib:109000, gpfInterest:68577, gpfDraw:0},
-            {sl:7, name:'KABITA MANDAL', desg:'A.T.', memo:'3881/S; 31-10-2008', bp:812800, adr:0, da:111136, hra:72000, ma:6000, bonus:0, arrear:0, pf:144000, pfLoanRef:0, it:60000, pt:2400, gpfOpen:1443245, gpfTrIn:0, gpfContrib:147000, gpfInterest:107156, gpfDraw:0},
-            {sl:8, name:'TAPAS KUNDU', desg:'A.T.', memo:'585/S;24-02-2009', bp:789200, adr:0, da:107908, hra:94704, ma:6000, bonus:0, arrear:0, pf:84000, pfLoanRef:0, it:45000, pt:2400, gpfOpen:807677, gpfTrIn:0, gpfContrib:84500, gpfInterest:60079, gpfDraw:0},
-            {sl:9, name:'MRINMAYEE CHAKRABORTY', desg:'A.T.', memo:'127/S;11-01-2010', bp:789200, adr:0, da:107908, hra:72000, ma:6000, bonus:0, arrear:0, pf:120000, pfLoanRef:0, it:43000, pt:2400, gpfOpen:1477718, gpfTrIn:0, gpfContrib:125000, gpfInterest:108823, gpfDraw:0},
-            {sl:10, name:'BIDHAN CHANDRA GHOSH', desg:'A.T.', memo:'2711/S;08-10-2009', bp:789200, adr:0, da:107908, hra:94704, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:44000, pt:2400, gpfOpen:835639, gpfTrIn:0, gpfContrib:60000, gpfInterest:61283, gpfDraw:0},
-            {sl:11, name:'SAHADEB BASKEY', desg:'A.T.', memo:'2309/S; 29-07-2011', bp:744000, adr:0, da:101728, hra:89280, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:29500, pt:2400, gpfOpen:930783, gpfTrIn:0, gpfContrib:60000, gpfInterest:68038, gpfDraw:0},
-            {sl:12, name:'TANMOY CHAKRABORTY', desg:'A.T.', memo:'2189/S; 25-07-2011', bp:744000, adr:0, da:101728, hra:89280, ma:6000, bonus:0, arrear:0, pf:96000, pfLoanRef:0, it:38500, pt:2400, gpfOpen:328726, gpfTrIn:0, gpfContrib:96000, gpfInterest:26464, gpfDraw:0},
-            {sl:13, name:'SUJATA MAHATA', desg:'A.T.', memo:'51/S; 03-01-2014', bp:701200, adr:0, da:95876, hra:73440, ma:6000, bonus:0, arrear:0, pf:48000, pfLoanRef:0, it:0, pt:2400, gpfOpen:629938, gpfTrIn:0, gpfContrib:49000, gpfInterest:46288, gpfDraw:0},
-            {sl:14, name:'PARTHA MISHRA', desg:'A.T.', memo:'4802/S; 08-12-2017', bp:565600, adr:0, da:77336, hra:67872, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:2400, gpfOpen:431755, gpfTrIn:0, gpfContrib:60000, gpfInterest:32607, gpfDraw:0},
-            {sl:15, name:'BELA MAHATA', desg:'A.T.', memo:'204/S; 16-01-2015', bp:925735, adr:0, da:126611, hra:111088, ma:6000, bonus:0, arrear:0, pf:240000, pfLoanRef:0, it:69500, pt:2400, gpfOpen:1919401, gpfTrIn:0, gpfContrib:240000, gpfInterest:144087, gpfDraw:0},
-            {sl:16, name:'PAPIYA MAJI', desg:'A.T.', memo:'3762/S ;05-10-2018', bp:604800, adr:0, da:82696, hra:72576, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:2400, gpfOpen:292150, gpfTrIn:0, gpfContrib:60000, gpfInterest:22695, gpfDraw:0},
-            {sl:17, name:'SUMANTA MANDAL', desg:'A.T.', memo:'3762/S05-10-2018', bp:604800, adr:0, da:82696, hra:72576, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:12000, pt:2400, gpfOpen:302558, gpfTrIn:0, gpfContrib:72000, gpfInterest:23825, gpfDraw:0},
-            {sl:18, name:'SAMPA PATI', desg:'A.T.', memo:'278/S; 28-01-2019', bp:460000, adr:0, da:62896, hra:55200, ma:6000, bonus:5300, arrear:0, pf:120000, pfLoanRef:0, it:0, pt:2400, gpfOpen:407760, gpfTrIn:0, gpfContrib:120000, gpfInterest:32856, gpfDraw:0},
-            {sl:19, name:'SANJOY DANGAR', desg:'A.T.', memo:'278/S; 28-01-2019', bp:560400, adr:0, da:76660, hra:67248, ma:6000, bonus:0, arrear:0, pf:60000, pfLoanRef:0, it:0, pt:2400, gpfOpen:279221, gpfTrIn:0, gpfContrib:60000, gpfInterest:21777, gpfDraw:0},
-            {sl:0, name:'PURNIMA PATRA', desg:'A.T.', memo:'544/S;02-03-2021', bp:0, adr:0, da:0, hra:0, ma:0, bonus:0, arrear:0, pf:0, pfLoanRef:0, it:0, pt:0, gpfOpen:18745, gpfTrIn:0, gpfContrib:0, gpfInterest:0, gpfDraw:0},
-            {sl:20, name:'ANTARA GHORAI', desg:'A.T.', memo:'543/S; 02-03-2021', bp:745200, adr:0, da:101892, hra:74880, ma:6000, bonus:0, arrear:0, pf:300000, pfLoanRef:0, it:36009, pt:2400, gpfOpen:1653711, gpfTrIn:0, gpfContrib:305000, gpfInterest:127176, gpfDraw:0},
-            {sl:21, name:'MALATI TUDU', desg:'A.T.', memo:'712/S ;10-03-2021', bp:553600, adr:0, da:75696, hra:66432, ma:6000, bonus:0, arrear:0, pf:84000, pfLoanRef:0, it:0, pt:2400, gpfOpen:109347, gpfTrIn:0, gpfContrib:84000, gpfInterest:10497, gpfDraw:0},
-            {sl:22, name:'SASANKA SAREN', desg:'A.T.', memo:'712/S ;10-03-2021', bp:553600, adr:0, da:75696, hra:66432, ma:6000, bonus:0, arrear:0, pf:48000, pfLoanRef:0, it:0, pt:2400, gpfOpen:93885, gpfTrIn:0, gpfContrib:48500, gpfInterest:8228, gpfDraw:0},
-            {sl:23, name:'SWAPNA MAHANTI', desg:'A.T.', memo:'1787/S ;05-10-2021', bp:789200, adr:0, da:107908, hra:72000, ma:6000, bonus:0, arrear:0, pf:180000, pfLoanRef:0, it:42500, pt:2400, gpfOpen:2035098, gpfTrIn:0, gpfContrib:185000, gpfInterest:150350, gpfDraw:0},
-            {sl:24, name:'KANTI MALLA', desg:'A.T.', memo:'2246/S; 24-11-2021', bp:656000, adr:0, da:89696, hra:78720, ma:6000, bonus:0, arrear:0, pf:96000, pfLoanRef:0, it:27000, pt:2400, gpfOpen:1035363, gpfTrIn:0, gpfContrib:97000, gpfInterest:76635, gpfDraw:0},
-            {sl:25, name:'SABYASACHI MANDAL', desg:'A.T.', memo:'66/S;06-01-2022', bp:837600, adr:0, da:114528, hra:97200, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:50500, pt:2400, gpfOpen:948439, gpfTrIn:0, gpfContrib:72000, gpfInterest:69682, gpfDraw:0},
-            {sl:26, name:'SHEPHALI MAJI', desg:'A.T.', memo:'1953/S;04-07-2022', bp:838800, adr:0, da:114692, hra:72000, ma:6000, bonus:0, arrear:0, pf:240000, pfLoanRef:0, it:48480, pt:2400, gpfOpen:1867775, gpfTrIn:0, gpfContrib:245000, gpfInterest:140422, gpfDraw:0},
-            {sl:27, name:'DIPTIMAN SAHA', desg:'A.T.', memo:'1954/S;04-07-2022', bp:656000, adr:0, da:89696, hra:72000, ma:6000, bonus:0, arrear:0, pf:72000, pfLoanRef:0, it:26000, pt:2400, gpfOpen:421743, gpfTrIn:0, gpfContrib:73000, gpfInterest:32287, gpfDraw:0},
-            {sl:28, name:'TUHIN SUBHRA PATRA', desg:'Librarian', memo:'1793/S ;05-10-2021', bp:562000, adr:0, da:76844, hra:67440, ma:6000, bonus:0, arrear:0, pf:102000, pfLoanRef:0, it:0, pt:2400, gpfOpen:748132, gpfTrIn:35362, gpfContrib:103000, gpfInterest:58947, gpfDraw:0},
-            {sl:29, name:'SUBHENDU KARMAKAR', desg:'Clerk', memo:'1220/S; 04-05-2000', bp:597600, adr:0, da:81712, hra:71712, ma:6000, bonus:0, arrear:0, pf:300000, pfLoanRef:0, it:0, pt:2400, gpfOpen:1055364, gpfTrIn:0, gpfContrib:305000, gpfInterest:84693, gpfDraw:0},
-            {sl:30, name:'SUMANTA DULE', desg:'Clerk', memo:'2086/S; 11-05-2018', bp:322000, adr:0, da:44028, hra:38640, ma:6000, bonus:5300, arrear:0, pf:24000, pfLoanRef:0, it:0, pt:1800, gpfOpen:24781, gpfTrIn:0, gpfContrib:24000, gpfInterest:2540, gpfDraw:0},
-            {sl:31, name:'TAPAN KUMAR DIYASI', desg:'Group-D', memo:'1086/S; 03-05-1995', bp:450400, adr:0, da:61584, hra:54048, ma:6000, bonus:5300, arrear:0, pf:144000, pfLoanRef:0, it:0, pt:2400, gpfOpen:1036898, gpfTrIn:0, gpfContrib:147000, gpfInterest:78306, gpfDraw:0},
-            {sl:32, name:'NIRANJAN MURMU', desg:'Group-D', memo:'1403/S; 23-07-1998', bp:437200, adr:0, da:59780, hra:52464, ma:6000, bonus:5300, arrear:0, pf:96000, pfLoanRef:0, it:0, pt:2400, gpfOpen:327584, gpfTrIn:0, gpfContrib:96000, gpfInterest:26382, gpfDraw:0},
-            {sl:33, name:'PRAKASH SARDAR', desg:'Group-D', memo:'4848/S; 31-12-2012', bp:304400, adr:0, da:41620, hra:36528, ma:6000, bonus:5300, arrear:0, pf:24000, pfLoanRef:0, it:0, pt:1800, gpfOpen:177008, gpfTrIn:0, gpfContrib:24000, gpfInterest:13349, gpfDraw:0},
-            {sl:34, name:'KEYA DEY', desg:'Group-D', memo:'2234/S; 18-05-2018', bp:241200, adr:0, da:32980, hra:28944, ma:6000, bonus:5300, arrear:0, pf:24000, pfLoanRef:0, it:0, pt:1760, gpfOpen:112385, gpfTrIn:0, gpfContrib:24000, gpfInterest:8760, gpfDraw:0}
-        ];
-
-        const fySeedDatabase = {
-            "2021-22": {
-                fy: "2021-22", staff: staffData_2021_22,
-                recSalGrant: 25046332.00, recSSMGrant: 175000.00, recLabGrant: 260000.00, recDevFees: 263760.00, recBankInt: 25390.00, recPFDraw: 2227815.00,
-                reconOpen: 771.55, reconTr: 20651431.00, reconTaxGrant: 4394901.00, reconInterest: 29.00, reconCharges: 0.00,
-                devOpen: 927934.90, devTrf: 263760.00, devLabRec: 0.00, devLibRec: 0.00, devInt: 25390.00, devExp: 86880.00, devLabExp: 260000.00, devChg: 39.00,
-                hostelOpen: 3165.00, hostelInt: 119.00, hostelExp: 0.00, hostelChg: 72.00,
-                ssmOpen: 337077.30, ssmComp: 175000.00, ssmInt: 9181.00, ssmExp: 44683.50, recOpenCashBank: 1268177.20
-            },
-            "2022-23": {
-                fy: "2022-23", staff: staffData_2022_23,
-                recSalGrant: 27513631.00, recSSMGrant: 677000.00, recLabGrant: 0.00, recDevFees: 271440.00, recBankInt: 24128.00, recPFDraw: 5995036.00,
-                reconOpen: 800.55, reconTr: 22662338.00, reconTaxGrant: 4851293.00, reconInterest: 26.00, reconCharges: 0.00,
-                devOpen: 870165.90, devTrf: 271440.00, devLabRec: 0.00, devLibRec: 0.00, devInt: 24128.00, devExp: 304410.00, devLabExp: 0.00, devChg: 135.00,
-                hostelOpen: 3212.00, hostelInt: 104.00, hostelExp: 0.00, hostelChg: 72.00,
-                ssmOpen: 476574.80, ssmComp: 50000.00, ssmInt: 24898.00, ssmExp: 181600.00, recOpenCashBank: 1350753.25
-            },
-            "2023-24": {
-                fy: "2023-24", staff: staffData_2023_24,
-                recSalGrant: 28991926.00, recSSMGrant: 50000.00, recLabGrant: 0.00, recDevFees: 242160.00, recBankInt: 24613.00, recPFDraw: 3100000.00,
-                reconOpen: 826.55, reconTr: 23600000.00, reconTaxGrant: 5391000.00, reconInterest: 28.00, reconCharges: 0.00,
-                devOpen: 861188.90, devTrf: 242160.00, devLabRec: 0.00, devLibRec: 0.00, devInt: 24613.00, devExp: 253152.00, devLabExp: 0.00, devChg: 15.00,
-                hostelOpen: 3244.00, hostelInt: 115.00, hostelExp: 0.00, hostelChg: 72.00,
-                ssmOpen: 994022.80, ssmComp: 25000.00, ssmInt: 10000.00, ssmExp: 802652.00, recOpenCashBank: 1859282.25
-            },
-            "2024-25": {
-                fy: "2024-25", staff: staffData_2024_25,
-                recSalGrant: 29727422.00, recSSMGrant: 25150.00, recLabGrant: 195000.00, recDevFees: 359923.00, recBankInt: 29858.00, recPFDraw: 3173229.00,
-                reconOpen: 853.55, reconTr: 24362373.00, reconTaxGrant: 5365049.00, reconInterest: 28.00, reconCharges: 118.00,
-                devOpen: 874794.90, devTrf: 247440.00, devLabRec: 95000.00, devLibRec: 100000.00, devInt: 23804.00, devExp: 341146.00, devLabExp: 95000.00, devChg: 15.00,
-                hostelOpen: 13687.00, hostelInt: 291.00, hostelExp: 8400.00, hostelChg: 72.00,
-                ssmOpen: 226370.80, ssmComp: 25000.00, ssmInt: 5885.00, ssmExp: 40814.00, recOpenCashBank: 1115706.25
-            }
-        };
-
-        let activeStaffList = [];
-
-        function renderPayroll() {
-            const tbody = document.getElementById('payrollTableBody');
-            tbody.innerHTML = '';
-
-            activeStaffList.forEach((s, idx) => {
-                const tr = document.createElement('tr');
-                if (s.sl === 0) tr.style.opacity = '0.6';
-
-                tr.innerHTML = `
-                    <td>${s.sl}</td>
-                    <td><input type="text" class="table-input" value="${s.name}" oninput="updateMaster(${idx}, 'name', this.value)"></td>
-                    <td>${s.desg}</td>
-                    <td><input type="text" class="table-input" value="${s.memo}" oninput="updateMaster(${idx}, 'memo', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.bp}" oninput="updateMaster(${idx}, 'bp', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.adr || 0}" oninput="updateMaster(${idx}, 'adr', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.da}" oninput="updateMaster(${idx}, 'da', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.hra}" oninput="updateMaster(${idx}, 'hra', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.ma}" oninput="updateMaster(${idx}, 'ma', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.bonus || 0}" oninput="updateMaster(${idx}, 'bonus', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.arrear || 0}" oninput="updateMaster(${idx}, 'arrear', this.value)"></td>
-                    <td id="gross-${idx}" class="number-cell auto-fetched">0.00</td>
-                    <td><input type="number" class="table-input number-input" value="${s.pf}" oninput="updateMaster(${idx}, 'pf', this.value)"></td>
-                    <td style="background-color:#fffbeb;"><input type="number" class="table-input number-input" value="${s.pfLoanRef || 0}" oninput="updateMaster(${idx}, 'pfLoanRef', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.it}" oninput="updateMaster(${idx}, 'it', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.pt}" oninput="updateMaster(${idx}, 'pt', this.value)"></td>
-                    <td id="net-${idx}" class="number-cell auto-fetched">0.00</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            recalculateAllForms();
-        }
-
-        function updateMaster(index, field, value) {
-            activeStaffList[index][field] = (field === 'name' || field === 'memo') ? value : (parseFloat(value) || 0);
-            recalculateAllForms();
-        }
-
-        function recalculateAllForms() {
-            let totBp=0, totAdr=0, totDa=0, totHra=0, totMa=0, totBonus=0, totArrear=0, totGross=0, totPf=0, totPfLoan=0, totIt=0, totPt=0, totNet=0;
-            let teacherGross=0, clerkGross=0, grdGross=0;
-
-            activeStaffList.forEach((s, idx) => {
-                const gross = s.bp + (s.adr || 0) + s.da + s.hra + s.ma + (s.bonus || 0) + (s.arrear || 0);
-                const pfLoan = (s.pfLoanRef || 0);
-                const net = gross - (s.pf + pfLoan + s.it + s.pt);
-
-                const grossEl = document.getElementById(`gross-${idx}`);
-                const netEl = document.getElementById(`net-${idx}`);
-                if (grossEl) grossEl.innerText = gross.toLocaleString('en-IN', {minimumFractionDigits:2});
-                if (netEl) netEl.innerText = net.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-                totBp += s.bp; totAdr += (s.adr || 0); totDa += s.da; totHra += s.hra; totMa += s.ma;
-                totBonus += (s.bonus || 0); totArrear += (s.arrear || 0); totGross += gross;
-                totPf += s.pf; totPfLoan += pfLoan; totIt += s.it; totPt += s.pt; totNet += net;
-
-                if (s.desg === 'HM' || s.desg === 'AHM' || s.desg === 'A.T.') teacherGross += gross;
-                else if (s.desg === 'Clerk' || s.desg === 'Librarian') clerkGross += gross;
-                else if (s.desg === 'Group-D') grdGross += gross;
-            });
-
-            document.getElementById('tot-bp').innerText = '₹' + totBp.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-adr').innerText = '₹' + totAdr.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-da').innerText = '₹' + totDa.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-hra').innerText = '₹' + totHra.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-ma').innerText = '₹' + totMa.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-bonus').innerText = '₹' + totBonus.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-arrear').innerText = '₹' + totArrear.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-gross').innerText = '₹' + totGross.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-pf').innerText = '₹' + totPf.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-pfloan').innerText = '₹' + totPfLoan.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-it').innerText = '₹' + totIt.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-pt').innerText = '₹' + totPt.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('tot-net').innerText = '₹' + totNet.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            document.getElementById('kpi-gross').innerText = '₹' + totGross.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            // Head 6 auto-fetches PF Contrib + PF Loan Ref
-            const totalHead6 = totPf + totPfLoan;
-
-            // AUTO-FETCH into R&P
-            document.getElementById('pay-teachers').value = teacherGross.toFixed(2);
-            document.getElementById('pay-clerks').value = clerkGross.toFixed(2);
-            document.getElementById('pay-grd').value = grdGross.toFixed(2);
-            document.getElementById('rec-pf-tot').value = totalHead6.toFixed(2);
-            document.getElementById('pay-pf-tot').value = totalHead6.toFixed(2);
-            document.getElementById('rec-pt-tot').value = totPt.toFixed(2);
-            document.getElementById('pay-pt-tot').value = totPt.toFixed(2);
-            document.getElementById('rec-it-tot').value = totIt.toFixed(2);
-            document.getElementById('pay-it-tot').value = totIt.toFixed(2);
-
-            document.getElementById('recon-disbursed').value = totGross.toFixed(2);
-
-            renderGPF();
-            calcRecon();
-            calcSubs();
-        }
-
-        function renderGPF() {
-            const tbody = document.getElementById('gpfTableBody');
-            tbody.innerHTML = '';
-
-            let totOpen = 0, totTrIn = 0, totContrib = 0, totInterest = 0, totLoanRefund = 0, totDraw = 0, totClose = 0;
-
-            activeStaffList.forEach((s, idx) => {
-                const tr = document.createElement('tr');
-                const netContrib = (s.gpfContrib !== undefined) ? s.gpfContrib : s.pf;
-                const loanRefund = s.gpfLoanRefund || 0;
-                const closeBal = s.gpfOpen + s.gpfTrIn + netContrib + s.gpfInterest + loanRefund - s.gpfDraw;
-
-                tr.innerHTML = `
-                    <td>${s.sl === 0 ? '-' : s.sl}</td>
-                    <td><strong>${s.name}</strong></td>
-                    <td>${s.memo}</td>
-                    <td><input type="number" class="table-input number-input" value="${s.gpfOpen}" oninput="updateGPF(${idx}, 'gpfOpen', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.gpfTrIn}" oninput="updateGPF(${idx}, 'gpfTrIn', this.value)"></td>
-                    <td class="number-cell auto-fetched">₹${netContrib.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
-                    <td><input type="number" class="table-input number-input" value="${s.gpfInterest}" oninput="updateGPF(${idx}, 'gpfInterest', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${loanRefund}" oninput="updateGPF(${idx}, 'gpfLoanRefund', this.value)"></td>
-                    <td><input type="number" class="table-input number-input" value="${s.gpfDraw}" oninput="updateGPF(${idx}, 'gpfDraw', this.value)"></td>
-                    <td class="number-cell auto-fetched">₹${closeBal.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
-                `;
-                tbody.appendChild(tr);
-
-                totOpen += s.gpfOpen; totTrIn += s.gpfTrIn; totContrib += netContrib;
-                totInterest += s.gpfInterest; totLoanRefund += loanRefund; totDraw += s.gpfDraw; totClose += closeBal;
-            });
-
-            document.getElementById('gpf-tot-open').innerText = '₹' + totOpen.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('gpf-tot-trin').innerText = '₹' + totTrIn.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('gpf-tot-contrib').innerText = '₹' + totContrib.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('gpf-tot-interest').innerText = '₹' + totInterest.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('gpf-tot-loanrefund').innerText = '₹' + totLoanRefund.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('gpf-tot-draw').innerText = '₹' + totDraw.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('gpf-tot-close').innerText = '₹' + totClose.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            document.getElementById('kpi-gpf').innerText = '₹' + totClose.toLocaleString('en-IN', {minimumFractionDigits:2});
-        }
-
-        function updateGPF(index, prop, value) {
-            activeStaffList[index][prop] = parseFloat(value) || 0;
-            renderGPF();
-        }
-
-        function calcSubs() {
-            const devOpen = parseFloat(document.getElementById('dev-open').value) || 0;
-            const devTrf = parseFloat(document.getElementById('dev-trf').value) || 0;
-            const devLabRec = parseFloat(document.getElementById('dev-lab-rec').value) || 0;
-            const devLibRec = parseFloat(document.getElementById('dev-lib-rec').value) || 0;
-            const devInt = parseFloat(document.getElementById('dev-int').value) || 0;
-            const devTotRec = devOpen + devTrf + devLabRec + devLibRec + devInt;
-            document.getElementById('dev-tot-rec').value = devTotRec.toFixed(2);
-
-            const devExp = parseFloat(document.getElementById('dev-exp').value) || 0;
-            const devLabExp = parseFloat(document.getElementById('dev-lab-exp').value) || 0;
-            const devChg = parseFloat(document.getElementById('dev-chg').value) || 0;
-            const devClose = devTotRec - (devExp + devLabExp + devChg);
-            document.getElementById('dev-close').value = devClose.toFixed(2);
-            document.getElementById('dev-tot-pay').value = (devExp + devLabExp + devChg + devClose).toFixed(2);
-
-            const hostelOpen = parseFloat(document.getElementById('hostel-open').value) || 0;
-            const hostelInt = parseFloat(document.getElementById('hostel-int').value) || 0;
-            const hostelTotRec = hostelOpen + hostelInt;
-            document.getElementById('hostel-tot-rec').value = hostelTotRec.toFixed(2);
-
-            const hostelExp = parseFloat(document.getElementById('hostel-exp').value) || 0;
-            const hostelChg = parseFloat(document.getElementById('hostel-chg').value) || 0;
-            const hostelClose = hostelTotRec - (hostelExp + hostelChg);
-            document.getElementById('hostel-close').value = hostelClose.toFixed(2);
-            document.getElementById('hostel-tot-pay').value = (hostelExp + hostelChg + hostelClose).toFixed(2);
-
-            const ssmOpen = parseFloat(document.getElementById('ssm-open').value) || 0;
-            const ssmComp = parseFloat(document.getElementById('ssm-comp').value) || 0;
-            const ssmInt = parseFloat(document.getElementById('ssm-int').value) || 0;
-            const ssmTotRec = ssmOpen + ssmComp + ssmInt;
-            document.getElementById('ssm-tot-rec').value = ssmTotRec.toFixed(2);
-
-            const ssmExp = parseFloat(document.getElementById('ssm-exp').value) || 0;
-            const ssmClose = ssmTotRec - ssmExp;
-            document.getElementById('ssm-close').value = ssmClose.toFixed(2);
-            document.getElementById('ssm-tot-pay').value = (ssmExp + ssmClose).toFixed(2);
-
-            document.getElementById('cbal-dev').innerText = devClose.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('cbal-dev-tot').innerText = devClose.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            document.getElementById('cbal-hostel').innerText = hostelClose.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('cbal-hostel-tot').innerText = hostelClose.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            document.getElementById('cbal-ssm').innerText = ssmClose.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('cbal-ssm-tot').innerText = ssmClose.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            updatePage9GrandTotal();
-        }
-
-        function calcRecon() {
-            const open = parseFloat(document.getElementById('recon-open').value) || 0;
-            const tr = parseFloat(document.getElementById('recon-tr').value) || 0;
-            const taxGrant = parseFloat(document.getElementById('recon-tax-grant').value) || 0;
-            const interest = parseFloat(document.getElementById('recon-interest').value) || 0;
-
-            const totalAvail = open + tr + taxGrant + interest;
-            document.getElementById('recon-total-avail').value = totalAvail.toFixed(2);
-
-            const disbursed = parseFloat(document.getElementById('recon-disbursed').value) || 0;
-            const closingPre = totalAvail - disbursed;
-            document.getElementById('recon-closing-pre').value = closingPre.toFixed(2);
-
-            const charges = parseFloat(document.getElementById('recon-charges').value) || 0;
-            const actualBal = closingPre - charges;
-            document.getElementById('recon-actual-bal').value = actualBal.toFixed(2);
-
-            document.getElementById('cbal-sal').innerText = actualBal.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('cbal-sal-tot').innerText = actualBal.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            updatePage9GrandTotal();
-        }
-
-        function updatePage9GrandTotal() {
-            const sal = parseFloat(document.getElementById('recon-actual-bal').value) || 0;
-            const dev = parseFloat(document.getElementById('dev-close').value) || 0;
-            const hostel = parseFloat(document.getElementById('hostel-close').value) || 0;
-            const ssm = parseFloat(document.getElementById('ssm-close').value) || 0;
-
-            const grand = sal + dev + hostel + ssm;
-            document.getElementById('cbal-grand-bank').innerText = '₹' + grand.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('cbal-grand-tot').innerText = '₹' + grand.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            document.getElementById('kpi-fund').innerText = '₹' + grand.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            document.getElementById('pay-closing-bal').value = grand.toFixed(2);
-            calcRecPay();
-        }
-
-        function calcRecPay() {
-            let sumRec = 0, sumPay = 0;
-            document.querySelectorAll('.rec-field').forEach(i => sumRec += parseFloat(i.value) || 0);
-            document.querySelectorAll('.pay-field').forEach(i => sumPay += parseFloat(i.value) || 0);
-
-            document.getElementById('rec-total').value = sumRec.toFixed(2);
-            document.getElementById('pay-total').value = sumPay.toFixed(2);
-            document.getElementById('kpi-recpay').innerText = '₹' + sumRec.toLocaleString('en-IN', {minimumFractionDigits:2});
-        }
-
-        function resetToOriginalSeed() {
-            if (confirm(`Reset all stored modifications for ${currentFY} back to initial seed data?`)) {
-                localStorage.removeItem(`audit_db_${currentFY}`);
-                switchFinancialYear(currentFY);
-            }
-        }
-
-        function rolloverNextFY() {
-            const fySeq = ["2021-22", "2022-23", "2023-24", "2024-25", "2025-26", "2026-27"];
-            const curIdx = fySeq.indexOf(currentFY);
-
-            if (curIdx === -1 || curIdx >= fySeq.length - 1) {
-                alert("Maximum limit reached."); return;
-            }
-
-            const nextFY = fySeq[curIdx + 1];
-
-            if (!confirm(`Perform Rollover from ${currentFY} to ${nextFY}?\nClosing balances will carry forward as Opening Balances.`)) {
-                return;
-            }
-
-            saveFYReport();
-
-            const salClose = parseFloat(document.getElementById('recon-actual-bal').value) || 0;
-            const devClose = parseFloat(document.getElementById('dev-close').value) || 0;
-            const hostelClose = parseFloat(document.getElementById('hostel-close').value) || 0;
-            const ssmClose = parseFloat(document.getElementById('ssm-close').value) || 0;
-            const totalPage9Close = salClose + devClose + hostelClose + ssmClose;
-
-            const rolloverStaff = activeStaffList.map(s => {
-                const gpfClose = s.gpfOpen + s.gpfTrIn + (s.gpfContrib !== undefined ? s.gpfContrib : s.pf) + s.gpfInterest - s.gpfDraw;
-                return {
-                    ...s,
-                    pfLoanRef: s.pfLoanRef || 0,
-                    gpfOpen: gpfClose,
-                    gpfTrIn: 0,
-                    gpfContrib: s.pf,
-                    gpfInterest: Math.round(gpfClose * 0.071),
-                    gpfDraw: 0
-                };
-            });
-
-            const nextFYSeed = fySeedDatabase[nextFY] || {};
-
-            const nextFYData = {
-                fy: nextFY,
-                staff: rolloverStaff,
-                reconOpen: salClose,
-                devOpen: devClose,
-                hostelOpen: hostelClose,
-                ssmOpen: ssmClose,
-                recOpenCashBank: totalPage9Close,
-                recSalGrant: nextFYSeed.recSalGrant || 31000000.00
-            };
-
-            localStorage.setItem(`audit_db_${nextFY}`, JSON.stringify(nextFYData));
-
-            document.getElementById('fySelector').value = nextFY;
-            switchFinancialYear(nextFY);
-
-            alert(`✅ Rollover Complete!\nActive Year: ${nextFY}. Opening Balances loaded.`);
-        }
-
-        function saveFYReport() {
-            const payload = {
-                fy: currentFY,
-                isLocked: isLocked,
-                staff: activeStaffList,
-                recSalGrant: parseFloat(document.getElementById('rec-sal-grant').value) || 0,
-                reconOpen: parseFloat(document.getElementById('recon-open').value) || 0,
-                devOpen: parseFloat(document.getElementById('dev-open').value) || 0,
-                hostelOpen: parseFloat(document.getElementById('hostel-open').value) || 0,
-                ssmOpen: parseFloat(document.getElementById('ssm-open').value) || 0,
-                recOpenCashBank: parseFloat(document.getElementById('rec-open-cashbank').value) || 0
-            };
-            localStorage.setItem(`audit_db_${currentFY}`, JSON.stringify(payload));
-            alert(`💾 Audit Report saved for ${currentFY}!`);
-        }
-
-        function switchFinancialYear(targetFY) {
-            currentFY = targetFY;
-            document.getElementById('meta-fy').value = currentFY;
-            document.getElementById('activeFYText').innerText = currentFY;
-
-            let savedJSON = localStorage.getItem(`audit_db_${currentFY}`);
-            let dbData = null;
-            if (savedJSON) {
-                try { dbData = JSON.parse(savedJSON); } catch(e) { dbData = null; }
-            }
-
-            const seed = fySeedDatabase[currentFY] || fySeedDatabase["2021-22"];
-
-            if (dbData && Array.isArray(dbData.staff) && dbData.staff.length > 0) {
-                activeStaffList = dbData.staff;
-                if (dbData.recSalGrant !== undefined) document.getElementById('rec-sal-grant').value = dbData.recSalGrant;
-                if (dbData.reconOpen !== undefined) document.getElementById('recon-open').value = dbData.reconOpen;
-                if (dbData.devOpen !== undefined) document.getElementById('dev-open').value = dbData.devOpen;
-                if (dbData.hostelOpen !== undefined) document.getElementById('hostel-open').value = dbData.hostelOpen;
-                if (dbData.ssmOpen !== undefined) document.getElementById('ssm-open').value = dbData.ssmOpen;
-                if (dbData.recOpenCashBank !== undefined) document.getElementById('rec-open-cashbank').value = dbData.recOpenCashBank;
+        function toggleFormat() {
+            const format = document.getElementById('formatSelect').value;
+            const ssmSub1 = document.getElementById('ssmSub1');
+            const ssmSub2 = document.getElementById('ssmSub2');
+            const sig1 = document.getElementById('sig1');
+            const sig2 = document.getElementById('sig2');
+            const sig3 = document.getElementById('sig3');
+            const sig4 = document.getElementById('sig4');
+
+            if (format === 'without-ssm') {
+                ssmSub1.style.display = 'none';
+                ssmSub2.style.display = 'none';
+                sig1.style.display = 'none';
+                sig2.style.display = 'none';
+                sig3.style.width = '48%';
+                sig4.style.width = '48%';
+                sig3.innerHTML = 'প্রধান শিক্ষক / সম্পাদক<br>(শীলমোহর সহ স্বাক্ষর)';
+                sig4.innerHTML = 'সভাপতি / সম্পাদক<br>(শীলমোহর সহ স্বাক্ষর)';
             } else {
-                activeStaffList = JSON.parse(JSON.stringify(seed.staff));
-                document.getElementById('rec-sal-grant').value = seed.recSalGrant;
-                document.getElementById('recon-open').value = seed.reconOpen;
-                document.getElementById('dev-open').value = seed.devOpen;
-                document.getElementById('hostel-open').value = seed.hostelOpen;
-                document.getElementById('ssm-open').value = seed.ssmOpen;
-                document.getElementById('rec-open-cashbank').value = seed.recOpenCashBank;
-            }
-
-            renderPayroll();
-        }
-
-        function toggleLock() {
-            isLocked = !isLocked;
-            const body = document.body;
-            const lockBtnText = document.getElementById('lockBtnText');
-            const lockBtnIcon = document.getElementById('lockBtnIcon');
-            const lockToggleBtn = document.getElementById('lockToggleBtn');
-            const lockStatusBadge = document.getElementById('lockStatusBadge');
-
-            if (isLocked) {
-                body.classList.add('is-form-locked');
-                lockBtnText.innerText = "Unlock Report";
-                lockBtnIcon.innerText = "🔒";
-                lockToggleBtn.classList.add('locked');
-                lockStatusBadge.innerText = "🔒 AUDIT REPORT LOCKED (READ-ONLY)";
-                document.querySelectorAll('input, select').forEach(el => { if (el.id !== 'fySelector' && el.id !== 'lockToggleBtn') el.disabled = true; });
-            } else {
-                body.classList.remove('is-form-locked');
-                lockBtnText.innerText = "Lock Report";
-                lockBtnIcon.innerText = "🔓";
-                lockToggleBtn.classList.remove('locked');
-                lockStatusBadge.innerText = "🔓 Edit Mode Unlocked";
-                document.querySelectorAll('input, select').forEach(el => el.disabled = false);
+                ssmSub1.style.display = 'block';
+                ssmSub2.style.display = 'block';
+                sig1.style.display = 'block';
+                sig2.style.display = 'block';
+                sig1.style.width = '23%';
+                sig2.style.width = '23%';
+                sig3.style.width = '23%';
+                sig4.style.width = '23%';
+                sig3.innerHTML = 'ভি.ইসি/ডলুইসি-র সম্পাদক/প্রধান শিক্ষক<br>(শীলমোহর সহ স্বাক্ষর)';
+                sig4.innerHTML = 'ভি.ইসি/ডলুইসি-র সভাপতি/এম.সি-র সম্পাদক<br>(শীলমোহর সহ স্বাক্ষর)';
             }
         }
-
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            switchFinancialYear("2021-22");
-        });
     </script>
 </body>
 </html>
