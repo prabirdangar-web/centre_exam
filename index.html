@@ -106,6 +106,22 @@ table.reporting-table th.sub{background:#334155; font-size:8.3pt;}
 table.reporting-table td{padding:6px; border:1px solid #e2e8f0;}
 table.reporting-table tr:nth-child(even){background:#f8fafc;}
 table.reporting-table input{width:88%; padding:4px; border:1px solid var(--border-color); border-radius:4px; text-align:center;}
+/* HS dashboard: keep every student-entry / attendance number box fully visible */
+#hs-ledger .student-count-table{table-layout:fixed; min-width:1120px;}
+#hs-ledger .student-count-table th,#hs-ledger .student-count-table td{padding:5px 3px; white-space:normal;}
+#hs-ledger .student-count-table input[type="number"]{width:100%; min-width:46px; height:32px; padding:4px 2px; font-size:10pt; font-weight:700; text-align:center; background:#fff; color:#111827; box-sizing:border-box;}
+#hs-ledger .student-count-table td:nth-child(n+5){width:4.33%;}
+#hs-ledger .student-count-table td:nth-child(1){width:3%;}
+#hs-ledger .student-count-table td:nth-child(2){width:10%;}
+#hs-ledger .student-count-table td:nth-child(3){width:7%;}
+#hs-ledger .student-count-table td:nth-child(4){width:28%;}
+#hs-ledger .student-count-table th:nth-child(n+5){font-size:7.5pt; line-height:1.1;}
+#hs-ledger .table-container:has(.student-count-table){overflow-x:auto;}
+@media(max-width:900px){
+  #hs-ledger .student-count-table{min-width:1120px;}
+  #hs-ledger .student-count-table input[type="number"]{min-width:46px;}
+}
+
 .active-day-row{background:#fef08a !important; font-weight:700;}
 
 /* ============ PRINT ARTIFACTS (shared look) ============ */
@@ -316,7 +332,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     </div>
 
     <div class="table-container no-print">
-      <table class="reporting-table">
+      <table class="reporting-table student-count-table">
         <thead>
           <tr>
             <th rowspan="2" style="width:3%;">SL</th>
@@ -1848,4 +1864,4 @@ mpRecPopulatePresetSelect();
 mpRecLoadPreset(6);
 </script>
 </body>
-</html>
+</html>v
