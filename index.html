@@ -200,6 +200,10 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
 .hs-dailyops-table th{background:#f1f5f9;text-align:center;font-size:8pt;line-height:1.15}
 .hs-dailyops-table input,.hs-dailyops-table select{width:100%;box-sizing:border-box;min-width:0;height:31px;padding:4px 5px;border:1px solid #94a3b8;border-radius:4px;background:#fff}
 .hs-dailyops-table input[type=number]{text-align:center}
+.hs-dailyops-table .hs-auto-box{min-height:31px;box-sizing:border-box;padding:6px 5px;border:1px solid #cbd5e1;border-radius:4px;background:#f8fafc;text-align:center;font-weight:700;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hs-dailyops-table .hs-edit-box{background:#fff;border:2px solid #2563eb;font-weight:700}.hs-dailyops-table input[data-field="qFrom"],.hs-dailyops-table input[data-field="omrFrom"]{font-size:11px;text-align:center}.hs-dailyops-table .hs-auto-box{background:#f0fdf4;border-color:#86efac}
+.hs-dailyops-table .hs-auto-label{font-size:8px;color:#64748b;font-weight:600;display:block;line-height:1;margin-top:2px}
+
 .hs-official-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
 .hs-official-grid .form-group{margin:0}
 .hs-save-strip{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
@@ -359,6 +363,10 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
 
     <div class="hs-dailyops-card no-print">
       <h3 style="margin:0 0 10px;">Subject-wise Question Paper &amp; OMR Serial Database</h3>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin:0 0 8px;font-size:9pt;align-items:center;">
+        <span style="padding:5px 9px;border:1px solid #2563eb;border-radius:5px;background:#eff6ff;"><b>BLUE/WHITE = EDIT</b> — Male, Female, QP SL From, OMR SL From, Invigilator names</span>
+        <span style="padding:5px 9px;border:1px solid #16a34a;border-radius:5px;background:#f0fdf4;"><b>GREEN/GRAY = AUTO</b> — Total, QP SL To, QP Required, NTP, OMR SL To, OMR Required</span>
+      </div>
       <div class="hs-dailyops-scroll">
         <table class="hs-dailyops-table">
           <thead><tr>
@@ -368,14 +376,14 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
             <th style="width:110px;">Invigilator 1</th><th style="width:110px;">Invigilator 2</th>
           </tr><tr>
             <th></th><th></th><th></th><th></th><th></th>
-            <th>Serial From</th><th>Serial To</th><th>Total Number</th><th>Non-Transparent Pouch</th>
-            <th>Serial From</th><th>Serial To</th><th>Total Number</th>
+            <th>ENTER QP SL<br>FROM</th><th>AUTO QP SL<br>TO</th><th>AUTO QP<br>REQUIRED</th><th>AUTO NTP<br>POUCH</th>
+            <th>ENTER OMR SL<br>FROM</th><th>AUTO OMR SL<br>TO</th><th>AUTO OMR<br>REQUIRED</th>
             <th>Invigilator 1</th><th>Invigilator 2</th>
           </tr></thead>
           <tbody id="hs_dailyOpsSubjectBody"></tbody>
         </table>
       </div>
-      <div style="margin-top:9px;font-size:8.5pt;color:#475569;"><b>Data-entry structure:</b> Hall/Room → Subject → Male + Female = Total → Question Paper Serial From/To + Total Number + Non-Transparent Pouch → OMR Serial From/To + Total Number → Invigilators. The room allocation below is generated automatically from the fixed seat capacities. The figures in the supplied sample are used only as a format reference; they are not imported as current 2026 data.</div>
+      <div style="margin-top:9px;font-size:8.5pt;color:#475569;"><b>Serial entry:</b> <b>ONLY ENTER the starting QP SL and starting OMR SL</b> in the two white boxes marked <b>ENTER ... SL FROM</b>. The ending serial, required quantity and pouch quantity are generated automatically from Total students. Do not enter SL To / Required manually.  The room allocation below is generated automatically from the fixed seat capacities. The figures in the supplied sample are used only as a format reference; they are not imported as current 2026 data.</div>
     </div>
   </div>
 
@@ -990,19 +998,39 @@ function hsDailyOpsRender(){
     const d=rec.subjects[sub]||{}; const e=hsEscapeFormText;
     const total=Number(d.total ?? ((Number(d.male)||0)+(Number(d.female)||0)))||0;
     const alloc=(d.roomAllocations||[]).map(x=>x.room+' ('+x.seats+')').join(', ')||d.hall||'Auto';
-    const input=(field,type='text',ph='')=>`<input type="${type}" data-sub="${e(sub)}" data-field="${field}" value="${e(d[field]??'')}" placeholder="${ph}" oninput="hsDailyOpsLiveUpdate(this)">`;
-    const totalBox=`<div class="hs-total-box" data-total-for="${e(sub)}">${total}</div>`;
-    return `<tr><td style="text-align:center;font-weight:700;">${e(alloc)}</td><td style="font-weight:700;">${e(sub)}</td><td>${input('male','number')}</td><td>${input('female','number')}</td><td>${totalBox}</td><td>${input('qFrom','text','From')}</td><td>${input('qTo','text','To')}</td><td>${input('qReq','number')}</td><td>${input('qNtp','number')}</td><td>${input('omrFrom','text','From')}</td><td>${input('omrTo','text','To')}</td><td>${input('omrReq','number')}</td><td>${input('inv1','text','Name')}</td><td>${input('inv2','text','Name')}</td></tr>`;
+    const input=(field,type='text',ph='')=>`<input class="hs-edit-box" type="${type}" data-sub="${e(sub)}" data-field="${field}" value="${e(d[field]??'')}" placeholder="${ph}" oninput="hsDailyOpsLiveUpdate(this)">`;
+    const auto=(field,val)=>`<div class="hs-auto-box" data-auto-for="${e(sub)}-${field}">${e(val==null||val===''?'—':String(val))}</div>`;
+    const qFrom=d.qFrom||''; const omrFrom=d.omrFrom||'';
+    const qReq=total; const omrReq=total; const ntp=total?Math.ceil(total/10):0;
+    const qTo=hsDailySerialEnd(qFrom,qReq); const omrTo=hsDailySerialEnd(omrFrom,omrReq);
+    return `<tr><td style="text-align:center;font-weight:700;">${auto('hall',alloc)}</td><td style="font-weight:700;">${e(sub)}${auto('subject','AUTO')}</td><td>${input('male','number')}</td><td>${input('female','number')}</td><td>${auto('total',total)}</td><td>${input('qFrom','text','Start serial')}</td><td>${auto('qTo',qTo)}</td><td>${auto('qReq',qReq)}</td><td>${auto('qNtp',ntp)}</td><td>${input('omrFrom','text','Start serial')}</td><td>${auto('omrTo',omrTo)}</td><td>${auto('omrReq',omrReq)}</td><td>${input('inv1','text','Name')}</td><td>${input('inv2','text','Name')}</td></tr>`;
   }).join('');
+}
+function hsDailySerialEnd(start,count){
+  if(start===null||start===undefined||String(start).trim()===''||!Number.isFinite(Number(count))||Number(count)<=0)return '';
+  const raw=String(start).trim();
+  const m=raw.match(/^(.*?)(\d+)$/);
+  if(!m){const n=Number(raw);return Number.isFinite(n)?String(n+Number(count)-1):'';}
+  const prefix=m[1], digits=m[2]; const n=Number(digits)+Number(count)-1;
+  return prefix+String(n).padStart(digits.length,'0');
+}
+function hsDailyOpsRefreshAutoCells(sub){
+  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
+  if(!date)return; const rec=hsDailyOpsEnsureRecord(venue,date); const d=rec.subjects[sub]||{};
+  const m=Number(d.male)||0, f=Number(d.female)||0, total=m+f, qReq=total, omrReq=total, ntp=total?Math.ceil(total/10):0;
+  d.total=total; d.qReq=qReq; d.omrReq=omrReq; d.qNtp=ntp;
+  const qTo=hsDailySerialEnd(d.qFrom,qReq), omrTo=hsDailySerialEnd(d.omrFrom,omrReq);
+  const esc=CSS.escape(sub);
+  const set=(field,val)=>{const box=document.querySelector(`.hs-auto-box[data-auto-for="${esc}-${field}"]`);if(box)box.textContent=(val===null||val===undefined||val==='')?'—':val;};
+  set('total',total);set('qReq',qReq);set('qNtp',ntp);set('qTo',qTo);set('omrReq',omrReq);set('omrTo',omrTo);
 }
 function hsDailyOpsLiveUpdate(el){
   const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
   if(!date||!el)return; const rec=hsDailyOpsEnsureRecord(venue,date); const sub=el.dataset.sub, field=el.dataset.field;
   rec.subjects[sub]=rec.subjects[sub]||{}; rec.subjects[sub][field]=el.value;
-  if(field==='male'||field==='female'){
-    const m=Number(rec.subjects[sub].male)||0, f=Number(rec.subjects[sub].female)||0;
-    rec.subjects[sub].total=m+f; rec.subjects[sub].present=rec.subjects[sub].present||String(m+f);
-    const box=document.querySelector(`.hs-total-box[data-total-for="${CSS.escape(sub)}"]`); if(box) box.textContent=m+f;
+  if(field==='male'||field==='female'||field==='qFrom'||field==='omrFrom'){
+    if(field==='male'||field==='female') rec.subjects[sub].total=(Number(rec.subjects[sub].male)||0)+(Number(rec.subjects[sub].female)||0);
+    hsDailyOpsRefreshAutoCells(sub);
   }
 }
 function hsDailyOpsCollectOfficials(){
@@ -1012,7 +1040,7 @@ function hsDailyOpsSaveDay(){
   const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
   const rec=hsDailyOpsEnsureRecord(venue,date); rec.officials=hsDailyOpsCollectOfficials();
   document.querySelectorAll('#hs_dailyOpsSubjectBody input[data-sub]').forEach(el=>{const sub=el.dataset.sub,field=el.dataset.field;rec.subjects[sub]=rec.subjects[sub]||{};rec.subjects[sub][field]=el.value;});
-  Object.values(rec.subjects||{}).forEach(d=>{if(d){d.total=(Number(d.male)||0)+(Number(d.female)||0); if(!d.present && d.total) d.present=String(d.total);}});
+  Object.values(rec.subjects||{}).forEach(d=>{if(d){d.total=(Number(d.male)||0)+(Number(d.female)||0); d.qReq=d.total; d.omrReq=d.total; d.qNtp=d.total?Math.ceil(d.total/10):0; d.qTo=hsDailySerialEnd(d.qFrom,d.qReq); d.omrTo=hsDailySerialEnd(d.omrFrom,d.omrReq);}});
   rec.savedAt=new Date().toISOString(); hsDailyOpsDB[hsDailyOpsKey(venue,date)]=rec;
   hsDailyOpsTemplates[venue]={...rec.officials}; hsDailyOpsPersist();
   document.getElementById('hs_opsDayStatus').textContent='Saved '+new Date(rec.savedAt).toLocaleString();
