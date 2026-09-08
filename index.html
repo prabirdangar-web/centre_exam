@@ -2348,6 +2348,22 @@ function hsSubjectDbRenderDD(keepValue){
   dd.innerHTML='<option value="">Select Subject</option>'+subjects.map(x=>`<option value="${hsEscapeFormText(x)}">${hsEscapeFormText(x)}</option>`).join('');
   if(old && subjects.includes(old)) dd.value=old;
   else if(subjects.length===1) dd.value=subjects[0];
+  // Always load the selected subject's stored master QP/OMR serials immediately.
+  const selected=dd.value||'';
+  if(selected){
+    const venue=document.getElementById('hs_opsVenue')?.value||'TFHS';
+    const date=document.getElementById('hs_opsDate')?.value;
+    if(date){
+      const rec=hsDailyOpsEnsureRecord(venue,date);
+      const d=rec.subjects[selected]||{};
+      const m=hsSubjectQpOmrMaster[selected]||{};
+      if(!d.qFrom && m.qpFrom)d.qFrom=m.qpFrom;
+      if(!d.omrFrom && m.omrFrom)d.omrFrom=m.omrFrom;
+      rec.subjects[selected]=d;
+      hsDailyOpsDB[hsDailyOpsKey(venue,date)]=rec;
+      hsDailyOpsPersist();
+    }
+  }
   hsSubjectDbRenderPanel();
 }
 function hsSubjectDbSelectChange(){
@@ -2379,8 +2395,11 @@ function hsSubjectDbRenderPanel(){
   const rec=date?hsDailyOpsEnsureRecord(venue,date):{}; const d=(rec.subjects||{})[sub]||{}; const m=hsSubjectQpOmrMaster[sub]||{};
   if(!sub){box.innerHTML='<h3 style="margin:0 0 8px;">Subject-wise Question Paper &amp; OMR Serial Database</h3><div style="padding:10px;border:1px dashed #94a3b8;color:#64748b;">Select an examination day and subject from the dropdowns. QP/OMR master serials will load automatically.</div>';return;}
   const total=(Number(d.male)||0)+(Number(d.female)||0), qTo=hsDailySerialEnd(d.qFrom||m.qpFrom||'',total), oTo=hsDailySerialEnd(d.omrFrom||m.omrFrom||'',total);
+  const masterStatus=(m.qpFrom||m.omrFrom)
+    ? '<span style="display:inline-block;padding:4px 8px;border-radius:4px;background:#dcfce7;color:#166534;font-weight:700;">MASTER SERIALS LOADED AUTOMATICALLY</span>'
+    : '<span style="display:inline-block;padding:4px 8px;border-radius:4px;background:#fef3c7;color:#92400e;font-weight:700;">NO MASTER SERIAL SAVED — ENTER IT IN THE MASTER ABOVE</span>';
   const roomRows=(d.roomSerials||[]).map(z=>`<tr><td>${hsEscapeFormText(z.room)}</td><td>${z.seats}</td><td>${hsEscapeFormText(z.qFrom||'')}</td><td>${hsEscapeFormText(z.qTo||'')}</td><td>${hsEscapeFormText(z.omrFrom||'')}</td><td>${hsEscapeFormText(z.omrTo||'')}</td></tr>`).join('');
-  box.innerHTML=`<h3 style="margin:0 0 8px;">Subject-wise Question Paper &amp; OMR Serial Database</h3><div style="font-size:9pt;color:#475569;margin-bottom:8px;"><b>${hsEscapeFormText(sub)}</b> — ${hsEscapeFormText(date||'')} — master serials and room-wise serial chain are shown automatically.</div><div class="hs-official-grid"><div class="form-group"><label>Master QP Start</label><input value="${hsEscapeFormText(m.qpFrom||'')}" readonly></div><div class="form-group"><label>Master OMR Start</label><input value="${hsEscapeFormText(m.omrFrom||'')}" readonly></div><div class="form-group"><label>Daily QP Start</label><input value="${hsEscapeFormText(d.qFrom||m.qpFrom||'')}" readonly></div><div class="form-group"><label>Daily OMR Start</label><input value="${hsEscapeFormText(d.omrFrom||m.omrFrom||'')}" readonly></div><div class="form-group"><label>Students / QP Required</label><input value="${total}" readonly></div><div class="form-group"><label>QP Ending Serial</label><input value="${hsEscapeFormText(qTo)}" readonly></div><div class="form-group"><label>OMR Ending Serial</label><input value="${hsEscapeFormText(oTo)}" readonly></div></div>`+
+  box.innerHTML=`<h3 style="margin:0 0 8px;">Subject-wise Question Paper &amp; OMR Serial Database</h3><div style="font-size:9pt;color:#475569;margin-bottom:8px;"><b>${hsEscapeFormText(sub)}</b> — ${hsEscapeFormText(date||'')} — master serials and room-wise serial chain are shown automatically.</div><div style="margin-bottom:9px;">${masterStatus}</div><div class="hs-official-grid"><div class="form-group"><label>Master QP Start</label><input value="${hsEscapeFormText(m.qpFrom||'')}" readonly></div><div class="form-group"><label>Master OMR Start</label><input value="${hsEscapeFormText(m.omrFrom||'')}" readonly></div><div class="form-group"><label>Daily QP Start</label><input value="${hsEscapeFormText(d.qFrom||m.qpFrom||'')}" readonly></div><div class="form-group"><label>Daily OMR Start</label><input value="${hsEscapeFormText(d.omrFrom||m.omrFrom||'')}" readonly></div><div class="form-group"><label>Students / QP Required</label><input value="${total}" readonly></div><div class="form-group"><label>QP Ending Serial</label><input value="${hsEscapeFormText(qTo)}" readonly></div><div class="form-group"><label>OMR Ending Serial</label><input value="${hsEscapeFormText(oTo)}" readonly></div></div>`+
     (roomRows?`<div style="overflow-x:auto;margin-top:10px;"><table class="hs-room-table"><thead><tr><th>Room</th><th>Students</th><th>QP FROM</th><th>QP TO</th><th>OMR FROM</th><th>OMR TO</th></tr></thead><tbody>${roomRows}</tbody></table></div>`:'<div style="margin-top:8px;color:#64748b;">Room-wise serial chain will appear after Auto Distribute.</div>');
 }
 
