@@ -338,7 +338,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     <div class="hs-dailyops-card no-print">
       <h3 style="margin:0 0 10px;">Examination Officials — Default Officials</h3>
       <div class="hs-official-grid">
-        <div class="form-group"><label>Venue Supervisor</label><input id="hs_opsVenueSupervisor" type="text" placeholder="Enter name"></div>
+        <div class="form-group"><label>Venue Supervisor</label><input id="hs_opsVenueSupervisor" type="text" value="MAHIM KUMAR PAINE" placeholder="MAHIM KUMAR PAINE"></div>
         <div class="form-group"><label>Centre Secretary</label><input id="hs_opsCentreSecretary" type="text" placeholder="PRABIR KUMAR DANGAR"></div>
         <div class="form-group"><label>Centre-in-Charge</label><input id="hs_opsCentreInCharge" type="text" placeholder="DIPANKAR DAS"></div>
         <div class="form-group"><label>Council Nominee</label><input id="hs_opsCouncilNominee" type="text" placeholder="JAGJIBON CHAKRABORTY"></div>
@@ -1055,6 +1055,19 @@ const HS_DEFAULT_EXAM_OFFICIALS = {
   other:''
 };
 function hsDailyOpsDefaultOfficials(base={}){ return {...HS_DEFAULT_EXAM_OFFICIALS,...(base||{})}; }
+function hsEnsureDefaultOfficialsEverywhere(){
+  hsDailyOpsLoad();
+  let changed=false;
+  Object.keys(hsDailyOpsDB||{}).forEach(k=>{
+    const r=hsDailyOpsDB[k]; r.officials=hsDailyOpsDefaultOfficials(r.officials||{});
+    if(r.officials.venueSupervisor!==HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor || !r.officials.venueSupervisor){ r.officials.venueSupervisor=HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor; changed=true; }
+  });
+  Object.keys(hsDailyOpsTemplates||{}).forEach(v=>{
+    hsDailyOpsTemplates[v]=hsDailyOpsDefaultOfficials(hsDailyOpsTemplates[v]||{});
+    if(!hsDailyOpsTemplates[v].venueSupervisor){ hsDailyOpsTemplates[v].venueSupervisor=HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor; changed=true; }
+  });
+  if(changed) hsDailyOpsPersist();
+}
 
 function hsDailyOpsEnsureRecord(venue,date){
   const key=hsDailyOpsKey(venue,date);
@@ -1083,7 +1096,7 @@ function hsDailyOpsRender(){
   const subjects=hsDailyOpsGetSelectedSubjects(venue,item.date);
   document.getElementById('hs_opsSubjectCount').textContent=subjects.length+' subject(s) selected';
   document.getElementById('hs_opsDayStatus').textContent=rec.savedAt?'Saved '+new Date(rec.savedAt).toLocaleString():'Not saved';
-  document.getElementById('hs_opsVenueSupervisor').value=rec.officials.venueSupervisor||'';
+  document.getElementById('hs_opsVenueSupervisor').value=rec.officials.venueSupervisor||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor;
   document.getElementById('hs_opsCentreSecretary').value=rec.officials.centreSecretary||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary;
   document.getElementById('hs_opsCentreInCharge').value=rec.officials.centreInCharge||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge;
   document.getElementById('hs_opsCouncilNominee').value=rec.officials.councilNominee||HS_DEFAULT_EXAM_OFFICIALS.councilNominee;
@@ -1827,6 +1840,7 @@ function hsClearStoredLedger(){
   if(confirm("Flush all HS ledger fields down to factory presets?")){
     localStorage.removeItem("ExamReportingLedgerCache_HS");
     hsResetToDefaults(); hsInitDataEngine();
+try{hsEnsureDefaultOfficialsEverywhere();}catch(e){console.warn('Default officials migration',e);}
   }
 }
 
