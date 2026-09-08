@@ -374,7 +374,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         Selecting that subject on any day will auto-fill its starting serials; you can still edit per-day manually.
       </div>
       <div class="hs-dailyops-toolbar" style="grid-template-columns:1.4fr 1fr 1fr auto;">
-        <div class="form-group"><label>Subject Name</label><input id="hs_masterSubjectName" type="text" placeholder="e.g. Physics"></div>
+        <div class="form-group"><label>Subject Name</label><input id="hs_masterSubjectName" type="text" placeholder="e.g. Physics or PHYS — code and full name are treated as the same subject"></div>
         <div class="form-group"><label>QP Serial Start</label><input id="hs_masterQpFrom" type="text" placeholder="e.g. PHY-00101"></div>
         <div class="form-group"><label>OMR Serial Start</label><input id="hs_masterOmrFrom" type="text" placeholder="e.g. OMR-00101"></div>
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="hsMasterSaveSubject()">Save / Update</button></div>
@@ -977,12 +977,63 @@ function hsRoomRenderSummary(){
 /* ================================================================
    HS :: CENTRE SUBJECT QP/OMR SERIAL MASTER
    ================================================================ */
+/* ================================================================
+   HS :: SUBJECT CODE <-> FULL NAME EQUIVALENCE
+   The Master QP/OMR box, the daily-ops table and the room-auto
+   allocator all key data off the subject's exact text. If the
+   subject is typed as a short code (e.g. PHYS) in one place and
+   picked as the full name (e.g. Physics) elsewhere, the two never
+   match and that subject's master serials / room data silently
+   fail to line up. This map makes code and full name equivalent
+   everywhere a subject name is saved or looked up.
+   ================================================================ */
+const HS_SUBJECT_CODE_MAP = {
+  BNGA:"Bengali (A)", BENG:"Bengali (B)", ENGA:"English (A)", ENGB:"English (B)",
+  SANT:"Santhali", ELTV:"Alternative English", ITEV:"IT & ITES", AGLV:"Agriculture (AGLV)",
+  BWLV:"Beauty & Wellness", MATH:"Mathematics", SNSK:"Sanskrit", BIOS:"Biological Science",
+  POLS:"Political Science", HIST:"History", CHEM:"Chemistry", GEGR:"Geography",
+  PHIL:"Philosophy", COMS:"Computer Science", COMA:"Accountancy", HPED:"Health & Physical Education",
+  PHYS:"Physics", NUTN:"Nutrition", EDCN:"Education"
+};
+function hsNormalizeSubjectName(text){
+  const raw=String(text||"").trim();
+  if(!raw) return "";
+  const key=raw.toUpperCase().replace(/\s+/g," ");
+  if(HS_SUBJECT_CODE_MAP[key]) return HS_SUBJECT_CODE_MAP[key];
+  // Also match against the official routine's own subject names, ignoring case/
+  // punctuation/spacing, so "physics" / "PHYSICS" / " Physics " all resolve to
+  // the exact spelling the day/room dropdowns use.
+  if(typeof hsOfficialExamRoutineTimeline!=="undefined" && typeof hsSubjectOptions==="function"){
+    const canon=s=>String(s||"").toUpperCase().replace(/[^A-Z0-9]+/g," ").trim();
+    const target=canon(raw);
+    for(const item of hsOfficialExamRoutineTimeline){
+      for(const name of hsSubjectOptions(item)){
+        if(canon(name)===target) return name;
+      }
+    }
+  }
+  return raw;
+}
 let hsSubjectQpOmrMaster = {};
-function hsMasterLoad(){ try{hsSubjectQpOmrMaster=JSON.parse(localStorage.getItem('hsSubjectQpOmrMaster2027')||'{}')||{};}catch(e){hsSubjectQpOmrMaster={};} }
+function hsMasterLoad(){
+  try{hsSubjectQpOmrMaster=JSON.parse(localStorage.getItem('hsSubjectQpOmrMaster2027')||'{}')||{};}catch(e){hsSubjectQpOmrMaster={};}
+  // Self-heal: migrate any previously-saved code-style keys (e.g. "PHYS") to the
+  // full subject name so they match the day/room dropdowns from now on.
+  let migrated=false;
+  Object.keys(hsSubjectQpOmrMaster).forEach(k=>{
+    const canonicalKey=hsNormalizeSubjectName(k);
+    if(canonicalKey && canonicalKey!==k){
+      if(!hsSubjectQpOmrMaster[canonicalKey]) hsSubjectQpOmrMaster[canonicalKey]=hsSubjectQpOmrMaster[k];
+      delete hsSubjectQpOmrMaster[k];
+      migrated=true;
+    }
+  });
+  if(migrated) hsMasterPersist();
+}
 function hsMasterPersist(){ localStorage.setItem('hsSubjectQpOmrMaster2027',JSON.stringify(hsSubjectQpOmrMaster)); }
 function hsMasterSaveSubject(){
   hsMasterLoad();
-  const name=(document.getElementById('hs_masterSubjectName')?.value||'').trim();
+  const name=hsNormalizeSubjectName(document.getElementById('hs_masterSubjectName')?.value||'');
   const qp=(document.getElementById('hs_masterQpFrom')?.value||'').trim();
   const omr=(document.getElementById('hs_masterOmrFrom')?.value||'').trim();
   if(!name) return alert('Enter the subject name allotted to this centre.');
