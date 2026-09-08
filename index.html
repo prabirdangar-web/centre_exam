@@ -284,6 +284,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         <div class="form-group"><label>Day-wise form generation</label><button class="btn btn-success" style="width:100%;" onclick="hsGenerateSelectedDayForms()">Generate Selected Day Forms</button></div>
         <div class="form-group"><label>All selected days</label><button class="btn btn-primary" style="width:100%;" onclick="hsGenerateAllSelectedDayForms()">Generate All Selected-Day Forms</button></div>
       </div>
+      <div id="hs_dayDateSelector" style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc;margin-bottom:10px;"></div>
       <div id="hs_daySubjectSelector" style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc;"></div>
     </div>
     <div class="center-registry no-print">
@@ -932,7 +933,7 @@ function hsRoomAutoPlace(){
   const autoSubs=subjects.filter(s=>!rec.subjects[s]?.manualRoom);
 
   manualSubs.forEach(sub=>{
-    const d=rec.subjects[sub]||{}; const n=Math.max(0,Math.floor(Number(d[basis])||0)); total+=n;
+    const d=rec.subjects[sub]||{}; const n=Math.max(0,Math.floor(Number(d[basis]) || ((Number(d.male)||0)+(Number(d.female)||0)))); total+=n;
     const target=remainingRooms.find(r=>r.room===d.manualRoom); const arr=[]; let left=n;
     if(target && target.remaining>0){
       const take=Math.min(left,target.remaining);
@@ -944,7 +945,7 @@ function hsRoomAutoPlace(){
   });
 
   autoSubs.forEach(sub=>{
-    const d=rec.subjects[sub]||{}; const n=Math.max(0,Math.floor(Number(d[basis])||0)); total+=n; let left=n; const arr=[];
+    const d=rec.subjects[sub]||{}; const n=Math.max(0,Math.floor(Number(d[basis]) || ((Number(d.male)||0)+(Number(d.female)||0)))); total+=n; let left=n; const arr=[];
     for(const r of remainingRooms){
       if(left<=0)break; if(r.remaining<=0)continue;
       const take=Math.min(left,r.remaining); if(take>0){arr.push({room:r.room,seats:take});r.remaining-=take;left-=take;placed+=take;}
@@ -1243,9 +1244,34 @@ function hsRenderFormDays(){
   el.innerHTML=hsOfficialExamRoutineTimeline.map(x=>`<option value="${x.date}">${x.date} — ${x.day}</option>`).join('');
   if(current && hsOfficialExamRoutineTimeline.some(x=>x.date===current)) el.value=current;
 }
+function hsRenderDayDateSelector(){
+  const box=document.getElementById('hs_dayDateSelector'); if(!box)return;
+  hsLoadSubjectAllocation();
+  const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
+  const active=(document.getElementById('hs_formDay')||{}).value||hsOfficialExamRoutineTimeline[0].date;
+  const selectedDates=JSON.parse(localStorage.getItem('hsCentreSelectedDates2027')||'{}')[venue]||[];
+  const checked=selectedDates.length?selectedDates:([active]);
+  box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px;"><div><b>Cover Page — Select Examination Dates</b><div style="font-size:12px;color:#475569;margin-top:3px;">Tick the dates required on the cover page. The Subject DD / subject tick selection below follows the currently active date.</div></div><div style="display:flex;gap:6px;"><button class="btn btn-primary" onclick="hsSelectAllFormDates()">Select All Dates</button><button class="btn btn-danger" onclick="hsClearFormDates()">Clear Dates</button></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px;">${hsOfficialExamRoutineTimeline.map(x=>{const ck=checked.includes(x.date)?'checked':'';return `<label style="display:flex;gap:8px;align-items:center;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;"><input type="checkbox" class="hs-cover-date" value="${hsEscapeFormText(x.date)}" ${ck} onchange="hsSaveSelectedFormDates()"><span><b>${hsEscapeFormText(x.date)}</b> — ${hsEscapeFormText(x.day)}</span></label>`;}).join('')}</div><div id="hs_coverDateStatus" style="margin-top:9px;font-size:12px;color:#475569;">${checked.length} date(s) selected for cover/form generation.</div>`;
+}
+function hsSaveSelectedFormDates(){
+  const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
+  const dates=[...document.querySelectorAll('.hs-cover-date:checked')].map(x=>x.value);
+  let db={}; try{db=JSON.parse(localStorage.getItem('hsCentreSelectedDates2027')||'{}')||{};}catch(e){db={};}
+  db[venue]=dates; localStorage.setItem('hsCentreSelectedDates2027',JSON.stringify(db));
+  const st=document.getElementById('hs_coverDateStatus'); if(st)st.textContent=`${dates.length} date(s) selected for cover/form generation.`;
+  if(dates.length){const dd=document.getElementById('hs_formDay'); if(dd && !dates.includes(dd.value)){dd.value=dates[0];} hsRenderDaySubjectSelector();}
+}
+function hsSelectAllFormDates(){document.querySelectorAll('.hs-cover-date').forEach(x=>x.checked=true);hsSaveSelectedFormDates();}
+function hsClearFormDates(){document.querySelectorAll('.hs-cover-date').forEach(x=>x.checked=false);hsSaveSelectedFormDates();}
+function hsGetSelectedFormDates(venue){
+  let db={};try{db=JSON.parse(localStorage.getItem('hsCentreSelectedDates2027')||'{}')||{};}catch(e){db={};}
+  const dates=(db[venue]||[]).filter(d=>hsOfficialExamRoutineTimeline.some(x=>x.date===d));
+  return dates;
+}
 function hsRenderDaySubjectSelector(){
   hsLoadSubjectAllocation();
   hsRenderFormDays();
+  hsRenderDayDateSelector();
   const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
   const date=(document.getElementById('hs_formDay')||{}).value||hsOfficialExamRoutineTimeline[0].date;
   const item=hsOfficialExamRoutineTimeline.find(x=>x.date===date)||hsOfficialExamRoutineTimeline[0];
@@ -1253,8 +1279,9 @@ function hsRenderDaySubjectSelector(){
   const selected=hsCentreSubjectAllocation[key]||[];
   const options=hsSubjectOptions(item);
   const box=document.getElementById('hs_daySubjectSelector'); if(!box) return;
-  box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;"><div><b>${hsEscapeFormText(item.date)} — ${hsEscapeFormText(item.day)}</b><div style="font-size:12px;color:#475569;margin-top:3px;">Select only the subjects actually allotted to ${venue==='TGHS'?"TALDANGRA GIRLS' HIGH SCHOOL [H.S.]":"TALDANGRA FULMATI HIGH SCHOOL [H.S.]"}.</div></div><div style="display:flex;gap:6px;"><button class="btn btn-primary" onclick="hsSelectAllDaySubjects()">Select All</button><button class="btn btn-danger" onclick="hsClearDaySubjects()">Clear</button></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px;">${options.map((sub,i)=>{const id='hs_sub_'+i;const ck=selected.includes(sub)?'checked':'';return `<label style="display:flex;gap:8px;align-items:flex-start;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer;"><input type="checkbox" class="hs-day-subject" value="${hsEscapeFormText(sub)}" ${ck} onchange="hsSaveCurrentDaySubjects()"><span>${hsEscapeFormText(sub)}</span></label>`;}).join('')}</div><div id="hs_daySubjectStatus" style="margin-top:10px;font-size:12px;color:#475569;">${selected.length?selected.length+' subject option(s) selected.':'No subject selected — this day will not generate subject-specific forms.'}</div>`;
+  box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;"><div><b>${hsEscapeFormText(item.date)} — ${hsEscapeFormText(item.day)}</b><div style="font-size:12px;color:#475569;margin-top:3px;">Tick the subjects actually allotted for this date. Subject names are loaded automatically from the selected day.</div></div><div style="display:flex;gap:6px;"><button class="btn btn-primary" onclick="hsSelectAllDaySubjects()">Select All Subjects</button><button class="btn btn-danger" onclick="hsClearDaySubjects()">Clear Subjects</button></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px;">${options.map((sub,i)=>{const ck=selected.includes(sub)?'checked':'';return `<label style="display:flex;gap:8px;align-items:flex-start;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer;"><input type="checkbox" class="hs-day-subject" value="${hsEscapeFormText(sub)}" ${ck} onchange="hsSaveCurrentDaySubjects()"><span>${hsEscapeFormText(sub)}</span></label>`;}).join('')}</div><div id="hs_daySubjectStatus" style="margin-top:10px;font-size:12px;color:#475569;">${selected.length?selected.length+' subject option(s) selected.':'No subject selected.'}</div>`;
 }
+
 function hsSaveCurrentDaySubjects(){
   const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
   const date=(document.getElementById('hs_formDay')||{}).value||'';
@@ -1312,11 +1339,11 @@ function hsPrintCentreForm(type,venueOverride,dateOverride){
   w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.official-form-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0;border-bottom:1px solid #333}.official-top-table{margin:0!important}.official-top-table .blank-col{width:11%}.official-top-table th{width:31%;font-size:14px}.official-top-table td{font-size:14px}.official-detail-table{margin-top:0!important}.official-section-note{font-weight:700;margin:12px 0 4px}h3{text-align:center;margin:0 0 10px}.small{font-size:9pt}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top;min-height:22px}th{background:#f1f5f9}.lines{border-bottom:1px solid #333;line-height:28px}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script></body></html>`); w.document.close();
 }
 function hsGenerateSelectedDayForms(){
-  hsSaveCurrentDaySubjects(); const venue=document.getElementById('hs_formVenue')?.value||'TFHS'; const date=document.getElementById('hs_formDay')?.value||hsOfficialExamRoutineTimeline[0].date; const subs=hsGetAllocatedSubjects(venue,date); if(!subs.length)return alert('No subject selected for this day.');
+  hsSaveCurrentDaySubjects(); hsSaveSelectedFormDates(); const venue=document.getElementById('hs_formVenue')?.value||'TFHS'; const date=document.getElementById('hs_formDay')?.value||hsOfficialExamRoutineTimeline[0].date; const subs=hsGetAllocatedSubjects(venue,date); if(!subs.length)return alert('No subject selected for this day.');
   hsOpenMultiFormWindow(venue,[date]);
 }
 function hsGenerateAllSelectedDayForms(){
-  hsSaveCurrentDaySubjects(); const venue=document.getElementById('hs_formVenue')?.value||'TFHS'; const dates=hsOfficialExamRoutineTimeline.map(x=>x.date).filter(d=>hsGetAllocatedSubjects(venue,d).length); if(!dates.length)return alert('No subjects have been selected for any day for this venue.'); hsOpenMultiFormWindow(venue,dates);
+  hsSaveCurrentDaySubjects(); hsSaveSelectedFormDates(); const venue=document.getElementById('hs_formVenue')?.value||'TFHS'; const ticked=hsGetSelectedFormDates(venue); const dates=(ticked.length?ticked:hsOfficialExamRoutineTimeline.map(x=>x.date).filter(d=>hsGetAllocatedSubjects(venue,d).length)); const valid=dates.filter(d=>hsGetAllocatedSubjects(venue,d).length); if(!valid.length)return alert('Tick at least one examination date and select subject(s) for that date.'); hsOpenMultiFormWindow(venue,valid);
 }
 function hsBuildDayFormPage(type,c){
   const esc=hsEscapeFormText;
@@ -2399,7 +2426,12 @@ function hsEnhancedAutoAllocate(showAlert){
   let roomIndex=0, grand=0, placed=0;
   subjects.forEach(sub=>{
     const d=rec.subjects[sub]||{};
-    const count=Math.max(0,Math.floor(Number(d[basis])||0));
+    const rawCount = Number(d[basis]) || 0;
+    const fallbackCount = (Number(d.male)||0) + (Number(d.female)||0);
+    const count=Math.max(0,Math.floor(rawCount || fallbackCount));
+    d[basis] = count;
+    d.present = Number(d.present)||fallbackCount;
+    d.total = Number(d.total)||fallbackCount;
     grand+=count;
     const arr=[]; let left=count;
     while(left>0 && roomIndex<roomState.length){
