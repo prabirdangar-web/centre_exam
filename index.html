@@ -236,6 +236,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
 <!-- Firebase (cloud backup + multi-device sync for all saved records) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyCiqQFsnbSi6eCgUI_W3NTybzIkRmCI_54",
@@ -246,10 +247,18 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     appId: "1:316041012204:web:04ee8b19374c60f63716c9"
   };
   let cloudDB = null;
+  let cloudAuthReadyPromise = Promise.resolve(null);
   try{
     firebase.initializeApp(firebaseConfig);
     cloudDB = firebase.firestore();
     cloudDB.enablePersistence({synchronizeTabs:true}).catch(()=>{/* multiple tabs or unsupported browser — offline cache simply skipped */});
+    cloudAuthReadyPromise = new Promise((resolve)=>{
+      firebase.auth().onAuthStateChanged(user=>{ if(user) resolve(user); });
+      firebase.auth().signInAnonymously().catch(err=>{
+        console.error('Firebase anonymous sign-in failed — check that Anonymous sign-in is enabled in the Firebase console.', err);
+        resolve(null); // app still boots and runs on local storage only
+      });
+    });
   }catch(e){ console.warn('Firebase init failed — app will run on local storage only.', e); }
 </script>
 </head>
@@ -264,9 +273,12 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       <p>Unified control deck &middot; H.S. (WBCHSE) &amp; Madhyamik (WBBSE)</p>
     </div>
   </div>
-  <div class="board-toggle">
-    <button class="board-btn active" data-board="hs" onclick="switchBoard('hs')">H.S.<small>WBCHSE &middot; 2026</small></button>
-    <button class="board-btn" data-board="mp" onclick="switchBoard('mp')">Madhyamik<small>WBBSE &middot; 2027</small></button>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <button class="btn btn-success no-print" style="border:none;padding:9px 16px;border-radius:6px;cursor:pointer;font-weight:700;font-size:9pt;" onclick="cloudForceSaveAll()">Save to Cloud Now</button>
+    <div class="board-toggle">
+      <button class="board-btn active" data-board="hs" onclick="switchBoard('hs')">H.S.<small>WBCHSE &middot; 2026</small></button>
+      <button class="board-btn" data-board="mp" onclick="switchBoard('mp')">Madhyamik<small>WBBSE &middot; 2027</small></button>
+    </div>
   </div>
 </div>
 
@@ -934,13 +946,16 @@ function cloudPushKey(key){
   if(!cloudDB) return;
   clearTimeout(cloudPushTimers[key]);
   cloudPushTimers[key]=setTimeout(()=>{
-    const val=localStorage.getItem(key);
-    if(val===null) return;
-    cloudSyncLastValue[key]=val;
-    cloudDB.collection(CLOUD_COLLECTION).doc(key).set({
-      value:val, updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>cloudShowBanner('Saved to cloud','ok'))
-      .catch(err=>cloudShowBanner('Cloud save failed (offline?) — kept locally: '+err.message,'error'));
+    cloudAuthReadyPromise.then(user=>{
+      if(!user) return; // not signed in — skip this push, local storage already has the value
+      const val=localStorage.getItem(key);
+      if(val===null) return;
+      cloudSyncLastValue[key]=val;
+      cloudDB.collection(CLOUD_COLLECTION).doc(key).set({
+        value:val, updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=>cloudShowBanner('Saved to cloud','ok'))
+        .catch(err=>cloudShowBanner('Cloud save failed (offline?) — kept locally: '+err.message,'error'));
+    });
   },700); // debounce so fast typing/edits don't spam Firestore writes
 }
 
@@ -955,22 +970,29 @@ Storage.prototype.setItem = function(key,value){
 function cloudHydrateAndBoot(bootFn){
   if(!cloudDB){ bootFn(); return; } // Firebase not available — run purely on local storage
   cloudShowBanner('Connecting to cloud database…','info',true);
-  const fetches = CLOUD_SYNC_KEYS.map(key =>
-    cloudDB.collection(CLOUD_COLLECTION).doc(key).get()
-      .then(snap=>{
-        if(snap.exists && snap.data().value!=null){
-          _origLSSetItem.call(localStorage,key,snap.data().value);
-          cloudSyncLastValue[key]=snap.data().value;
-        }
-      })
-      .catch(()=>{ /* offline or rules block read — keep whatever is already local */ })
-  );
-  Promise.all(fetches).finally(()=>{
-    cloudSyncReady=true;
-    cloudShowBanner('Cloud data loaded','ok');
-    bootFn();
-    cloudPostReadyQueue.splice(0).forEach(fn=>fn());
-    cloudAttachLiveListeners();
+  cloudAuthReadyPromise.then(user=>{
+    if(!user){
+      cloudShowBanner('Cloud sign-in failed — running on local storage only. Check that Anonymous sign-in is enabled in Firebase Authentication.','error',true);
+      bootFn();
+      return;
+    }
+    const fetches = CLOUD_SYNC_KEYS.map(key =>
+      cloudDB.collection(CLOUD_COLLECTION).doc(key).get()
+        .then(snap=>{
+          if(snap.exists && snap.data().value!=null){
+            _origLSSetItem.call(localStorage,key,snap.data().value);
+            cloudSyncLastValue[key]=snap.data().value;
+          }
+        })
+        .catch(()=>{ /* offline or rules block read — keep whatever is already local */ })
+    );
+    Promise.all(fetches).finally(()=>{
+      cloudSyncReady=true;
+      cloudShowBanner('Cloud data loaded','ok');
+      bootFn();
+      cloudPostReadyQueue.splice(0).forEach(fn=>fn());
+      cloudAttachLiveListeners();
+    });
   });
 }
 
@@ -987,6 +1009,27 @@ function cloudAttachLiveListeners(){
       const b=document.getElementById('cloudSyncBanner');
       if(b){ b.style.cursor='pointer'; b.onclick=()=>location.reload(); }
     }, err=>console.warn('Cloud listener error for',key,err));
+  });
+}
+
+// Explicit manual save — pushes every tracked key to Firestore immediately,
+// instead of waiting for the 700ms debounce on the next localStorage write.
+function cloudForceSaveAll(){
+  if(!cloudDB){ cloudShowBanner('Cloud not connected — nothing to save.','error'); return; }
+  cloudShowBanner('Saving…','info',true);
+  cloudAuthReadyPromise.then(user=>{
+    if(!user){ cloudShowBanner('Not signed in — cannot save to cloud. Check that Anonymous sign-in is enabled in Firebase Authentication.','error'); return; }
+    const writes = CLOUD_SYNC_KEYS.map(key=>{
+      const val=localStorage.getItem(key);
+      if(val===null) return Promise.resolve();
+      cloudSyncLastValue[key]=val;
+      return cloudDB.collection(CLOUD_COLLECTION).doc(key).set({
+        value:val, updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+    Promise.all(writes)
+      .then(()=>cloudShowBanner('All data saved to cloud','ok'))
+      .catch(err=>cloudShowBanner('Save failed: '+err.message,'error'));
   });
 }
 
