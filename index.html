@@ -233,6 +233,25 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- Firebase (cloud backup + multi-device sync for all saved records) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCiqQFsnbSi6eCgUI_W3NTybzIkRmCI_54",
+    authDomain: "tfhs-portal.firebaseapp.com",
+    projectId: "tfhs-portal",
+    storageBucket: "tfhs-portal.firebasestorage.app",
+    messagingSenderId: "316041012204",
+    appId: "1:316041012204:web:04ee8b19374c60f63716c9"
+  };
+  let cloudDB = null;
+  try{
+    firebase.initializeApp(firebaseConfig);
+    cloudDB = firebase.firestore();
+    cloudDB.enablePersistence({synchronizeTabs:true}).catch(()=>{/* multiple tabs or unsupported browser — offline cache simply skipped */});
+  }catch(e){ console.warn('Firebase init failed — app will run on local storage only.', e); }
+</script>
 </head>
 <body>
 
@@ -876,6 +895,102 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
 <script>
 
 /* ================================================================
+   CLOUD SYNC ENGINE — Firebase Firestore backup + multi-device sync
+   Mirrors every record this app already keeps in localStorage, with
+   zero changes needed to the 30+ existing load()/persist() call
+   sites elsewhere in this file. If Firebase is unreachable (offline,
+   blocked, not configured) the app falls back to local storage only.
+   ================================================================ */
+const CLOUD_SYNC_KEYS = [
+  'hsFixedRooms2027','hsRoomAllocations2027','hsSubjectQpOmrMaster2027',
+  'hsDailyOpsDB2027','hsDailyOpsOfficialsTemplates2027',
+  'hsCentreSubjectAllocation2027','hsCentreSelectedDates2027',
+  'ExamReportingLedgerCache_HS','ExamReportingLedgerCache_MP',
+  'ExamRequisitionSystemDataCache_HS','ExamRequisitionSystemDataCache_MP'
+];
+const CLOUD_COLLECTION = 'examCommandCenter2027';
+let cloudSyncReady = false;
+let cloudSyncLastValue = {};   // key -> last value WE either pushed or pulled, to ignore our own echo
+let cloudPushTimers = {};
+const cloudPostReadyQueue = [];
+
+function cloudRunWhenReady(fn){ if(cloudSyncReady) fn(); else cloudPostReadyQueue.push(fn); }
+
+function cloudShowBanner(msg,kind,sticky){
+  let b=document.getElementById('cloudSyncBanner');
+  if(!b){
+    b=document.createElement('div'); b.id='cloudSyncBanner'; b.className='no-print';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;text-align:center;padding:7px 14px;font:700 9pt "Segoe UI",sans-serif;color:#fff;letter-spacing:.2px;';
+    document.body.appendChild(b);
+  }
+  b.style.background = kind==='error' ? '#dc2626' : kind==='ok' ? '#16a34a' : '#1e3a8a';
+  b.style.cursor=''; b.onclick=null;
+  b.style.opacity='1'; b.textContent=msg;
+  clearTimeout(b._t);
+  if(!sticky) b._t=setTimeout(()=>{b.style.opacity='0';},3000);
+}
+
+function cloudPushKey(key){
+  if(!cloudDB) return;
+  clearTimeout(cloudPushTimers[key]);
+  cloudPushTimers[key]=setTimeout(()=>{
+    const val=localStorage.getItem(key);
+    if(val===null) return;
+    cloudSyncLastValue[key]=val;
+    cloudDB.collection(CLOUD_COLLECTION).doc(key).set({
+      value:val, updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>cloudShowBanner('Saved to cloud','ok'))
+      .catch(err=>cloudShowBanner('Cloud save failed (offline?) — kept locally: '+err.message,'error'));
+  },700); // debounce so fast typing/edits don't spam Firestore writes
+}
+
+// Patch localStorage.setItem once, globally, so every existing xPersist()
+// call already in this app automatically mirrors to Firestore.
+const _origLSSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function(key,value){
+  _origLSSetItem.call(this,key,value);
+  if(cloudSyncReady && CLOUD_SYNC_KEYS.includes(key)) cloudPushKey(key);
+};
+
+function cloudHydrateAndBoot(bootFn){
+  if(!cloudDB){ bootFn(); return; } // Firebase not available — run purely on local storage
+  cloudShowBanner('Connecting to cloud database…','info',true);
+  const fetches = CLOUD_SYNC_KEYS.map(key =>
+    cloudDB.collection(CLOUD_COLLECTION).doc(key).get()
+      .then(snap=>{
+        if(snap.exists && snap.data().value!=null){
+          _origLSSetItem.call(localStorage,key,snap.data().value);
+          cloudSyncLastValue[key]=snap.data().value;
+        }
+      })
+      .catch(()=>{ /* offline or rules block read — keep whatever is already local */ })
+  );
+  Promise.all(fetches).finally(()=>{
+    cloudSyncReady=true;
+    cloudShowBanner('Cloud data loaded','ok');
+    bootFn();
+    cloudPostReadyQueue.splice(0).forEach(fn=>fn());
+    cloudAttachLiveListeners();
+  });
+}
+
+function cloudAttachLiveListeners(){
+  if(!cloudDB) return;
+  CLOUD_SYNC_KEYS.forEach(key=>{
+    cloudDB.collection(CLOUD_COLLECTION).doc(key).onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const val=snap.data().value;
+      if(val==null || val===cloudSyncLastValue[key]) return; // our own write echoing back — ignore
+      _origLSSetItem.call(localStorage,key,val);
+      cloudSyncLastValue[key]=val;
+      cloudShowBanner('New data synced from another device — click to refresh and view it','info',true);
+      const b=document.getElementById('cloudSyncBanner');
+      if(b){ b.style.cursor='pointer'; b.onclick=()=>location.reload(); }
+    }, err=>console.warn('Cloud listener error for',key,err));
+  });
+}
+
+/* ================================================================
    HS :: FIXED HALL / ROOM + AUTO STUDENT PLACEMENT
    ================================================================ */
 let hsRoomDB = {};
@@ -1479,12 +1594,12 @@ const hsOfficialExamRoutineTimeline = [
   { date: "30.09.2026", day: "Wednesday", sub: "Statistics, Psychology, Commercial Law and Preliminaries of Auditing, History" },
   { date: "01.10.2026", day: "Thursday", sub: "Chemistry, Geography, Human Development and Resource Management, Business Studies" },
   { date: "03.10.2026", day: "Saturday", sub: "Philosophy" },
-  { date: "05.10.2026", day: "Monday", sub: "Mathematics, Business Mathematics and Business Statistics, Basic Mathematics for Social Sciences, Agriculture (AGRI), Journalism and Mass Communication, Sanskrit, Persian, Arabic" },
-  { date: "06.10.2026", day: "Tuesday", sub: "Cyber Security, Artificial Intelligence, Data Science, Sociology, Artificial Intelligence and Data Science, Fisheries and Aquaculture" },
-  { date: "07.10.2026", day: "Wednesday", sub: "Biological Science, Political Science, Costing and Taxation" }
+  { date: "12.10.2026", day: "Monday", sub: "Mathematics, Business Mathematics and Business Statistics, Basic Mathematics for Social Sciences, Agriculture (AGRI), Journalism and Mass Communication, Sanskrit, Persian, Arabic" },
+  { date: "13.10.2026", day: "Tuesday", sub: "Cyber Security, Artificial Intelligence, Data Science, Sociology, Artificial Intelligence and Data Science, Fisheries and Aquaculture" },
+  { date: "14.10.2026", day: "Wednesday", sub: "Biological Science, Political Science, Costing and Taxation" }
 ];
 
-setTimeout(()=>{hsLoadSubjectAllocation(); hsRenderFormDays(); hsRenderDaySubjectSelector();},0);
+cloudRunWhenReady(()=>{hsLoadSubjectAllocation(); hsRenderFormDays(); hsRenderDaySubjectSelector();});
 
 // Values are transcribed from the supplied workbook DATA sheet:
 // [Regular M, Regular F, Supplementary M, Supplementary F, Old M, Old F,
@@ -2670,17 +2785,19 @@ window.addEventListener('load',()=>{setTimeout(()=>{hsEnhancedEnsureUI();hsEnhan
 /* ================================================================
    BOOTSTRAP EVERYTHING
    ================================================================ */
-hsInitDataEngine();
-hsReqInitSystemWorkspace();
-hsRecPopulatePresetSelect();
-hsRecLoadPreset(6);
-hsMasterLoad();
-hsMasterRenderList();
+cloudHydrateAndBoot(function(){
+  hsInitDataEngine();
+  hsReqInitSystemWorkspace();
+  hsRecPopulatePresetSelect();
+  hsRecLoadPreset(6);
+  hsMasterLoad();
+  hsMasterRenderList();
 
-mpInitDataEngine();
-mpReqInitSystemWorkspace();
-mpRecPopulatePresetSelect();
-mpRecLoadPreset(6);
+  mpInitDataEngine();
+  mpReqInitSystemWorkspace();
+  mpRecPopulatePresetSelect();
+  mpRecLoadPreset(6);
+});
 </script>
 </body>
 </html>
