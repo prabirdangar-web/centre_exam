@@ -1489,8 +1489,13 @@ setTimeout(()=>{hsLoadSubjectAllocation(); hsRenderFormDays(); hsRenderDaySubjec
 // Values are transcribed from the supplied workbook DATA sheet:
 // [Regular M, Regular F, Supplementary M, Supplementary F, Old M, Old F,
 //  Appeared Regular M, Appeared Regular F, Appeared Supplementary M, Appeared Supplementary F, Old M, Old F]
+// Row 0 (Day 1, 21.09.2026 — First Language, near-universal turnout) updated 10.09.2026 with
+// current Sem III venue totals from WBCHSE Centre 2206 Semester III APPROVED-ENROLLED DATA
+// (printed 09.09.2026). Old Supplementary/Old-syllabus carry-over figures cleared — not present
+// in that report. Appeared defaulted equal to Enrolled until actual Day-1 attendance is entered.
+// Rows 1-9 (other exam days) are unchanged — this report has no day-wise breakdown.
 const hsExcelCurrentYearTFHS = [
-  [511,68,0,5,0,0,511,63,0,5,0,0],
+  [479,80,0,0,0,0,479,80,0,0,0,0],
   [79,0,0,0,0,0,79,0,0,0,0,0],
   [511,68,0,5,0,0,511,68,0,0,0,0],
   [284,10,0,0,0,0,284,10,0,0,0,0],
@@ -1503,7 +1508,7 @@ const hsExcelCurrentYearTFHS = [
 ];
 const hsImageFallbackPresets = {
   TFHS: hsExcelCurrentYearTFHS[0],
-  TGHS: [0,0,0,0,0,0,0,0,0,0,0,0]
+  TGHS: [0,426,0,0,0,0,0,426,0,0,0,0]
 };
 let hsTrackingStateDatabase = {};
 let hsActiveSchool = "TFHS";
@@ -2010,18 +2015,18 @@ function hsReqClearDataReset(){
    HS :: FEE RECEIPT
    ================================================================ */
 const hsReceiptPresets = [
-  /* Sem III (m1/f1) figures updated 10.09.2026 from WBCHSE Centre 2206 (Taldangra)
+  /* Current Sem III (m1/f1) figures ONLY — from WBCHSE Centre 2206 (Taldangra)
      "Centre-wise, Examination Venue-wise Institution List — Higher Secondary Examination 2027,
      Semester III (Supplementary/Regular) — APPROVED-ENROLLED DATA", printed 09.09.2026.
-     Sem IV (m2/f2) and Old Syl (m3/f3) figures left unchanged — not present in that report. */
-  { name: "SIMLAPAL MADAN MOHAN HIGH SCHOOL", m1: 225, f1: 133, m2: 4, f2: 0, m3: 17, f3: 1 },
-  { name: "CHHAGULIA SAMMILANI NEHRU HIGH SCHOOL", m1: 28, f1: 39, m2: 0, f2: 0, m3: 1, f3: 6 },
-  { name: "PANCHMURA HIGH SCHOOL (H.S.)", m1: 57, f1: 96, m2: 0, f2: 0, m3: 4, f3: 6 },
-  { name: "BIBARDA SATCHIDANANDA VIDYAPITH", m1: 114, f1: 96, m2: 4, f2: 2, m3: 8, f3: 14 },
-  { name: "MASAT KHAL GANDHI ADARSHA VIDYALAYA", m1: 37, f1: 42, m2: 0, f2: 0, m3: 3, f3: 9 },
-  { name: "BHEDUA HIGH SCHOOL", m1: 18, f1: 20, m2: 0, f2: 0, m3: 0, f3: 3 },
-  { name: "TALDANGRA GIRLS' HIGH SCHOOL", m1: 0, f1: 44, m2: 0, f2: 5, m3: 0, f3: 10 },
-  { name: "BIBARDA GIRLS' HIGH SCHOOL", m1: 0, f1: 36, m2: 0, f2: 0, m3: 0, f3: 3 }
+     Old Sem IV / Old Syllabus carry-over figures removed — not present in that report. */
+  { name: "SIMLAPAL MADAN MOHAN HIGH SCHOOL", m1: 225, f1: 133 },
+  { name: "CHHAGULIA SAMMILANI NEHRU HIGH SCHOOL", m1: 28, f1: 39 },
+  { name: "PANCHMURA HIGH SCHOOL (H.S.)", m1: 57, f1: 96 },
+  { name: "BIBARDA SATCHIDANANDA VIDYAPITH", m1: 114, f1: 96 },
+  { name: "MASAT KHAL GANDHI ADARSHA VIDYALAYA", m1: 37, f1: 42 },
+  { name: "BHEDUA HIGH SCHOOL", m1: 18, f1: 20 },
+  { name: "TALDANGRA GIRLS' HIGH SCHOOL", m1: 0, f1: 44 },
+  { name: "BIBARDA GIRLS' HIGH SCHOOL", m1: 0, f1: 36 }
 ];
 function hsRecPopulatePresetSelect(){
   const sel = document.getElementById("hs_schoolPreset");
@@ -2037,8 +2042,8 @@ function hsRecLoadPreset(idx){
   document.getElementById("hs_inSchoolName").value = p.name;
   document.getElementById("hs_inRefNo").value = "THSEC/" + document.getElementById("hs_inYear").value + "/REC/0" + (parseInt(idx)+1);
   document.getElementById("hs_inM1").value = p.m1; document.getElementById("hs_inF1").value = p.f1;
-  document.getElementById("hs_inM2").value = p.m2; document.getElementById("hs_inF2").value = p.f2;
-  document.getElementById("hs_inM3").value = p.m3; document.getElementById("hs_inF3").value = p.f3;
+  document.getElementById("hs_inM2").value = p.m2 || 0; document.getElementById("hs_inF2").value = p.f2 || 0;
+  document.getElementById("hs_inM3").value = p.m3 || 0; document.getElementById("hs_inF3").value = p.f3 || 0;
   hsRecCalculateAutoValues();
 }
 function hsRecCalculateAutoValues(){
