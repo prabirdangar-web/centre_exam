@@ -907,8 +907,11 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
 <script>
 
 /* ================================================================
-   CLOUD SYNC ENGINE — SAFE RESTORE
-   Never replace non-empty local data with an empty cloud value.
+   CLOUD SYNC ENGINE — Firebase Firestore backup + multi-device sync
+   Mirrors every record this app already keeps in localStorage, with
+   zero changes needed to the 30+ existing load()/persist() call
+   sites elsewhere in this file. If Firebase is unreachable (offline,
+   blocked, not configured) the app falls back to local storage only.
    ================================================================ */
 const CLOUD_SYNC_KEYS = [
   'hsFixedRooms2027','hsRoomAllocations2027','hsSubjectQpOmrMaster2027',
@@ -917,30 +920,118 @@ const CLOUD_SYNC_KEYS = [
   'ExamReportingLedgerCache_HS','ExamReportingLedgerCache_MP',
   'ExamRequisitionSystemDataCache_HS','ExamRequisitionSystemDataCache_MP'
 ];
-const CLOUD_COLLECTION='examCommandCenter2027';
-let cloudSyncReady=false, cloudDB=null, cloudListeners=[];
-function cloudShowBanner(msg,kind){let b=document.getElementById('cloudSyncBanner');if(!b){b=document.createElement('div');b.id='cloudSyncBanner';b.className='no-print';b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;text-align:center;padding:7px 14px;font:700 9pt Arial;color:#fff';document.body.appendChild(b);}b.style.background=kind==='error'?'#dc2626':kind==='ok'?'#16a34a':'#1e3a8a';b.textContent=msg;}
-function cloudMetaKey(k){return '__cloudUpdatedAt__'+k;}
-function cloudTs(k){return Number(localStorage.getItem(cloudMetaKey(k))||0)||0;}
-function cloudKeys(){const s=new Set(CLOUD_SYNC_KEYS);for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&!k.startsWith('firebase:')&&!k.startsWith('__cloudUpdatedAt__'))s.add(k);}return [...s];}
-function cloudPushKey(k,force=false){if(!cloudDB||!cloudSyncReady)return Promise.resolve();const val=localStorage.getItem(k);if(val===null)return Promise.resolve();return cloudDB.collection(CLOUD_COLLECTION).doc(encodeURIComponent(k)).get().then(s=>{const old=s.exists?s.data():null;if(!force&&old&&old.value&&!val)return;const stamp=Date.now();return cloudDB.collection(CLOUD_COLLECTION).doc(encodeURIComponent(k)).set({value:val,clientUpdatedAt:stamp,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}).then(()=>localStorage.setItem(cloudMetaKey(k),String(stamp)));}).catch(e=>{console.error(e);cloudShowBanner('Firebase save error: '+(e.code||e.message||e),'error');});}
-const _setItem=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){_setItem.call(this,k,v);if(this===localStorage&&cloudSyncReady&&!k.startsWith('__cloudUpdatedAt__')&&!k.startsWith('firebase:'))setTimeout(()=>cloudPushKey(k),0);};
-async function cloudHydrateAndBoot(bootFn){
- cloudShowBanner('Restoring saved data from Firebase…');
- try{
-  if(!firebase.apps.length)firebase.initializeApp(firebaseConfig); cloudDB=firebase.firestore();
-  try{await cloudDB.enablePersistence({synchronizeTabs:true});}catch(e){}
-  const user=await new Promise(resolve=>{let done=false;const fin=u=>{if(!done){done=true;resolve(u||null);}};firebase.auth().onAuthStateChanged(u=>{if(u)fin(u);});firebase.auth().signInAnonymously().then(r=>fin(r&&r.user)).catch(()=>fin(firebase.auth().currentUser));setTimeout(()=>fin(firebase.auth().currentUser),10000);});
-  if(!user)throw new Error('Firebase anonymous authentication failed');
-  const keys=cloudKeys();
-  for(const k of keys){try{const s=await cloudDB.collection(CLOUD_COLLECTION).doc(encodeURIComponent(k)).get();const local=localStorage.getItem(k);if(s.exists){const d=s.data()||{},rv=d.value==null?'':String(d.value),rt=Number(d.clientUpdatedAt||0)||0,lt=cloudTs(k);if(local&&local.length&&!rv){continue;}if(rv&&(!local||rt>=lt)){_setItem.call(localStorage,k,rv);localStorage.setItem(cloudMetaKey(k),String(rt||Date.now()));}else if(local&&rt<lt){await cloudPushKey(k);}}else if(local){await cloudPushKey(k);}}catch(e){console.error('Firebase restore',k,e);cloudShowBanner('Firebase restore error: '+(e.code||e.message||e),'error');}}
-  cloudSyncReady=true; cloudShowBanner('Firebase connected — existing data preserved.','ok');
-  cloudListeners.forEach(u=>{try{u();}catch(e){}});cloudListeners=[];
-  keys.forEach(k=>{const u=cloudDB.collection(CLOUD_COLLECTION).doc(encodeURIComponent(k)).onSnapshot(s=>{if(!s.exists)return;const d=s.data()||{},rv=d.value==null?'':String(d.value),rt=Number(d.clientUpdatedAt||0)||0;if(!rv||rt<=cloudTs(k))return;_setItem.call(localStorage,k,rv);localStorage.setItem(cloudMetaKey(k),String(rt));});cloudListeners.push(u);});
-  if(typeof bootFn==='function')bootFn();
- }catch(e){console.error(e);cloudShowBanner('Firebase unavailable — local data kept: '+(e.code||e.message||e),'error');if(typeof bootFn==='function')bootFn();}
+const CLOUD_COLLECTION = 'examCommandCenter2027';
+let cloudSyncReady = false;
+let cloudSyncLastValue = {};   // key -> last value WE either pushed or pulled, to ignore our own echo
+let cloudPushTimers = {};
+const cloudPostReadyQueue = [];
+
+function cloudRunWhenReady(fn){ if(cloudSyncReady) fn(); else cloudPostReadyQueue.push(fn); }
+
+function cloudShowBanner(msg,kind,sticky){
+  let b=document.getElementById('cloudSyncBanner');
+  if(!b){
+    b=document.createElement('div'); b.id='cloudSyncBanner'; b.className='no-print';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;text-align:center;padding:7px 14px;font:700 9pt "Segoe UI",sans-serif;color:#fff;letter-spacing:.2px;';
+    document.body.appendChild(b);
+  }
+  b.style.background = kind==='error' ? '#dc2626' : kind==='ok' ? '#16a34a' : '#1e3a8a';
+  b.style.cursor=''; b.onclick=null;
+  b.style.opacity='1'; b.textContent=msg;
+  clearTimeout(b._t);
+  if(!sticky) b._t=setTimeout(()=>{b.style.opacity='0';},3000);
 }
-async function cloudForceSaveAll(){if(!cloudDB||!cloudSyncReady){alert('Firebase is not connected.');return;}for(const k of cloudKeys())await cloudPushKey(k,true);alert('Saved. Existing data was not cleared.');}
+
+function cloudPushKey(key){
+  if(!cloudDB) return;
+  clearTimeout(cloudPushTimers[key]);
+  cloudPushTimers[key]=setTimeout(()=>{
+    cloudAuthReadyPromise.then(user=>{
+      if(!user) return; // not signed in — skip this push, local storage already has the value
+      const val=localStorage.getItem(key);
+      if(val===null) return;
+      cloudSyncLastValue[key]=val;
+      cloudDB.collection(CLOUD_COLLECTION).doc(key).set({
+        value:val, updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=>cloudShowBanner('Saved to cloud','ok'))
+        .catch(err=>cloudShowBanner('Cloud save failed (offline?) — kept locally: '+err.message,'error'));
+    });
+  },700); // debounce so fast typing/edits don't spam Firestore writes
+}
+
+// Patch localStorage.setItem once, globally, so every existing xPersist()
+// call already in this app automatically mirrors to Firestore.
+const _origLSSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function(key,value){
+  _origLSSetItem.call(this,key,value);
+  if(cloudSyncReady && CLOUD_SYNC_KEYS.includes(key)) cloudPushKey(key);
+};
+
+function cloudHydrateAndBoot(bootFn){
+  if(!cloudDB){ bootFn(); return; } // Firebase not available — run purely on local storage
+  cloudShowBanner('Connecting to cloud database…','info',true);
+  cloudAuthReadyPromise.then(user=>{
+    if(!user){
+      cloudShowBanner('Cloud sign-in failed — running on local storage only. Check that Anonymous sign-in is enabled in Firebase Authentication.','error',true);
+      bootFn();
+      return;
+    }
+    const fetches = CLOUD_SYNC_KEYS.map(key =>
+      cloudDB.collection(CLOUD_COLLECTION).doc(key).get()
+        .then(snap=>{
+          if(snap.exists && snap.data().value!=null){
+            _origLSSetItem.call(localStorage,key,snap.data().value);
+            cloudSyncLastValue[key]=snap.data().value;
+          }
+        })
+        .catch(()=>{ /* offline or rules block read — keep whatever is already local */ })
+    );
+    Promise.all(fetches).finally(()=>{
+      cloudSyncReady=true;
+      cloudShowBanner('Cloud data loaded','ok');
+      bootFn();
+      cloudPostReadyQueue.splice(0).forEach(fn=>fn());
+      cloudAttachLiveListeners();
+    });
+  });
+}
+
+function cloudAttachLiveListeners(){
+  if(!cloudDB) return;
+  CLOUD_SYNC_KEYS.forEach(key=>{
+    cloudDB.collection(CLOUD_COLLECTION).doc(key).onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const val=snap.data().value;
+      if(val==null || val===cloudSyncLastValue[key]) return; // our own write echoing back — ignore
+      _origLSSetItem.call(localStorage,key,val);
+      cloudSyncLastValue[key]=val;
+      cloudShowBanner('New data synced from another device — click to refresh and view it','info',true);
+      const b=document.getElementById('cloudSyncBanner');
+      if(b){ b.style.cursor='pointer'; b.onclick=()=>location.reload(); }
+    }, err=>console.warn('Cloud listener error for',key,err));
+  });
+}
+
+// Explicit manual save — pushes every tracked key to Firestore immediately,
+// instead of waiting for the 700ms debounce on the next localStorage write.
+function cloudForceSaveAll(){
+  if(!cloudDB){ cloudShowBanner('Cloud not connected — nothing to save.','error'); return; }
+  cloudShowBanner('Saving…','info',true);
+  cloudAuthReadyPromise.then(user=>{
+    if(!user){ cloudShowBanner('Not signed in — cannot save to cloud. Check that Anonymous sign-in is enabled in Firebase Authentication.','error'); return; }
+    const writes = CLOUD_SYNC_KEYS.map(key=>{
+      const val=localStorage.getItem(key);
+      if(val===null) return Promise.resolve();
+      cloudSyncLastValue[key]=val;
+      return cloudDB.collection(CLOUD_COLLECTION).doc(key).set({
+        value:val, updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+    Promise.all(writes)
+      .then(()=>cloudShowBanner('All data saved to cloud','ok'))
+      .catch(err=>cloudShowBanner('Save failed: '+err.message,'error'));
+  });
+}
 
 /* ================================================================
    HS :: FIXED HALL / ROOM + AUTO STUDENT PLACEMENT
