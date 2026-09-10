@@ -1743,152 +1743,7 @@ function hsPrintCentreForm(type,venueOverride,dateOverride){
   const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
   w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.official-form-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0;border-bottom:1px solid #333}.official-top-table{margin:0!important}.official-top-table .blank-col{width:11%}.official-top-table th{width:31%;font-size:14px}.official-top-table td{font-size:14px}.official-detail-table{margin-top:0!important}.official-section-note{font-weight:700;margin:12px 0 4px}h3{text-align:center;margin:0 0 10px}.small{font-size:9pt}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top;min-height:22px}th{background:#f1f5f9}.lines{border-bottom:1px solid #333;line-height:28px}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script>
 <style>
-/* CLEAN DAILY SUBJECT ENTRY */
-#hs-dailyops > .hs-dailyops-card:not(#hs-clean-daily-entry){display:none!important}
-#hs-clean-daily-entry{margin:0 0 14px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,.06)}
-#hs-clean-daily-entry .clean-head{padding:14px 16px;border-bottom:1px solid #e2e8f0;background:#f8fafc;border-radius:10px 10px 0 0}
-#hs-clean-daily-entry .clean-head h3{margin:0 0 4px;font-size:18px}
-#hs-clean-daily-entry .clean-head p{margin:0;color:#64748b;font-size:12px}
-#hs-clean-daily-entry .clean-body{padding:14px 16px}
-#hs-clean-daily-entry .clean-grid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px}
-#hs-clean-daily-entry label{font-size:12px;font-weight:700;color:#334155;display:block;margin-bottom:4px}
-#hs-clean-daily-entry input,#hs-clean-daily-entry select{width:100%;height:34px;padding:5px 8px;border:1px solid #cbd5e1;border-radius:5px;background:#fff}
-#hs-clean-daily-entry .clean-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-#hs-clean-daily-entry .clean-status{font-size:12px;color:#475569;margin-top:8px}
-#hs-clean-daily-entry .clean-table-wrap{overflow:auto;margin-top:14px}
-#hs-clean-daily-entry table{width:100%;border-collapse:collapse;font-size:12px}
-#hs-clean-daily-entry th,#hs-clean-daily-entry td{border:1px solid #e2e8f0;padding:7px;text-align:left;white-space:nowrap}
-#hs-clean-daily-entry th{background:#f1f5f9}
-#hs-clean-daily-entry .room-box{margin-top:16px;padding-top:14px;border-top:2px solid #e2e8f0}
-#hs-clean-daily-entry .room-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:10px}
-@media(max-width:900px){#hs-clean-daily-entry .clean-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}#hs-clean-daily-entry .room-grid{grid-template-columns:1fr 1fr}}
-</style>
-<script>
-/* ================================================================
-   CLEAN DAILY SUBJECT-WISE QP / OMR ENTRY
-   Saves one subject at a time, with Edit/Remove, then manual room
-   selection and room-wise continuous QP/OMR allocation.
-   ================================================================ */
-(function(){
-  const KEY='hsCleanDailySubjectEntry2027';
-  let editIndex=-1;
-  function esc(v){return typeof hsEscapeFormText==='function'?hsEscapeFormText(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-  function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')||[]}catch(e){return[]}}
-  function save(a){localStorage.setItem(KEY,JSON.stringify(a));}
-  function day(){return document.getElementById('hs_clean_day')?.value||''}
-  function venue(){return document.getElementById('hs_clean_venue')?.value||document.getElementById('hs_opsVenue')?.value||'TFHS'}
-  function subjects(){try{return hsSubjectDbGetDaySubjects()}catch(e){return[]}}
-  function serialEnd(start,count){return typeof hsDailySerialEnd==='function'?hsDailySerialEnd(start,count):''}
-  function renderSubjectDD(){
-    const d=document.getElementById('hs_clean_subject');if(!d)return;
-    const old=d.value; const arr=subjects();
-    d.innerHTML='<option value="">Select Subject</option>'+arr.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
-    if(old&&arr.includes(old))d.value=old;
-    const found=load().find(x=>x.day===day()&&x.subject===d.value);
-    if(found && editIndex<0) fill(found);
-  }
-  function fill(x){
-    const map={male:x.male||'',female:x.female||'',qpFrom:x.qpFrom||'',omrFrom:x.omrFrom||''};
-    Object.entries(map).forEach(([k,v])=>{const el=document.getElementById('hs_clean_'+k);if(el)el.value=v});
-    updateEnds();
-  }
-  function updateEnds(){
-    const m=Number(document.getElementById('hs_clean_male')?.value)||0, f=Number(document.getElementById('hs_clean_female')?.value)||0, n=m+f;
-    const q=document.getElementById('hs_clean_qpFrom')?.value||'',o=document.getElementById('hs_clean_omrFrom')?.value||'';
-    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||''};
-    set('hs_clean_total',n);set('hs_clean_qpTo',serialEnd(q,n));set('hs_clean_omrTo',serialEnd(o,n));
-  }
-  function clearForm(){
-    editIndex=-1; ['hs_clean_male','hs_clean_female','hs_clean_qpFrom','hs_clean_omrFrom'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); updateEnds();
-    const b=document.getElementById('hs_clean_save');if(b)b.textContent='Save Subject';
-  }
-  function renderList(){
-    const box=document.getElementById('hs_clean_list');if(!box)return;
-    const arr=load().filter(x=>!day()||x.day===day());
-    if(!arr.length){box.innerHTML='<div style="padding:12px;color:#64748b;border:1px dashed #cbd5e1;border-radius:6px">No subject entry saved for this day.</div>';return}
-    box.innerHTML='<div class="clean-table-wrap"><table><thead><tr><th>Sl.</th><th>Day</th><th>Subject</th><th>Total</th><th>QP</th><th>OMR</th><th>Room Allocation</th><th>Action</th></tr></thead><tbody>'+arr.map((x,idx)=>{
-      const real=load().findIndex(z=>z===x); const rooms=(x.rooms||[]).map(r=>esc(r.room)+' ('+r.count+')').join(', ')||'Not allocated';
-      return `<tr><td>${idx+1}</td><td>${esc(x.day)}</td><td><b>${esc(x.subject)}</b></td><td>${x.total||0}</td><td>${esc(x.qpFrom)} – ${esc(x.qpTo)}</td><td>${esc(x.omrFrom)} – ${esc(x.omrTo)}</td><td>${rooms}</td><td><button class="btn btn-primary" onclick="hsCleanEdit(${real})">Edit</button> <button class="btn btn-secondary" onclick="hsCleanRemove(${real})">Remove</button></td></tr>`;
-    }).join('')+'</tbody></table></div>';
-  }
-  function renderRoom(){
-    const box=document.getElementById('hs_clean_room_list');if(!box)return;
-    let rooms=[];try{hsRoomLoad();rooms=hsRoomDB[venue()]||[]}catch(e){}
-    box.innerHTML=rooms.length?rooms.map((r,i)=>`<label style="display:flex;gap:6px;align-items:center;padding:7px;border:1px solid #e2e8f0;border-radius:5px"><input type="checkbox" data-clean-room="${esc(r.room)}" value="${esc(r.room)}"><span><b>${esc(r.room)}</b> — ${r.seats} seats</span></label>`).join(''):'<span style="color:#64748b">No fixed rooms saved for this venue. Add rooms in the room setup.</span>';
-  }
-  function selectedEntry(){
-    const d=day(),s=document.getElementById('hs_clean_subject')?.value||''; const arr=load();
-    return {arr,index:editIndex>=0?editIndex:arr.findIndex(x=>x.day===d&&x.subject===s)};
-  }
-  function saveSubject(){
-    const d=day(),s=document.getElementById('hs_clean_subject')?.value||''; if(!d)return alert('Select Examination Day.'); if(!s)return alert('Select Subject.');
-    const m=Number(document.getElementById('hs_clean_male')?.value)||0,f=Number(document.getElementById('hs_clean_female')?.value)||0,total=m+f;
-    if(total<=0)return alert('Enter Male / Female student count.');
-    const q=(document.getElementById('hs_clean_qpFrom')?.value||'').trim(),o=(document.getElementById('hs_clean_omrFrom')?.value||'').trim();
-    if(!q||!o)return alert('Enter QP Start and OMR Start serials.');
-    const arr=load(); const existing=arr.findIndex((x,i)=>i!==editIndex&&x.day===d&&x.subject===s);
-    if(existing>=0)return alert('This subject is already saved for this day. Use Edit.');
-    const old=editIndex>=0?arr[editIndex]:{};
-    const rec={...old,day:d,venue:venue(),subject:s,male:m,female:f,total,qpFrom:q,qpTo:serialEnd(q,total),omrFrom:o,omrTo:serialEnd(o,total),rooms:old.rooms||[],savedAt:new Date().toISOString()};
-    if(editIndex>=0)arr[editIndex]=rec; else arr.push(rec); save(arr); hsCleanSyncToDaily(rec); editIndex=-1; clearForm(); renderList(); renderRoomSummary();
-    const st=document.getElementById('hs_clean_status');if(st)st.textContent='Saved: '+s+' — '+total+' student(s).';
-  }
-  function syncDaily(rec){
-    try{hsDailyOpsLoad();const k=hsDailyOpsKey(rec.venue,rec.day),r=hsDailyOpsEnsureRecord(rec.venue,rec.day);r.subjects[rec.subject]={...(r.subjects[rec.subject]||{}),male:rec.male,female:rec.female,total:rec.total,qFrom:rec.qpFrom,qTo:rec.qpTo,qReq:rec.total,omrFrom:rec.omrFrom,omrTo:rec.omrTo,omrReq:rec.total,roomSerials:rec.rooms||[],roomAllocations:(rec.rooms||[]).map(x=>({room:x.room,seats:x.count}))};hsDailyOpsDB[k]=r;hsDailyOpsPersist();}catch(e){console.warn('Daily sync',e)}
-  }
-  function removeSubject(i){const arr=load();if(!arr[i])return;if(!confirm('Remove this subject entry?'))return;arr.splice(i,1);save(arr);renderList();renderRoomSummary();}
-  function editSubject(i){const arr=load();const x=arr[i];if(!x)return;editIndex=i;document.getElementById('hs_clean_day').value=x.day;renderSubjectDD();document.getElementById('hs_clean_subject').value=x.subject;fill(x);document.getElementById('hs_clean_save').textContent='Update Subject';window.scrollTo({top:document.getElementById('hs-clean-daily-entry').offsetTop-20,behavior:'smooth'});}
-  function allocate(){
-    const arr=load(),d=day(),s=document.getElementById('hs_clean_subject')?.value||'';const i=arr.findIndex(x=>x.day===d&&x.subject===s);if(i<0)return alert('Save the subject entry first.');
-    const checks=[...document.querySelectorAll('#hs_clean_room_list input[data-clean-room]:checked')];if(!checks.length)return alert('Choose one or more rooms.');
-    let left=Number(arr[i].total)||0, q=arr[i].qpFrom, o=arr[i].omrFrom, rooms=[]; let fixed={};try{hsRoomLoad();fixed=Object.fromEntries((hsRoomDB[venue()]||[]).map(r=>[r.room,Number(r.seats)||0]))}catch(e){}
-    for(const c of checks){if(left<=0)break;const room=c.value,capacity=fixed[room]||0,count=Math.min(left,capacity);if(count<=0)continue;const qTo=serialEnd(q,count),oTo=serialEnd(o,count);rooms.push({room,count,seats:count,qpFrom:q,qpTo,omrFrom:o,omrTo:oTo});q=typeof hsEnhancedSerialStartAfter==='function'?hsEnhancedSerialStartAfter(q,count):serialEnd(q,count+1);o=typeof hsEnhancedSerialStartAfter==='function'?hsEnhancedSerialStartAfter(o,count):serialEnd(o,count+1);left-=count;}
-    if(!rooms.length)return alert('Selected rooms have no usable capacity.');
-    arr[i].rooms=rooms;arr[i].unallocated=left;arr[i].allocatedAt=new Date().toISOString();save(arr);hsCleanSyncToDaily(arr[i]);renderList();renderRoomSummary();
-    alert(left?'Room allocation saved. '+left+' student(s) remain unallocated.':'Room allocation saved successfully.');
-  }
-  function renderRoomSummary(){const box=document.getElementById('hs_clean_room_summary');if(!box)return;const s=document.getElementById('hs_clean_subject')?.value||'',d=day();const x=load().find(z=>z.day===d&&z.subject===s);if(!x){box.innerHTML='Select a saved subject to allocate rooms.';return}box.innerHTML=(x.rooms||[]).length?'<table><thead><tr><th>Room</th><th>Students</th><th>QP</th><th>OMR</th></tr></thead><tbody>'+x.rooms.map(r=>`<tr><td><b>${esc(r.room)}</b></td><td>${r.count}</td><td>${esc(r.qpFrom)} – ${esc(r.qpTo)}</td><td>${esc(r.omrFrom)} – ${esc(r.omrTo)}</td></tr>`).join('')+'</tbody></table><div style="margin-top:6px;color:#475569">Unallocated: <b>${x.unallocated||0}</b></div>':'No rooms allocated yet.'}
-  function syncAll(){load().forEach(syncDaily)}
-  function build(){
-    const old=document.getElementById('hs-clean-daily-entry');if(old)old.remove();
-    const panel=document.getElementById('hs-dailyops');if(!panel)return;
-    const host=document.createElement('div');host.id='hs-clean-daily-entry';host.className='no-print';host.innerHTML=`<div class="clean-head"><h3>Daily Subject-wise Examination Entry — CLEAN ENTRY</h3><p>Save QP and OMR subject-wise, one subject at a time. Edit / Remove anytime. Then choose rooms manually and save room-wise allocation.</p></div><div class="clean-body">
-      <div class="clean-grid">
-        <div><label>Venue DD</label><select id="hs_clean_venue"><option value="TFHS">VENUE-1 [114071]</option><option value="TGHS">VENUE-2 [114200]</option></select></div>
-        <div><label>Examination Day DD</label><select id="hs_clean_day"></select></div>
-        <div><label>Subject DD</label><select id="hs_clean_subject"><option value="">Select Subject</option></select></div>
-        <div><label>Male</label><input id="hs_clean_male" type="number" min="0"></div>
-        <div><label>Female</label><input id="hs_clean_female" type="number" min="0"></div>
-        <div><label>Total</label><input id="hs_clean_total" readonly></div>
-        <div><label>QP Start Serial</label><input id="hs_clean_qpFrom" placeholder="QP-0001"></div>
-        <div><label>QP End Serial</label><input id="hs_clean_qpTo" readonly></div>
-        <div><label>OMR Start Serial</label><input id="hs_clean_omrFrom" placeholder="OMR-0001"></div>
-        <div><label>OMR End Serial</label><input id="hs_clean_omrTo" readonly></div>
-      </div>
-      <div class="clean-actions"><button id="hs_clean_save" class="btn btn-success">Save Subject</button><button id="hs_clean_clear" class="btn btn-secondary">Clear</button></div>
-      <div id="hs_clean_status" class="clean-status">Save each subject separately. Firebase sync uses the existing application sync engine.</div>
-      <div style="margin-top:16px"><b>Saved Subject Entries</b><div id="hs_clean_list"></div></div>
-      <div class="room-box"><h3 style="margin:0 0 4px">NEXT — Room-wise Allocation</h3><p style="margin:0 0 10px;color:#64748b;font-size:12px">Select the saved subject, tick the rooms you want, then save. QP and OMR serials continue automatically from room to room.</p>
-        <div class="room-grid"><div><label>Subject to Allocate</label><select id="hs_clean_alloc_subject"></select></div><div><label>Venue</label><select id="hs_clean_alloc_venue"><option value="TFHS">VENUE-1 [114071]</option><option value="TGHS">VENUE-2 [114200]</option></select></div><div><label>Allocation Status</label><div id="hs_clean_alloc_status" style="height:34px;border:1px solid #cbd5e1;border-radius:5px;padding:8px">—</div></div><div><label>&nbsp;</label><button id="hs_clean_allocate" class="btn btn-primary" style="width:100%">Save Room Allocation</button></div></div>
-        <div id="hs_clean_room_list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:7px;margin-top:10px"></div><div id="hs_clean_room_summary" style="margin-top:12px"></div>
-      </div></div>`;
-    panel.insertBefore(host,panel.children[1]||null);
-    const src=document.getElementById('hs_opsDate'),dayEl=document.getElementById('hs_clean_day'),venueEl=document.getElementById('hs_clean_venue');if(src&&dayEl){dayEl.innerHTML=src.innerHTML;dayEl.value=src.value}
-    renderSubjectDD();renderList();renderRoom();syncAll();updateAllocDD(); venueEl.addEventListener('change',()=>{try{document.getElementById('hs_opsVenue').value=venueEl.value}catch(e){};renderSubjectDD();renderRoom()});
-    ['hs_clean_male','hs_clean_female','hs_clean_qpFrom','hs_clean_omrFrom'].forEach(id=>document.getElementById(id).addEventListener('input',updateEnds));
-    dayEl.addEventListener('change',()=>{renderSubjectDD();renderList();updateAllocDD();renderRoom();renderRoomSummary()});
-    document.getElementById('hs_clean_subject').addEventListener('change',()=>{editIndex=-1;const x=load().find(z=>z.day===day()&&z.subject===document.getElementById('hs_clean_subject').value);if(x)fill(x);else clearForm();updateAllocDD();renderRoomSummary()});
-    document.getElementById('hs_clean_save').onclick=saveSubject;document.getElementById('hs_clean_clear').onclick=clearForm;document.getElementById('hs_clean_allocate').onclick=allocate;
-    document.getElementById('hs_clean_alloc_subject').addEventListener('change',()=>{document.getElementById('hs_clean_subject').value=document.getElementById('hs_clean_alloc_subject').value;renderRoomSummary()});
-    document.getElementById('hs_clean_alloc_venue').addEventListener('change',()=>{renderRoom();renderRoomSummary()});
-  }
-  function updateAllocDD(){const d=document.getElementById('hs_clean_alloc_subject');if(!d)return;const old=d.value;const a=load().filter(x=>x.day===day());d.innerHTML='<option value="">Select Saved Subject</option>'+a.map(x=>`<option value="${esc(x.subject)}">${esc(x.subject)} — ${x.total}</option>`).join('');if(a.some(x=>x.subject===old))d.value=old;else if(a.length===1)d.value=a[0].subject;}
-  window.hsCleanEdit=editSubject;window.hsCleanRemove=removeSubject;window.hsCleanSyncToDaily=syncDaily;
-  const oldRender=window.hsDailyOpsRender;
-  window.hsDailyOpsRender=function(){oldRender&&oldRender();setTimeout(build,0)};
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(build,200));
-})();
-</script>
+
 </body></html>`); w.document.close();
 }
 function hsGenerateSelectedDayForms(){
@@ -1941,152 +1796,7 @@ function hsOpenMultiFormWindow(venue,dates){
 @page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#222;background:#fff}.page{page-break-after:always;min-height:100vh;position:relative}.venue-official-page{width:100%;padding:15mm 11mm 10mm}.venue-logo-wrap{text-align:center;margin:0 0 4mm}.venue-logo{width:25mm;height:25mm;object-fit:contain}.venue-main-title{text-align:center;font-size:16pt;font-weight:700;text-decoration:underline;margin:0 0 4mm}.venue-subtitle{text-align:center;font-size:9pt;font-weight:700;line-height:1.3;margin-bottom:5mm}.venue-meta{display:flex;justify-content:space-between;font-size:10.5pt;font-weight:600;margin:0 0 3mm}.venue-meta>div{width:48%;white-space:nowrap}.venue-data-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.2pt}.venue-data-table th,.venue-data-table td{border:1px solid #555;padding:1.5mm 1mm;text-align:center;vertical-align:middle}.venue-data-table th{font-weight:700}.venue-data-table .hall-col{width:5%}.venue-data-table .inv-col{width:13%}.venue-data-table .sig-col{width:11%}.venue-data-table tbody td{height:10mm}.venue-notes{font-size:8pt;line-height:1.45;margin-top:2.5mm}.venue-signature{text-align:right;margin-top:7mm;margin-right:4mm;font-size:8.5pt;line-height:1.4}.seal-official-page{width:100%;padding:15mm 20mm 12mm}.seal-logo-wrap{text-align:center;margin-bottom:2mm}.seal-logo{width:22mm;height:22mm;object-fit:contain}.seal-title{text-align:center;font-size:15pt;font-weight:700;margin-bottom:5mm}.seal-subtitle{text-align:center;font-size:11pt;font-weight:700;margin-bottom:4mm}.seal-box{border:1px solid #555;padding:4mm 5mm 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;line-height:1.65}.seal-box p{margin:0 0 5mm}.write-line{display:inline-block;min-width:105mm;border-bottom:1px solid #777;vertical-align:bottom}.short-line{display:inline-block;min-width:32mm;border-bottom:1px solid #777;text-align:center}.seal-person-table{width:100%;border-collapse:collapse;margin-top:2mm;font-size:10pt;line-height:1.1}.seal-person-table th,.seal-person-table td{border:1px solid #555;padding:1.7mm;text-align:left;height:11mm}.seal-person-table th{text-align:center;font-weight:700}.seal-person-table th:first-child,.seal-person-table td:first-child{width:8%}.seal-person-table th:nth-child(2){width:43%}.seal-person-table th:nth-child(3){width:18%}.seal-person-table th:nth-child(4){width:31%}.seal-meta{display:flex;justify-content:space-between;margin:8mm 0 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt}.seal-meta.single{display:block;margin-top:6mm}.seal-signature{text-align:center;margin-top:20mm;font-family:Georgia,'Times New Roman',serif;font-size:10pt}.generic-page{padding:12mm}.generic-page .official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.generic-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #555;padding:6px;vertical-align:top}th{font-weight:700}.sig{margin-top:35px;display:flex;justify-content:space-between}
 </style></head><body>${pages.join('')}<script>window.onload=()=>window.print();<\/script>
 <style>
-/* CLEAN DAILY SUBJECT ENTRY */
-#hs-dailyops > .hs-dailyops-card:not(#hs-clean-daily-entry){display:none!important}
-#hs-clean-daily-entry{margin:0 0 14px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,.06)}
-#hs-clean-daily-entry .clean-head{padding:14px 16px;border-bottom:1px solid #e2e8f0;background:#f8fafc;border-radius:10px 10px 0 0}
-#hs-clean-daily-entry .clean-head h3{margin:0 0 4px;font-size:18px}
-#hs-clean-daily-entry .clean-head p{margin:0;color:#64748b;font-size:12px}
-#hs-clean-daily-entry .clean-body{padding:14px 16px}
-#hs-clean-daily-entry .clean-grid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px}
-#hs-clean-daily-entry label{font-size:12px;font-weight:700;color:#334155;display:block;margin-bottom:4px}
-#hs-clean-daily-entry input,#hs-clean-daily-entry select{width:100%;height:34px;padding:5px 8px;border:1px solid #cbd5e1;border-radius:5px;background:#fff}
-#hs-clean-daily-entry .clean-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-#hs-clean-daily-entry .clean-status{font-size:12px;color:#475569;margin-top:8px}
-#hs-clean-daily-entry .clean-table-wrap{overflow:auto;margin-top:14px}
-#hs-clean-daily-entry table{width:100%;border-collapse:collapse;font-size:12px}
-#hs-clean-daily-entry th,#hs-clean-daily-entry td{border:1px solid #e2e8f0;padding:7px;text-align:left;white-space:nowrap}
-#hs-clean-daily-entry th{background:#f1f5f9}
-#hs-clean-daily-entry .room-box{margin-top:16px;padding-top:14px;border-top:2px solid #e2e8f0}
-#hs-clean-daily-entry .room-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:10px}
-@media(max-width:900px){#hs-clean-daily-entry .clean-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}#hs-clean-daily-entry .room-grid{grid-template-columns:1fr 1fr}}
-</style>
-<script>
-/* ================================================================
-   CLEAN DAILY SUBJECT-WISE QP / OMR ENTRY
-   Saves one subject at a time, with Edit/Remove, then manual room
-   selection and room-wise continuous QP/OMR allocation.
-   ================================================================ */
-(function(){
-  const KEY='hsCleanDailySubjectEntry2027';
-  let editIndex=-1;
-  function esc(v){return typeof hsEscapeFormText==='function'?hsEscapeFormText(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-  function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')||[]}catch(e){return[]}}
-  function save(a){localStorage.setItem(KEY,JSON.stringify(a));}
-  function day(){return document.getElementById('hs_clean_day')?.value||''}
-  function venue(){return document.getElementById('hs_clean_venue')?.value||document.getElementById('hs_opsVenue')?.value||'TFHS'}
-  function subjects(){try{return hsSubjectDbGetDaySubjects()}catch(e){return[]}}
-  function serialEnd(start,count){return typeof hsDailySerialEnd==='function'?hsDailySerialEnd(start,count):''}
-  function renderSubjectDD(){
-    const d=document.getElementById('hs_clean_subject');if(!d)return;
-    const old=d.value; const arr=subjects();
-    d.innerHTML='<option value="">Select Subject</option>'+arr.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
-    if(old&&arr.includes(old))d.value=old;
-    const found=load().find(x=>x.day===day()&&x.subject===d.value);
-    if(found && editIndex<0) fill(found);
-  }
-  function fill(x){
-    const map={male:x.male||'',female:x.female||'',qpFrom:x.qpFrom||'',omrFrom:x.omrFrom||''};
-    Object.entries(map).forEach(([k,v])=>{const el=document.getElementById('hs_clean_'+k);if(el)el.value=v});
-    updateEnds();
-  }
-  function updateEnds(){
-    const m=Number(document.getElementById('hs_clean_male')?.value)||0, f=Number(document.getElementById('hs_clean_female')?.value)||0, n=m+f;
-    const q=document.getElementById('hs_clean_qpFrom')?.value||'',o=document.getElementById('hs_clean_omrFrom')?.value||'';
-    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||''};
-    set('hs_clean_total',n);set('hs_clean_qpTo',serialEnd(q,n));set('hs_clean_omrTo',serialEnd(o,n));
-  }
-  function clearForm(){
-    editIndex=-1; ['hs_clean_male','hs_clean_female','hs_clean_qpFrom','hs_clean_omrFrom'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); updateEnds();
-    const b=document.getElementById('hs_clean_save');if(b)b.textContent='Save Subject';
-  }
-  function renderList(){
-    const box=document.getElementById('hs_clean_list');if(!box)return;
-    const arr=load().filter(x=>!day()||x.day===day());
-    if(!arr.length){box.innerHTML='<div style="padding:12px;color:#64748b;border:1px dashed #cbd5e1;border-radius:6px">No subject entry saved for this day.</div>';return}
-    box.innerHTML='<div class="clean-table-wrap"><table><thead><tr><th>Sl.</th><th>Day</th><th>Subject</th><th>Total</th><th>QP</th><th>OMR</th><th>Room Allocation</th><th>Action</th></tr></thead><tbody>'+arr.map((x,idx)=>{
-      const real=load().findIndex(z=>z===x); const rooms=(x.rooms||[]).map(r=>esc(r.room)+' ('+r.count+')').join(', ')||'Not allocated';
-      return `<tr><td>${idx+1}</td><td>${esc(x.day)}</td><td><b>${esc(x.subject)}</b></td><td>${x.total||0}</td><td>${esc(x.qpFrom)} – ${esc(x.qpTo)}</td><td>${esc(x.omrFrom)} – ${esc(x.omrTo)}</td><td>${rooms}</td><td><button class="btn btn-primary" onclick="hsCleanEdit(${real})">Edit</button> <button class="btn btn-secondary" onclick="hsCleanRemove(${real})">Remove</button></td></tr>`;
-    }).join('')+'</tbody></table></div>';
-  }
-  function renderRoom(){
-    const box=document.getElementById('hs_clean_room_list');if(!box)return;
-    let rooms=[];try{hsRoomLoad();rooms=hsRoomDB[venue()]||[]}catch(e){}
-    box.innerHTML=rooms.length?rooms.map((r,i)=>`<label style="display:flex;gap:6px;align-items:center;padding:7px;border:1px solid #e2e8f0;border-radius:5px"><input type="checkbox" data-clean-room="${esc(r.room)}" value="${esc(r.room)}"><span><b>${esc(r.room)}</b> — ${r.seats} seats</span></label>`).join(''):'<span style="color:#64748b">No fixed rooms saved for this venue. Add rooms in the room setup.</span>';
-  }
-  function selectedEntry(){
-    const d=day(),s=document.getElementById('hs_clean_subject')?.value||''; const arr=load();
-    return {arr,index:editIndex>=0?editIndex:arr.findIndex(x=>x.day===d&&x.subject===s)};
-  }
-  function saveSubject(){
-    const d=day(),s=document.getElementById('hs_clean_subject')?.value||''; if(!d)return alert('Select Examination Day.'); if(!s)return alert('Select Subject.');
-    const m=Number(document.getElementById('hs_clean_male')?.value)||0,f=Number(document.getElementById('hs_clean_female')?.value)||0,total=m+f;
-    if(total<=0)return alert('Enter Male / Female student count.');
-    const q=(document.getElementById('hs_clean_qpFrom')?.value||'').trim(),o=(document.getElementById('hs_clean_omrFrom')?.value||'').trim();
-    if(!q||!o)return alert('Enter QP Start and OMR Start serials.');
-    const arr=load(); const existing=arr.findIndex((x,i)=>i!==editIndex&&x.day===d&&x.subject===s);
-    if(existing>=0)return alert('This subject is already saved for this day. Use Edit.');
-    const old=editIndex>=0?arr[editIndex]:{};
-    const rec={...old,day:d,venue:venue(),subject:s,male:m,female:f,total,qpFrom:q,qpTo:serialEnd(q,total),omrFrom:o,omrTo:serialEnd(o,total),rooms:old.rooms||[],savedAt:new Date().toISOString()};
-    if(editIndex>=0)arr[editIndex]=rec; else arr.push(rec); save(arr); hsCleanSyncToDaily(rec); editIndex=-1; clearForm(); renderList(); renderRoomSummary();
-    const st=document.getElementById('hs_clean_status');if(st)st.textContent='Saved: '+s+' — '+total+' student(s).';
-  }
-  function syncDaily(rec){
-    try{hsDailyOpsLoad();const k=hsDailyOpsKey(rec.venue,rec.day),r=hsDailyOpsEnsureRecord(rec.venue,rec.day);r.subjects[rec.subject]={...(r.subjects[rec.subject]||{}),male:rec.male,female:rec.female,total:rec.total,qFrom:rec.qpFrom,qTo:rec.qpTo,qReq:rec.total,omrFrom:rec.omrFrom,omrTo:rec.omrTo,omrReq:rec.total,roomSerials:rec.rooms||[],roomAllocations:(rec.rooms||[]).map(x=>({room:x.room,seats:x.count}))};hsDailyOpsDB[k]=r;hsDailyOpsPersist();}catch(e){console.warn('Daily sync',e)}
-  }
-  function removeSubject(i){const arr=load();if(!arr[i])return;if(!confirm('Remove this subject entry?'))return;arr.splice(i,1);save(arr);renderList();renderRoomSummary();}
-  function editSubject(i){const arr=load();const x=arr[i];if(!x)return;editIndex=i;document.getElementById('hs_clean_day').value=x.day;renderSubjectDD();document.getElementById('hs_clean_subject').value=x.subject;fill(x);document.getElementById('hs_clean_save').textContent='Update Subject';window.scrollTo({top:document.getElementById('hs-clean-daily-entry').offsetTop-20,behavior:'smooth'});}
-  function allocate(){
-    const arr=load(),d=day(),s=document.getElementById('hs_clean_subject')?.value||'';const i=arr.findIndex(x=>x.day===d&&x.subject===s);if(i<0)return alert('Save the subject entry first.');
-    const checks=[...document.querySelectorAll('#hs_clean_room_list input[data-clean-room]:checked')];if(!checks.length)return alert('Choose one or more rooms.');
-    let left=Number(arr[i].total)||0, q=arr[i].qpFrom, o=arr[i].omrFrom, rooms=[]; let fixed={};try{hsRoomLoad();fixed=Object.fromEntries((hsRoomDB[venue()]||[]).map(r=>[r.room,Number(r.seats)||0]))}catch(e){}
-    for(const c of checks){if(left<=0)break;const room=c.value,capacity=fixed[room]||0,count=Math.min(left,capacity);if(count<=0)continue;const qTo=serialEnd(q,count),oTo=serialEnd(o,count);rooms.push({room,count,seats:count,qpFrom:q,qpTo,omrFrom:o,omrTo:oTo});q=typeof hsEnhancedSerialStartAfter==='function'?hsEnhancedSerialStartAfter(q,count):serialEnd(q,count+1);o=typeof hsEnhancedSerialStartAfter==='function'?hsEnhancedSerialStartAfter(o,count):serialEnd(o,count+1);left-=count;}
-    if(!rooms.length)return alert('Selected rooms have no usable capacity.');
-    arr[i].rooms=rooms;arr[i].unallocated=left;arr[i].allocatedAt=new Date().toISOString();save(arr);hsCleanSyncToDaily(arr[i]);renderList();renderRoomSummary();
-    alert(left?'Room allocation saved. '+left+' student(s) remain unallocated.':'Room allocation saved successfully.');
-  }
-  function renderRoomSummary(){const box=document.getElementById('hs_clean_room_summary');if(!box)return;const s=document.getElementById('hs_clean_subject')?.value||'',d=day();const x=load().find(z=>z.day===d&&z.subject===s);if(!x){box.innerHTML='Select a saved subject to allocate rooms.';return}box.innerHTML=(x.rooms||[]).length?'<table><thead><tr><th>Room</th><th>Students</th><th>QP</th><th>OMR</th></tr></thead><tbody>'+x.rooms.map(r=>`<tr><td><b>${esc(r.room)}</b></td><td>${r.count}</td><td>${esc(r.qpFrom)} – ${esc(r.qpTo)}</td><td>${esc(r.omrFrom)} – ${esc(r.omrTo)}</td></tr>`).join('')+'</tbody></table><div style="margin-top:6px;color:#475569">Unallocated: <b>${x.unallocated||0}</b></div>':'No rooms allocated yet.'}
-  function syncAll(){load().forEach(syncDaily)}
-  function build(){
-    const old=document.getElementById('hs-clean-daily-entry');if(old)old.remove();
-    const panel=document.getElementById('hs-dailyops');if(!panel)return;
-    const host=document.createElement('div');host.id='hs-clean-daily-entry';host.className='no-print';host.innerHTML=`<div class="clean-head"><h3>Daily Subject-wise Examination Entry — CLEAN ENTRY</h3><p>Save QP and OMR subject-wise, one subject at a time. Edit / Remove anytime. Then choose rooms manually and save room-wise allocation.</p></div><div class="clean-body">
-      <div class="clean-grid">
-        <div><label>Venue DD</label><select id="hs_clean_venue"><option value="TFHS">VENUE-1 [114071]</option><option value="TGHS">VENUE-2 [114200]</option></select></div>
-        <div><label>Examination Day DD</label><select id="hs_clean_day"></select></div>
-        <div><label>Subject DD</label><select id="hs_clean_subject"><option value="">Select Subject</option></select></div>
-        <div><label>Male</label><input id="hs_clean_male" type="number" min="0"></div>
-        <div><label>Female</label><input id="hs_clean_female" type="number" min="0"></div>
-        <div><label>Total</label><input id="hs_clean_total" readonly></div>
-        <div><label>QP Start Serial</label><input id="hs_clean_qpFrom" placeholder="QP-0001"></div>
-        <div><label>QP End Serial</label><input id="hs_clean_qpTo" readonly></div>
-        <div><label>OMR Start Serial</label><input id="hs_clean_omrFrom" placeholder="OMR-0001"></div>
-        <div><label>OMR End Serial</label><input id="hs_clean_omrTo" readonly></div>
-      </div>
-      <div class="clean-actions"><button id="hs_clean_save" class="btn btn-success">Save Subject</button><button id="hs_clean_clear" class="btn btn-secondary">Clear</button></div>
-      <div id="hs_clean_status" class="clean-status">Save each subject separately. Firebase sync uses the existing application sync engine.</div>
-      <div style="margin-top:16px"><b>Saved Subject Entries</b><div id="hs_clean_list"></div></div>
-      <div class="room-box"><h3 style="margin:0 0 4px">NEXT — Room-wise Allocation</h3><p style="margin:0 0 10px;color:#64748b;font-size:12px">Select the saved subject, tick the rooms you want, then save. QP and OMR serials continue automatically from room to room.</p>
-        <div class="room-grid"><div><label>Subject to Allocate</label><select id="hs_clean_alloc_subject"></select></div><div><label>Venue</label><select id="hs_clean_alloc_venue"><option value="TFHS">VENUE-1 [114071]</option><option value="TGHS">VENUE-2 [114200]</option></select></div><div><label>Allocation Status</label><div id="hs_clean_alloc_status" style="height:34px;border:1px solid #cbd5e1;border-radius:5px;padding:8px">—</div></div><div><label>&nbsp;</label><button id="hs_clean_allocate" class="btn btn-primary" style="width:100%">Save Room Allocation</button></div></div>
-        <div id="hs_clean_room_list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:7px;margin-top:10px"></div><div id="hs_clean_room_summary" style="margin-top:12px"></div>
-      </div></div>`;
-    panel.insertBefore(host,panel.children[1]||null);
-    const src=document.getElementById('hs_opsDate'),dayEl=document.getElementById('hs_clean_day'),venueEl=document.getElementById('hs_clean_venue');if(src&&dayEl){dayEl.innerHTML=src.innerHTML;dayEl.value=src.value}
-    renderSubjectDD();renderList();renderRoom();syncAll();updateAllocDD(); venueEl.addEventListener('change',()=>{try{document.getElementById('hs_opsVenue').value=venueEl.value}catch(e){};renderSubjectDD();renderRoom()});
-    ['hs_clean_male','hs_clean_female','hs_clean_qpFrom','hs_clean_omrFrom'].forEach(id=>document.getElementById(id).addEventListener('input',updateEnds));
-    dayEl.addEventListener('change',()=>{renderSubjectDD();renderList();updateAllocDD();renderRoom();renderRoomSummary()});
-    document.getElementById('hs_clean_subject').addEventListener('change',()=>{editIndex=-1;const x=load().find(z=>z.day===day()&&z.subject===document.getElementById('hs_clean_subject').value);if(x)fill(x);else clearForm();updateAllocDD();renderRoomSummary()});
-    document.getElementById('hs_clean_save').onclick=saveSubject;document.getElementById('hs_clean_clear').onclick=clearForm;document.getElementById('hs_clean_allocate').onclick=allocate;
-    document.getElementById('hs_clean_alloc_subject').addEventListener('change',()=>{document.getElementById('hs_clean_subject').value=document.getElementById('hs_clean_alloc_subject').value;renderRoomSummary()});
-    document.getElementById('hs_clean_alloc_venue').addEventListener('change',()=>{renderRoom();renderRoomSummary()});
-  }
-  function updateAllocDD(){const d=document.getElementById('hs_clean_alloc_subject');if(!d)return;const old=d.value;const a=load().filter(x=>x.day===day());d.innerHTML='<option value="">Select Saved Subject</option>'+a.map(x=>`<option value="${esc(x.subject)}">${esc(x.subject)} — ${x.total}</option>`).join('');if(a.some(x=>x.subject===old))d.value=old;else if(a.length===1)d.value=a[0].subject;}
-  window.hsCleanEdit=editSubject;window.hsCleanRemove=removeSubject;window.hsCleanSyncToDaily=syncDaily;
-  const oldRender=window.hsDailyOpsRender;
-  window.hsDailyOpsRender=function(){oldRender&&oldRender();setTimeout(build,0)};
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(build,200));
-})();
-</script>
+
 </body></html>`); w.document.close();
 }
 
@@ -3339,10 +3049,30 @@ cloudHydrateAndBoot(function(){
    ================================================================ */
 (function(){
   const KEY='hsCleanDailySubjectEntry2027';
+  // Migrate existing Daily Subject records once so the clean screen does not show blank/mismatched data.
+  function migrateExisting(){
+    try{
+      const existing=JSON.parse(localStorage.getItem(KEY)||'[]')||[];
+      const db=JSON.parse(localStorage.getItem('hsDailyOpsDB2027')||'{}')||{};
+      const out=Array.isArray(existing)?existing.slice():[];
+      Object.keys(db).forEach(k=>{
+        const rec=db[k]||{}; const venue=rec.venue||k.split('|')[0]||'TFHS'; const day=rec.date||k.split('|').slice(1).join('|')||'';
+        Object.keys(rec.subjects||{}).forEach(sub=>{
+          if(out.some(x=>x.day===day&&x.subject===sub&&x.venue===venue))return;
+          const d=rec.subjects[sub]||{}; const total=Number(d.total)||(Number(d.male)||0)+(Number(d.female)||0);
+          if(!total)return;
+          out.push({day,venue,subject:sub,male:Number(d.male)||0,female:Number(d.female)||0,total,
+            qpFrom:d.qFrom||'',qpTo:d.qTo||'',omrFrom:d.omrFrom||'',omrTo:d.omrTo||'',rooms:Array.isArray(d.roomAllocations)?d.roomAllocations.map(r=>({room:r.room,count:Number(r.seats)||Number(r.count)||0,qpFrom:r.qpFrom||'',qpTo:r.qpTo||'',omrFrom:r.omrFrom||'',omrTo:r.omrTo||''})):[],savedAt:new Date().toISOString()});
+        });
+      });
+      if(out.length!==existing.length)localStorage.setItem(KEY,JSON.stringify(out));
+    }catch(e){console.warn('Clean-entry migration',e)}
+  }
+  migrateExisting();
   let editIndex=-1;
   function esc(v){return typeof hsEscapeFormText==='function'?hsEscapeFormText(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')||[]}catch(e){return[]}}
-  function save(a){localStorage.setItem(KEY,JSON.stringify(a));}
+  function save(a){localStorage.setItem(KEY,JSON.stringify(a)); try{ if(typeof cloudPushKey==='function' && window.cloudSyncReady) cloudPushKey(KEY); }catch(e){ console.warn('Clean entry cloud sync',e); }}
   function day(){return document.getElementById('hs_clean_day')?.value||''}
   function venue(){return document.getElementById('hs_clean_venue')?.value||document.getElementById('hs_opsVenue')?.value||'TFHS'}
   function subjects(){try{return hsSubjectDbGetDaySubjects()}catch(e){return[]}}
@@ -3442,7 +3172,7 @@ cloudHydrateAndBoot(function(){
       </div></div>`;
     panel.insertBefore(host,panel.children[1]||null);
     const src=document.getElementById('hs_opsDate'),dayEl=document.getElementById('hs_clean_day'),venueEl=document.getElementById('hs_clean_venue');if(src&&dayEl){dayEl.innerHTML=src.innerHTML;dayEl.value=src.value}
-    renderSubjectDD();renderList();renderRoom();syncAll();updateAllocDD(); venueEl.addEventListener('change',()=>{try{document.getElementById('hs_opsVenue').value=venueEl.value}catch(e){};renderSubjectDD();renderRoom()});
+    renderSubjectDD();renderList();renderRoom();updateAllocDD(); venueEl.addEventListener('change',()=>{try{document.getElementById('hs_opsVenue').value=venueEl.value}catch(e){};renderSubjectDD();renderRoom()});
     ['hs_clean_male','hs_clean_female','hs_clean_qpFrom','hs_clean_omrFrom'].forEach(id=>document.getElementById(id).addEventListener('input',updateEnds));
     dayEl.addEventListener('change',()=>{renderSubjectDD();renderList();updateAllocDD();renderRoom();renderRoomSummary()});
     document.getElementById('hs_clean_subject').addEventListener('change',()=>{editIndex=-1;const x=load().find(z=>z.day===day()&&z.subject===document.getElementById('hs_clean_subject').value);if(x)fill(x);else clearForm();updateAllocDD();renderRoomSummary()});
