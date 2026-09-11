@@ -1960,7 +1960,7 @@ function hsInitDataEngine(){
       const oldRows = Array.isArray(hsTrackingStateDatabase[sch]) ? hsTrackingStateDatabase[sch] : [];
       hsTrackingStateDatabase[sch] = hsOfficialExamRoutineTimeline.map((session,index)=>{
         const prior = oldRows[index] || {};
-        return { date: session.date, day: session.day, sub: session.sub, vals: Array.isArray(prior.vals) && prior.vals.length===12 ? prior.vals : [0,0,0,0,0,0,0,0,0,0,0,0] };
+        return { date: session.date, day: session.day, sub: session.sub, vals: Array.isArray(prior.vals) && prior.vals.length===12 ? prior.vals : [0,0,0,0,0,0,0,0,0,0,0,0], subVals: prior.subVals||undefined, subWise: !!prior.subWise };
       });
     });
     hsTrackingStateDatabase["year"] = "2026";
@@ -1991,21 +1991,89 @@ function hsPopulateDateDropdown(){
     dropdown.appendChild(opt);
   });
 }
+function hsRowSubjectList(row){
+  // Reuses the same comma-split logic as the day-wise subject allotment
+  // elsewhere in the app (hsSubjectOptions), so "Bengali (A), English (A), ..."
+  // becomes ["Bengali (A)","English (A)", ...].
+  return hsSubjectOptions({sub:row.sub});
+}
+function hsRecalcRowValsFromSub(row){
+  const totals=[0,0,0,0,0,0,0,0,0,0,0,0];
+  Object.values(row.subVals||{}).forEach(arr=>{
+    for(let i=0;i<12;i++) totals[i]+= (Number((arr||[])[i])||0);
+  });
+  row.vals=totals;
+}
 function hsRenderReportingMatrixTable(){
   const tbody = document.getElementById("hs_matrixTableBody");
   tbody.innerHTML = "";
   const schoolDataset = hsTrackingStateDatabase[hsActiveSchool];
   const examYear = hsTrackingStateDatabase["year"] || "2026";
   schoolDataset.forEach((row, rowIndex)=>{
+    const subjects=hsRowSubjectList(row);
+    const multi=subjects.length>1;
     const tr = document.createElement("tr");
     tr.id = "hs-row-idx-" + rowIndex;
-    let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${row.sub}</td>`;
-    for(let v=0; v<12; v++){ rowHtml += `<td><input type="number" min="0" value="${row.vals[v]}" oninput="hsUpdateValueNode(${rowIndex}, ${v}, this.value)"></td>`; }
+    const toggleBtn = multi
+      ? `<button class="btn btn-primary" style="padding:3px 7px;font-size:8pt;margin-top:5px;" onclick="hsToggleSubjectWise(${rowIndex})">${row.subWise?'Hide Subject-wise Entry':'Subject-wise Entry ('+subjects.length+')'}</button>`
+      : '';
+    let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${row.sub}<br>${toggleBtn}</td>`;
+    for(let v=0; v<12; v++){
+      rowHtml += row.subWise
+        ? `<td><div class="hs-auto-box" style="min-height:26px;">${row.vals[v]}</div></td>`
+        : `<td><input type="number" min="0" value="${row.vals[v]}" oninput="hsUpdateValueNode(${rowIndex}, ${v}, this.value)"></td>`;
+    }
     tr.innerHTML = rowHtml;
     tbody.appendChild(tr);
+
+    if(multi && row.subWise){
+      subjects.forEach(sub=>{
+        const arr=(row.subVals && row.subVals[sub]) || [0,0,0,0,0,0,0,0,0,0,0,0];
+        const subTr=document.createElement("tr");
+        subTr.style.background="#f8fafc";
+        const safe=sub.replace(/'/g,"\\'");
+        let subHtml=`<td></td><td></td><td></td><td style="text-align:left;font-size:8.5pt;color:#334155;padding-left:16px;">&#8627; ${sub}</td>`;
+        for(let v=0; v<12; v++){ subHtml += `<td><input type="number" min="0" value="${arr[v]||0}" oninput="hsUpdateSubjectValueNode(${rowIndex}, '${safe}', ${v}, this.value)"></td>`; }
+        subTr.innerHTML=subHtml;
+        tbody.appendChild(subTr);
+      });
+    }
   });
   hsCalculateTotalsMathEngine();
   hsHighlightAndPrepareDualSlips(document.getElementById("hs_activeDayFocus").value);
+}
+function hsToggleSubjectWise(rowIndex){
+  const row=hsTrackingStateDatabase[hsActiveSchool][rowIndex];
+  const subjects=hsRowSubjectList(row);
+  if(!row.subWise){
+    // Turning ON: seed subVals so nothing is lost — put the current aggregate
+    // totals under the first subject (the user can then redistribute them
+    // across the other subjects); other subjects start at zero.
+    if(!row.subVals){
+      row.subVals={};
+      subjects.forEach((s,i)=>{ row.subVals[s]= i===0 ? [...row.vals] : [0,0,0,0,0,0,0,0,0,0,0,0]; });
+      if(subjects.length>1) alert('Subject-wise entry turned on for this day.\n\nThe existing total has been placed under "'+subjects[0]+'" — please redistribute the correct counts across each subject below.');
+    }
+    row.subWise=true;
+  } else {
+    row.subWise=false;
+  }
+  localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
+  hsRenderReportingMatrixTable();
+}
+function hsUpdateSubjectValueNode(rowIndex, subject, col, value){
+  const row=hsTrackingStateDatabase[hsActiveSchool][rowIndex];
+  row.subVals=row.subVals||{};
+  row.subVals[subject]=row.subVals[subject]||[0,0,0,0,0,0,0,0,0,0,0,0];
+  row.subVals[subject][col]=parseInt(value)||0;
+  hsRecalcRowValsFromSub(row);
+  localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
+  // Refresh just the auto-sum boxes on the parent row rather than a full
+  // re-render, so focus/scroll position in the subject sub-rows isn't lost.
+  const parentTr=document.getElementById("hs-row-idx-"+rowIndex);
+  if(parentTr){ const boxes=parentTr.querySelectorAll('.hs-auto-box'); boxes.forEach((b,i)=>{ b.textContent=row.vals[i]; }); }
+  hsCalculateTotalsMathEngine();
+  if(document.getElementById("hs_activeDayFocus").value == rowIndex){ hsHighlightAndPrepareDualSlips(rowIndex); }
 }
 function hsUpdateValueNode(row, col, value){
   hsTrackingStateDatabase[hsActiveSchool][row].vals[col] = parseInt(value) || 0;
