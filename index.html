@@ -1169,11 +1169,11 @@ function hsRoomRenderSummary(){
   const detail=document.getElementById('hs_roomAllocationTable');
   const venue=document.getElementById('hs_roomVenue')?.value||'TFHS'; const date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
   const a=hsRoomAllocDB[hsRoomKey(venue,date)]; if(!a){box.innerHTML='<b>Fixed rooms are ready.</b> Enter subject student counts and click <b>Auto Place Students</b>.'; if(detail)detail.innerHTML=''; return;}
-  const rows=Object.entries(a.allocations||{}).map(([sub,x])=>{const rr=(x.rooms||[]).map(z=>hsEscapeFormText(z.room)+' → '+z.seats).join(' &nbsp;|&nbsp; ')||'Not placed';const manualTag=x.manual?' <span style="color:#2563eb;font-weight:700;">[Manual: '+hsEscapeFormText(x.manual)+']</span>':'';return '<div><b>'+hsEscapeFormText(sub)+'</b> ('+x.count+') : '+rr+manualTag+(x.unplaced?' <span style="color:#b91c1c;font-weight:700;"> | Unplaced '+x.unplaced+'</span>':'')+'</div>';}).join('');
+  const rows=Object.entries(a.allocations||{}).map(([sub,x])=>{const rr=(x.rooms||[]).map(z=>hsEscapeFormText(z.room)+' → '+z.seats).join(' &nbsp;|&nbsp; ')||'Not placed';const manualTag=x.manual?' <span style="color:#2563eb;font-weight:700;">[Manual: '+hsEscapeFormText(x.manual)+']</span>':'';return '<div><b>'+hsEscapeFormText(hsSubjectWithCode(sub))+'</b> ('+x.count+') : '+rr+manualTag+(x.unplaced?' <span style="color:#b91c1c;font-weight:700;"> | Unplaced '+x.unplaced+'</span>':'')+'</div>';}).join('');
   box.innerHTML='<b>Auto placement — '+(a.basis==='present'?'Present':'Enrolled')+' students:</b><div style="margin-top:6px;line-height:1.7;">'+rows+'</div>';
   if(detail){
     const flat=[]; Object.entries(a.allocations||{}).forEach(([sub,x])=>(x.rooms||[]).forEach(z=>flat.push({room:z.room,subject:sub,count:z.seats})));
-    detail.innerHTML=flat.length?'<table class="hs-allocation-detail"><thead><tr><th>Exam. Hall / Room No.</th><th>Subject Code</th><th>Students Placed</th></tr></thead><tbody>'+flat.map(r=>'<tr><td><b>'+hsEscapeFormText(r.room)+'</b></td><td>'+hsEscapeFormText(r.subject)+'</td><td><b>'+r.count+'</b></td></tr>').join('')+'</tbody></table>':'';
+    detail.innerHTML=flat.length?'<table class="hs-allocation-detail"><thead><tr><th>Exam. Hall / Room No.</th><th>Subject Code</th><th>Students Placed</th></tr></thead><tbody>'+flat.map(r=>'<tr><td><b>'+hsEscapeFormText(r.room)+'</b></td><td>'+hsEscapeFormText(hsSubjectWithCode(r.subject))+'</td><td><b>'+r.count+'</b></td></tr>').join('')+'</tbody></table>':'';
   }
 }
 
@@ -1198,6 +1198,25 @@ const HS_SUBJECT_CODE_MAP = {
   PHIL:"Philosophy", COMS:"Computer Science", COMA:"Accountancy", HPED:"Health & Physical Education",
   PHYS:"Physics", NUTN:"Nutrition", EDCN:"Education"
 };
+/* Reverse lookup (full name -> short WBCHSE code) + display helper.
+   Used purely for on-screen / printed labels ("Bengali (A) (BNGA)") —
+   never for the stored/keyed subject text, so data matching elsewhere
+   in the app (master serials, room allocation, ledger) is untouched. */
+const HS_SUBJECT_NAME_TO_CODE = {};
+Object.keys(HS_SUBJECT_CODE_MAP).forEach(code=>{
+  HS_SUBJECT_NAME_TO_CODE[HS_SUBJECT_CODE_MAP[code].toUpperCase()] = code;
+});
+function hsSubjectWithCode(name){
+  const raw=String(name||"").trim();
+  if(!raw) return raw;
+  const code=HS_SUBJECT_NAME_TO_CODE[raw.toUpperCase()] || (HS_SUBJECT_CODE_MAP[raw.toUpperCase()]?raw.toUpperCase():"");
+  return code ? raw+" ("+code+")" : raw;
+}
+/* Same as hsSubjectWithCode but for a comma-separated list of subjects
+   (e.g. a Progress Ledger day's "sub" field: "Bengali (A), English (A), ..."). */
+function hsSubjectListWithCodes(list){
+  return String(list||"").split(",").map(s=>s.trim()).filter(Boolean).map(hsSubjectWithCode).join(", ");
+}
 function hsNormalizeSubjectName(text){
   const raw=String(text||"").trim();
   if(!raw) return "";
@@ -1258,7 +1277,7 @@ function hsMasterRenderList(){
   box.innerHTML='<table class="hs-room-table"><thead><tr><th>Subject</th><th>QP Serial Start</th><th>OMR Serial Start</th><th>Action</th></tr></thead><tbody>'+
     names.map(n=>{const d=hsSubjectQpOmrMaster[n];
       const safe=hsEscapeFormText(n).replace(/'/g,"\\'");
-      return `<tr><td style="text-align:left;font-weight:700;">${hsEscapeFormText(n)}</td><td>${hsEscapeFormText(d.qpFrom||'')}</td><td>${hsEscapeFormText(d.omrFrom||'')}</td><td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="hsMasterDeleteSubject('${safe}')">Delete</button></td></tr>`;
+      return `<tr><td style="text-align:left;font-weight:700;">${hsEscapeFormText(hsSubjectWithCode(n))}</td><td>${hsEscapeFormText(d.qpFrom||'')}</td><td>${hsEscapeFormText(d.omrFrom||'')}</td><td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="hsMasterDeleteSubject('${safe}')">Delete</button></td></tr>`;
     }).join('')+'</tbody></table>';
 }
 function hsDailyOpsLoadMasterSerials(){
@@ -1517,6 +1536,43 @@ function hsLoadSubjectAllocation(){
   try{ hsCentreSubjectAllocation=JSON.parse(localStorage.getItem('hsCentreSubjectAllocation2027')||'{}')||{}; }catch(e){ hsCentreSubjectAllocation={}; }
 }
 function hsSaveSubjectAllocation(){ try{localStorage.setItem('hsCentreSubjectAllocation2027',JSON.stringify(hsCentreSubjectAllocation));}catch(e){} }
+/* ================================================================
+   HS :: AUTO-SYNC SUBJECT ALLOTMENT FROM THE PROGRESS LEDGER
+   Whenever a subject already has a Male/Female (or subject-wise)
+   figure greater than 0 entered in the Progress Ledger for a given
+   venue/date, that subject is automatically marked "allotted" here —
+   feeding the day-subject tick list, Quick Entry and Room Allocation
+   (all three read subjects via hsGetAllocatedSubjects below), so the
+   Progress Ledger stays the single source of truth. If the ledger
+   has no figures yet for that day, any existing manual selection is
+   left untouched.
+   ================================================================ */
+function hsSyncSubjectAllocationFromLedger(venue,date){
+  try{
+    if(typeof hsTrackingStateDatabase==='undefined') return;
+    const rows=hsTrackingStateDatabase[venue];
+    if(!Array.isArray(rows)) return;
+    const row=rows.find(r=>r.date===date);
+    if(!row) return;
+    const daySubjects=hsSubjectOptions(row);
+    if(!daySubjects.length) return;
+    let ledgerAllotted=[];
+    if(row.subWise && row.subVals){
+      ledgerAllotted=daySubjects.filter(sub=>{
+        const arr=row.subVals[sub]||[];
+        return arr.some(v=>(Number(v)||0)>0);
+      });
+    } else {
+      const total=(row.vals||[]).reduce((a,b)=>a+(Number(b)||0),0);
+      if(total>0) ledgerAllotted=daySubjects.slice();
+    }
+    if(!ledgerAllotted.length) return;
+    const key=hsAllocationKey(venue,date);
+    const current=hsCentreSubjectAllocation[key]||[];
+    const same=current.length===ledgerAllotted.length && current.every(s=>ledgerAllotted.includes(s));
+    if(!same){ hsCentreSubjectAllocation[key]=ledgerAllotted; hsSaveSubjectAllocation(); }
+  }catch(e){}
+}
 function hsRenderFormDays(){
   const el=document.getElementById('hs_formDay'); if(!el) return;
   const current=el.value;
@@ -1554,11 +1610,12 @@ function hsRenderDaySubjectSelector(){
   const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
   const date=(document.getElementById('hs_formDay')||{}).value||hsOfficialExamRoutineTimeline[0].date;
   const item=hsOfficialExamRoutineTimeline.find(x=>x.date===date)||hsOfficialExamRoutineTimeline[0];
+  hsSyncSubjectAllocationFromLedger(venue,item.date);
   const key=hsAllocationKey(venue,item.date);
   const selected=hsCentreSubjectAllocation[key]||[];
   const options=hsSubjectOptions(item);
   const box=document.getElementById('hs_daySubjectSelector'); if(!box) return;
-  box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;"><div><b>${hsEscapeFormText(item.date)} — ${hsEscapeFormText(item.day)}</b><div style="font-size:12px;color:#475569;margin-top:3px;">Tick the subjects actually allotted for this date. Subject names are loaded automatically from the selected day.</div></div><div style="display:flex;gap:6px;"><button class="btn btn-primary" onclick="hsSelectAllDaySubjects()">Select All Subjects</button><button class="btn btn-danger" onclick="hsClearDaySubjects()">Clear Subjects</button></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px;">${options.map((sub,i)=>{const ck=selected.includes(sub)?'checked':'';return `<label style="display:flex;gap:8px;align-items:flex-start;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer;"><input type="checkbox" class="hs-day-subject" value="${hsEscapeFormText(sub)}" ${ck} onchange="hsSaveCurrentDaySubjects()"><span>${hsEscapeFormText(sub)}</span></label>`;}).join('')}</div><div id="hs_daySubjectStatus" style="margin-top:10px;font-size:12px;color:#475569;">${selected.length?selected.length+' subject option(s) selected.':'No subject selected.'}</div>`;
+  box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;"><div><b>${hsEscapeFormText(item.date)} — ${hsEscapeFormText(item.day)}</b><div style="font-size:12px;color:#475569;margin-top:3px;">Tick the subjects actually allotted for this date. Subject names are loaded automatically from the selected day, and auto-ticked once a figure &gt;0 is entered for that subject in the Progress Ledger.</div></div><div style="display:flex;gap:6px;"><button class="btn btn-primary" onclick="hsSelectAllDaySubjects()">Select All Subjects</button><button class="btn btn-danger" onclick="hsClearDaySubjects()">Clear Subjects</button></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px;">${options.map((sub,i)=>{const ck=selected.includes(sub)?'checked':'';return `<label style="display:flex;gap:8px;align-items:flex-start;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer;"><input type="checkbox" class="hs-day-subject" value="${hsEscapeFormText(sub)}" ${ck} onchange="hsSaveCurrentDaySubjects()"><span>${hsEscapeFormText(hsSubjectWithCode(sub))}</span></label>`;}).join('')}</div><div id="hs_daySubjectStatus" style="margin-top:10px;font-size:12px;color:#475569;">${selected.length?selected.length+' subject option(s) selected.':'No subject selected.'}</div>`;
 }
 
 function hsSaveCurrentDaySubjects(){
@@ -1576,6 +1633,7 @@ function hsClearDaySubjects(){
   document.querySelectorAll('.hs-day-subject').forEach(x=>x.checked=false); hsSaveCurrentDaySubjects();
 }
 function hsGetAllocatedSubjects(venue,date){
+  hsSyncSubjectAllocationFromLedger(venue,date);
   const key=hsAllocationKey(venue,date); return (hsCentreSubjectAllocation[key]||[]).slice();
 }
 function hsGetCentreFormContext(venueOverride,dateOverride){
@@ -1585,7 +1643,7 @@ function hsGetCentreFormContext(venueOverride,dateOverride){
   const date=dateOverride || document.getElementById('hs_formDay')?.value || document.getElementById('hs_activeDayFocus')?.value || hsOfficialExamRoutineTimeline[0].date;
   const item=hsOfficialExamRoutineTimeline.find(x=>x.date===date)||hsOfficialExamRoutineTimeline[0];
   const subjects=hsGetAllocatedSubjects(venueKey,item.date);
-  return {venueKey,centre:'TALDANGRA',centreCode:'2206',venue,venueCode:code,year:'2027',date:item.date,day:item.day,subject:subjects.length?subjects.join(', '):'NOT ALLOTTED / NOT SELECTED',subjects};
+  return {venueKey,centre:'TALDANGRA',centreCode:'2206',venue,venueCode:code,year:'2027',date:item.date,day:item.day,subject:subjects.length?subjects.map(hsSubjectWithCode).join(', '):'NOT ALLOTTED / NOT SELECTED',subjects};
 }
 function hsFormHeaderHtml(c){
   return `<div class="official-form-head">
@@ -2017,7 +2075,7 @@ function hsRenderReportingMatrixTable(){
     const toggleBtn = multi
       ? `<button class="btn btn-primary" style="padding:3px 7px;font-size:8pt;margin-top:5px;" onclick="hsToggleSubjectWise(${rowIndex})">${row.subWise?'Hide Subject-wise Entry':'Subject-wise Entry ('+subjects.length+')'}</button>`
       : '';
-    let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${row.sub}<br>${toggleBtn}</td>`;
+    let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${hsSubjectListWithCodes(row.sub)}<br>${toggleBtn}</td>`;
     for(let v=0; v<12; v++){
       rowHtml += row.subWise
         ? `<td><div class="hs-auto-box" style="min-height:26px;">${row.vals[v]}</div></td>`
@@ -2032,7 +2090,7 @@ function hsRenderReportingMatrixTable(){
         const subTr=document.createElement("tr");
         subTr.style.background="#f8fafc";
         const safe=sub.replace(/'/g,"\\'");
-        let subHtml=`<td></td><td></td><td></td><td style="text-align:left;font-size:8.5pt;color:#334155;padding-left:16px;">&#8627; ${sub}</td>`;
+        let subHtml=`<td></td><td></td><td></td><td style="text-align:left;font-size:8.5pt;color:#334155;padding-left:16px;">&#8627; ${hsSubjectWithCode(sub)}</td>`;
         for(let v=0; v<12; v++){ subHtml += `<td><input type="number" min="0" value="${arr[v]||0}" oninput="hsUpdateSubjectValueNode(${rowIndex}, '${safe}', ${v}, this.value)"></td>`; }
         subTr.innerHTML=subHtml;
         tbody.appendChild(subTr);
@@ -2220,7 +2278,7 @@ function hsReqSyncDisplayOutputs(){
       <td><input type="text" value="${item.sub}" style="text-align:left;" oninput="hsReqUpdateRowVariable(${index}, 'sub', this.value)"></td>`;
     matrixBody.appendChild(trMatrix);
     const trLetter = document.createElement("tr");
-    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${item.count}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${item.sub}</td>`;
+    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${item.count}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${hsSubjectListWithCodes(item.sub)}</td>`;
     letterBody.appendChild(trLetter);
   });
 }
@@ -2232,7 +2290,7 @@ function hsReqUpdateRowVariable(index, key, value){
   if(letterRows[index]){
     if(key==='day'){ letterRows[index].children[0].textContent = `${value}, ${hsReqLiveSystemState.schedule[index].baseDate} ${targetYear}`; }
     if(key==='count') letterRows[index].children[1].textContent = value;
-    if(key==='sub') letterRows[index].children[2].textContent = value;
+    if(key==='sub') letterRows[index].children[2].textContent = hsSubjectListWithCodes(value);
   }
 }
 function hsReqUpdateRecipientSchoolName(val){
@@ -2537,7 +2595,7 @@ function mpReqSyncDisplayOutputs(){
       <td><input type="text" value="${item.sub}" style="text-align:left;" oninput="mpReqUpdateRowVariable(${index}, 'sub', this.value)"></td>`;
     matrixBody.appendChild(trMatrix);
     const trLetter = document.createElement("tr");
-    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${item.count}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${item.sub}</td>`;
+    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${item.count}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${hsSubjectListWithCodes(item.sub)}</td>`;
     letterBody.appendChild(trLetter);
   });
 }
@@ -2549,7 +2607,7 @@ function mpReqUpdateRowVariable(index, key, value){
   if(letterRows[index]){
     if(key==='day'){ letterRows[index].children[0].textContent = `${value}, ${mpReqLiveSystemState.schedule[index].baseDate} ${targetYear}`; }
     if(key==='count') letterRows[index].children[1].textContent = value;
-    if(key==='sub') letterRows[index].children[2].textContent = value;
+    if(key==='sub') letterRows[index].children[2].textContent = hsSubjectListWithCodes(value);
   }
 }
 function mpReqUpdateRecipientSchoolName(val){
@@ -2919,7 +2977,7 @@ hsBuildDayFormPage=function(type,c){
       <tr><th rowspan="3" class="hall-col">EXAM.<br>HALL<br>NO.</th><th rowspan="3" class="inv-col">NAME OF THE<br>INVIGILATOR<br>1</th><th rowspan="3" class="inv-col">NAME OF THE<br>INVIGILATOR<br>2</th><th colspan="5">DETAILS OF QUESTION PAPER</th><th colspan="3">DETAILS OF OMR ANSWER SHEET</th><th rowspan="3" class="sig-col">SIGNATURE OF<br>INVIGILATORS</th></tr>
       <tr><th rowspan="2">NAME OF<br>SUBJECT</th><th colspan="2">QUESTION PAPER<br>SERIAL NO.</th><th rowspan="2">TOTAL<br>NUMBER</th><th rowspan="2">NON<br>TRANSPARENT<br>POLY POUCH<br>SERIAL NO.</th><th colspan="2">SERIAL NO.</th><th rowspan="2">TOTAL<br>NUMBER</th></tr>
       <tr><th>FROM</th><th>TO</th><th>FROM</th><th>TO</th></tr></thead><tbody>
-      ${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.d.inv1||'')}</td><td>${esc(x.d.inv2||'')}</td><td>${esc(x.sub||'')}</td><td>${esc(x.z.qFrom||'')}</td><td>${esc(x.z.qTo||'')}</td><td>${esc(x.z.seats||'')}</td><td></td><td>${esc(x.z.omrFrom||'')}</td><td>${esc(x.z.omrTo||'')}</td><td>${esc(x.z.seats||'')}</td><td></td></tr>`).join('')}
+      ${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.d.inv1||'')}</td><td>${esc(x.d.inv2||'')}</td><td>${esc(hsSubjectWithCode(x.sub)||'')}</td><td>${esc(x.z.qFrom||'')}</td><td>${esc(x.z.qTo||'')}</td><td>${esc(x.z.seats||'')}</td><td></td><td>${esc(x.z.omrFrom||'')}</td><td>${esc(x.z.omrTo||'')}</td><td>${esc(x.z.seats||'')}</td><td></td></tr>`).join('')}
     </tbody></table>
     <div class="venue-notes"><b>N.B. :</b>&nbsp;&nbsp; 1) &nbsp; Invigilators are instructed to open Non Transparent Poly Pouch containing Question Papers at 10:55 am in presence of examinees, signing by any TWO of them on it.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2) &nbsp; Distribute Question Papers and OMR Answer Sheets among examinees at 11:00 am.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3) &nbsp; The day-to-day records are to be preserved by the Venue Supervisor for future reference and requirement.</div>
     <div class="venue-signature">Venue Supervisor: <b>${esc(rec.officials?.venueSupervisor||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor)}</b><br>Centre Secretary: <b>${esc(rec.officials?.centreSecretary||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary)}</b><br>Centre-in-Charge: <b>${esc(rec.officials?.centreInCharge||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge)}</b><br>Council Nominee: <b>${esc(rec.officials?.councilNominee||HS_DEFAULT_EXAM_OFFICIALS.councilNominee)}</b><br><br>............................................................<br><b>( Signature of Venue Supervisor with Date &amp; Seal )</b></div>
@@ -2958,7 +3016,7 @@ function hsQuickEntryPopulateSubjects(){
   const venue=hsQuickEntryGetVenue(), date=hsQuickEntryGetDay();
   const subjects=hsDailyOpsGetSelectedSubjects(venue,date);
   const old=dd.value;
-  dd.innerHTML='<option value="">Select Subject</option>'+subjects.map(s=>`<option value="${hsEscapeFormText(s)}">${hsEscapeFormText(s)}</option>`).join('');
+  dd.innerHTML='<option value="">Select Subject</option>'+subjects.map(s=>`<option value="${hsEscapeFormText(s)}">${hsEscapeFormText(hsSubjectWithCode(s))}</option>`).join('');
   if(old && subjects.includes(old)) dd.value=old;
 }
 function hsQuickEntryPopulateRooms(){
@@ -3106,7 +3164,7 @@ function hsQuickEntryRenderSavedList(){
     if(!saved) return null;
     const total=(Number(d.male)||0)+(Number(d.female)||0);
     const safe=sub.replace(/'/g,"\\'");
-    return `<tr><td style="text-align:left;font-weight:700;">${hsEscapeFormText(sub)}</td><td>${d.male||0}</td><td>${d.female||0}</td><td>${total}</td><td>${hsEscapeFormText(d.qFrom||'')}</td><td>${hsEscapeFormText(d.qTo||'')}</td><td>${hsEscapeFormText(d.omrFrom||'')}</td><td>${hsEscapeFormText(d.omrTo||'')}</td><td>${hsEscapeFormText(d.manualRoom||'Auto')}</td><td style="white-space:nowrap;"><button class="btn btn-primary" style="padding:4px 8px;font-size:11px;" onclick="hsQuickEntryEditSubject('${safe}')">Edit</button> <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="hsQuickEntryRemoveSubject('${safe}')">Remove</button></td></tr>`;
+    return `<tr><td style="text-align:left;font-weight:700;">${hsEscapeFormText(hsSubjectWithCode(sub))}</td><td>${d.male||0}</td><td>${d.female||0}</td><td>${total}</td><td>${hsEscapeFormText(d.qFrom||'')}</td><td>${hsEscapeFormText(d.qTo||'')}</td><td>${hsEscapeFormText(d.omrFrom||'')}</td><td>${hsEscapeFormText(d.omrTo||'')}</td><td>${hsEscapeFormText(d.manualRoom||'Auto')}</td><td style="white-space:nowrap;"><button class="btn btn-primary" style="padding:4px 8px;font-size:11px;" onclick="hsQuickEntryEditSubject('${safe}')">Edit</button> <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="hsQuickEntryRemoveSubject('${safe}')">Remove</button></td></tr>`;
   }).filter(Boolean);
   if(!rows.length){ box.innerHTML='<div style="padding:10px;color:#64748b;text-align:center;border:1px dashed #cbd5e1;border-radius:8px;">No subject saved yet for this day.</div>'; return; }
   box.innerHTML='<div style="overflow-x:auto;"><table class="hs-room-table"><thead><tr><th>Subject</th><th>Male</th><th>Female</th><th>Total</th><th>QP From</th><th>QP To</th><th>OMR From</th><th>OMR To</th><th>Room</th><th>Action</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
