@@ -366,6 +366,51 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </div>
     </div>
 
+    <div class="hs-dailyops-card no-print" id="hs_quickEntryCard">
+      <h3 style="margin:0 0 6px;">Quick Subject Entry (Simplified)</h3>
+      <div style="font-size:9pt;color:#475569;margin-bottom:10px;">
+        Day &rarr; Subject &rarr; Male/Female &rarr; QP SL From &rarr; OMR SL From &rarr; <b>Save Subject</b>. Total, QP/OMR To, QP/OMR Required and NTP are calculated automatically as you type below, but nothing is written to storage until you press <b>Save Subject</b>. Changing the Day or Subject dropdown never saves anything by itself.
+      </div>
+      <div class="hs-dailyops-toolbar" style="grid-template-columns:1.1fr 1.5fr 0.8fr 0.8fr 1fr 1fr;">
+        <div class="form-group"><label>Day</label><select id="hs_qeDay" onchange="hsQuickEntryDayChange()"></select></div>
+        <div class="form-group"><label>Subject</label><select id="hs_qeSubject" onchange="hsQuickEntrySubjectChange()"><option value="">Select Subject</option></select></div>
+        <div class="form-group"><label>Male</label><input type="number" min="0" id="hs_qeMale" oninput="hsQuickEntryRecalc()"></div>
+        <div class="form-group"><label>Female</label><input type="number" min="0" id="hs_qeFemale" oninput="hsQuickEntryRecalc()"></div>
+        <div class="form-group"><label>QP SL From</label><input type="text" id="hs_qeQpFrom" placeholder="e.g. PHY-00101" oninput="hsQuickEntryRecalc()"></div>
+        <div class="form-group"><label>OMR SL From</label><input type="text" id="hs_qeOmrFrom" placeholder="e.g. OMR-00101" oninput="hsQuickEntryRecalc()"></div>
+      </div>
+      <div class="hs-official-grid" style="margin-top:12px;">
+        <div class="form-group"><label>Total</label><div class="hs-auto-box" id="hs_qeTotal">0</div></div>
+        <div class="form-group"><label>QP SL To (Auto)</label><div class="hs-auto-box" id="hs_qeQpTo">&mdash;</div></div>
+        <div class="form-group"><label>QP Required (Auto)</label><div class="hs-auto-box" id="hs_qeQpReq">0</div></div>
+        <div class="form-group"><label>NTP Pouch (Auto)</label><div class="hs-auto-box" id="hs_qeNtp">0</div></div>
+        <div class="form-group"><label>OMR SL To (Auto)</label><div class="hs-auto-box" id="hs_qeOmrTo">&mdash;</div></div>
+        <div class="form-group"><label>OMR Required (Auto)</label><div class="hs-auto-box" id="hs_qeOmrReq">0</div></div>
+        <div class="form-group"><label>Room (this subject)</label><div class="hs-auto-box" id="hs_qeCurrentRoom">Auto</div></div>
+        <div class="form-group"><label>&nbsp;</label></div>
+      </div>
+      <div class="hs-save-strip">
+        <button class="btn btn-success" onclick="hsQuickEntrySaveSubject()">Save Subject</button>
+        <button class="btn btn-primary" onclick="hsQuickEntryClearForm()">Clear Form</button>
+        <span class="hs-dailyops-status" id="hs_qeStatus">Not saved</span>
+      </div>
+
+      <div style="margin-top:16px;">
+        <h4 style="margin:0 0 8px;font-size:9.5pt;color:#334155;text-transform:uppercase;letter-spacing:.3px;">Saved Subjects — Selected Day</h4>
+        <div id="hs_qeSavedList"></div>
+      </div>
+
+      <div class="hs-dailyops-card" style="margin:16px 0 0;background:#f8fafc;">
+        <h4 style="margin:0 0 8px;font-size:9.5pt;color:#334155;text-transform:uppercase;letter-spacing:.3px;">Room Assignment for the Selected Subject</h4>
+        <div style="font-size:8.5pt;color:#475569;margin-bottom:8px;">Save the subject entry first, then pick its Hall/Room and press Save Room Data. Rooms are the same fixed rooms entered below in "Fixed Examination Halls / Rooms".</div>
+        <div class="hs-dailyops-toolbar" style="grid-template-columns:2fr 1fr;">
+          <div class="form-group"><label>Select Room</label><select id="hs_qeRoom"><option value="">Auto / Not set</option></select></div>
+          <div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="hsQuickEntrySaveRoom()">Save Room Data</button></div>
+        </div>
+        <div id="hs_qeRoomStatus" style="font-size:8.5pt;color:#475569;margin-top:8px;"></div>
+      </div>
+    </div>
+
     <div class="hs-dailyops-card no-print">
       <h3 style="margin:0 0 10px;">Examination Officials — Default Officials</h3>
       <div class="hs-official-grid">
@@ -2826,6 +2871,240 @@ const hsOriginalEnsureRecord=hsDailyOpsEnsureRecord;
 window.addEventListener('load',()=>{setTimeout(()=>{hsEnhancedEnsureUI();hsEnhancedRenderRoomCaps();hsEnhancedRenderRoomSerialTable();},50);});
 
 /* ================================================================
+   HS :: QUICK SUBJECT ENTRY (SIMPLIFIED WORKFLOW)
+   Day -> Subject -> Male/Female -> QP SL From -> OMR SL From -> Save
+   Subject, then optional Select Room -> Save Room Data.
+   Reads and writes the SAME hsDailyOpsDB2027 record shape used by
+   the original Daily Subject/QP/OMR workspace above (rec.subjects[sub]
+   = {male, female, total, qFrom, qTo, qReq, qNtp, omrFrom, omrTo,
+   omrReq, manualRoom, roomAllocations, inv1, inv2, hall}) — no new
+   storage key is introduced and no existing key is renamed/removed.
+   Selecting a Day or Subject here ONLY loads values into the form;
+   it never calls hsDailyOpsPersist(). Only "Save Subject" and
+   "Save Room Data" persist anything.
+   ================================================================ */
+function hsQuickEntryGetVenue(){ return document.getElementById('hs_opsVenue')?.value||'TFHS'; }
+function hsQuickEntryGetDay(){ return document.getElementById('hs_qeDay')?.value||hsOfficialExamRoutineTimeline[0]?.date; }
+
+function hsQuickEntryPopulateDays(){
+  const el=document.getElementById('hs_qeDay'); if(!el)return;
+  const old=el.value;
+  el.innerHTML=hsOfficialExamRoutineTimeline.map(x=>`<option value="${x.date}">${x.date} — ${x.day}</option>`).join('');
+  const opsDate=document.getElementById('hs_opsDate')?.value;
+  if(old && hsOfficialExamRoutineTimeline.some(x=>x.date===old)) el.value=old;
+  else if(opsDate && hsOfficialExamRoutineTimeline.some(x=>x.date===opsDate)) el.value=opsDate;
+}
+function hsQuickEntryPopulateSubjects(){
+  const dd=document.getElementById('hs_qeSubject'); if(!dd)return;
+  const venue=hsQuickEntryGetVenue(), date=hsQuickEntryGetDay();
+  const subjects=hsDailyOpsGetSelectedSubjects(venue,date);
+  const old=dd.value;
+  dd.innerHTML='<option value="">Select Subject</option>'+subjects.map(s=>`<option value="${hsEscapeFormText(s)}">${hsEscapeFormText(s)}</option>`).join('');
+  if(old && subjects.includes(old)) dd.value=old;
+}
+function hsQuickEntryPopulateRooms(){
+  const dd=document.getElementById('hs_qeRoom'); if(!dd)return;
+  hsRoomLoad();
+  const venue=hsQuickEntryGetVenue();
+  const rooms=hsRoomDB[venue]||[];
+  const old=dd.value;
+  dd.innerHTML='<option value="">Auto / Not set</option>'+rooms.map(r=>`<option value="${hsEscapeFormText(r.room)}">${hsEscapeFormText(r.room)} (${r.seats})</option>`).join('');
+  if(old && rooms.some(r=>r.room===old)) dd.value=old;
+}
+
+// View-only — never persists. Just refreshes the subject list / rooms for the
+// chosen day and reloads the current subject's saved values, if any.
+function hsQuickEntryDayChange(){
+  hsQuickEntryPopulateSubjects();
+  hsQuickEntryPopulateRooms();
+  hsQuickEntrySubjectChange();
+  hsQuickEntryRenderSavedList();
+}
+
+// View-only — never persists. Loads an already-saved entry into the form for
+// editing, or clears the form (except the chosen subject) if nothing saved yet.
+function hsQuickEntrySubjectChange(){
+  const sub=document.getElementById('hs_qeSubject')?.value||'';
+  const venue=hsQuickEntryGetVenue(), date=hsQuickEntryGetDay();
+  if(!sub){ hsQuickEntryClearForm(); return; }
+  hsDailyOpsLoad();
+  const rec=hsDailyOpsDB[hsDailyOpsKey(venue,date)];
+  const d=rec && rec.subjects ? rec.subjects[sub] : null;
+  const hasSavedData = d && ((Number(d.male)||0)>0 || (Number(d.female)||0)>0 || d.qFrom || d.omrFrom);
+  if(hasSavedData){
+    document.getElementById('hs_qeMale').value=d.male||'';
+    document.getElementById('hs_qeFemale').value=d.female||'';
+    document.getElementById('hs_qeQpFrom').value=d.qFrom||'';
+    document.getElementById('hs_qeOmrFrom').value=d.omrFrom||'';
+    document.getElementById('hs_qeStatus').textContent='Loaded saved entry — editing (press Save Subject to update)';
+  }else{
+    hsMasterLoad();
+    const m=hsSubjectQpOmrMaster[sub]||{};
+    document.getElementById('hs_qeMale').value='';
+    document.getElementById('hs_qeFemale').value='';
+    document.getElementById('hs_qeQpFrom').value=m.qpFrom||'';
+    document.getElementById('hs_qeOmrFrom').value=m.omrFrom||'';
+    document.getElementById('hs_qeStatus').textContent='Not saved';
+  }
+  hsQuickEntryPopulateRooms();
+  document.getElementById('hs_qeRoom').value=(d&&d.manualRoom)||'';
+  document.getElementById('hs_qeCurrentRoom').textContent=(d&&d.manualRoom)?d.manualRoom:'Auto';
+  hsQuickEntryRecalc();
+}
+
+// Pure display calculation — reads the form only, writes to storage never.
+function hsQuickEntryRecalc(){
+  const male=Number(document.getElementById('hs_qeMale')?.value)||0;
+  const female=Number(document.getElementById('hs_qeFemale')?.value)||0;
+  const qFrom=document.getElementById('hs_qeQpFrom')?.value||'';
+  const omrFrom=document.getElementById('hs_qeOmrFrom')?.value||'';
+  const total=male+female;
+  const qTo=hsDailySerialEnd(qFrom,total);
+  const omrTo=hsDailySerialEnd(omrFrom,total);
+  const ntp=total?Math.ceil(total/10):0;
+  document.getElementById('hs_qeTotal').textContent=total;
+  document.getElementById('hs_qeQpTo').textContent=qTo||'—';
+  document.getElementById('hs_qeQpReq').textContent=total;
+  document.getElementById('hs_qeNtp').textContent=ntp;
+  document.getElementById('hs_qeOmrTo').textContent=omrTo||'—';
+  document.getElementById('hs_qeOmrReq').textContent=total;
+}
+
+function hsQuickEntryClearForm(){
+  const dd=document.getElementById('hs_qeSubject'); if(dd) dd.value='';
+  document.getElementById('hs_qeMale').value='';
+  document.getElementById('hs_qeFemale').value='';
+  document.getElementById('hs_qeQpFrom').value='';
+  document.getElementById('hs_qeOmrFrom').value='';
+  document.getElementById('hs_qeStatus').textContent='Not saved';
+  document.getElementById('hs_qeRoom').value='';
+  document.getElementById('hs_qeCurrentRoom').textContent='Auto';
+  hsQuickEntryRecalc();
+}
+
+// THE ONLY function in this panel that persists Male/Female/QP/OMR data.
+function hsQuickEntrySaveSubject(){
+  const sub=document.getElementById('hs_qeSubject')?.value||'';
+  if(!sub){ alert('Select a subject first.'); return; }
+  const venue=hsQuickEntryGetVenue(), date=hsQuickEntryGetDay();
+  const male=Number(document.getElementById('hs_qeMale')?.value)||0;
+  const female=Number(document.getElementById('hs_qeFemale')?.value)||0;
+  const qFrom=(document.getElementById('hs_qeQpFrom')?.value||'').trim();
+  const omrFrom=(document.getElementById('hs_qeOmrFrom')?.value||'').trim();
+  const total=male+female;
+  const rec=hsDailyOpsEnsureRecord(venue,date);
+  const existing=rec.subjects[sub]||{};
+  rec.subjects[sub]={
+    ...existing,
+    male, female, total,
+    qFrom, qTo:hsDailySerialEnd(qFrom,total), qReq:total, qNtp: total?Math.ceil(total/10):0,
+    omrFrom, omrTo:hsDailySerialEnd(omrFrom,total), omrReq: total,
+    manualRoom: existing.manualRoom||'', roomAllocations: existing.roomAllocations||[],
+    inv1: existing.inv1||'', inv2: existing.inv2||'', hall: existing.hall||''
+  };
+  hsDailyOpsDB[hsDailyOpsKey(venue,date)]=rec;
+  rec.savedAt=new Date().toISOString();
+  hsDailyOpsPersist();
+  document.getElementById('hs_qeStatus').textContent='Saved '+new Date(rec.savedAt).toLocaleString();
+  hsQuickEntryRenderSavedList();
+  // Keep the original detailed daily-ops table in sync — it reads the same record.
+  try{ hsDailyOpsRender(); }catch(e){}
+}
+
+function hsQuickEntryEditSubject(sub){
+  const dd=document.getElementById('hs_qeSubject'); if(dd) dd.value=sub;
+  hsQuickEntrySubjectChange();
+  document.getElementById('hs_quickEntryCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// Explicit removal only — clears one subject's saved entry for the selected day.
+function hsQuickEntryRemoveSubject(sub){
+  if(!confirm('Remove the saved Male/Female/QP/OMR entry for "'+sub+'" on this day?')) return;
+  const venue=hsQuickEntryGetVenue(), date=hsQuickEntryGetDay();
+  hsDailyOpsLoad();
+  const key=hsDailyOpsKey(venue,date);
+  const rec=hsDailyOpsDB[key];
+  if(rec && rec.subjects && rec.subjects[sub]){
+    rec.subjects[sub]={hall:'',male:'',female:'',total:'',enrolled:'',present:'',qFrom:'',qTo:'',qReq:'',qNtp:'',omrFrom:'',omrTo:'',omrReq:'',inv1:rec.subjects[sub].inv1||'',inv2:rec.subjects[sub].inv2||'',manualRoom:'',roomAllocations:[]};
+    hsDailyOpsDB[key]=rec;
+    hsDailyOpsPersist();
+  }
+  const dd=document.getElementById('hs_qeSubject');
+  if(dd && dd.value===sub) hsQuickEntryClearForm();
+  hsQuickEntryRenderSavedList();
+  try{ hsDailyOpsRender(); }catch(e){}
+}
+
+function hsQuickEntryRenderSavedList(){
+  const box=document.getElementById('hs_qeSavedList'); if(!box)return;
+  hsDailyOpsLoad();
+  const venue=hsQuickEntryGetVenue(), date=hsQuickEntryGetDay();
+  const rec=hsDailyOpsDB[hsDailyOpsKey(venue,date)];
+  const subjects=hsDailyOpsGetSelectedSubjects(venue,date);
+  const rows=subjects.map(sub=>{
+    const d=(rec&&rec.subjects&&rec.subjects[sub])||{};
+    const saved=(Number(d.male)||0)>0||(Number(d.female)||0)>0||d.qFrom||d.omrFrom;
+    if(!saved) return null;
+    const total=(Number(d.male)||0)+(Number(d.female)||0);
+    const safe=sub.replace(/'/g,"\\'");
+    return `<tr><td style="text-align:left;font-weight:700;">${hsEscapeFormText(sub)}</td><td>${d.male||0}</td><td>${d.female||0}</td><td>${total}</td><td>${hsEscapeFormText(d.qFrom||'')}</td><td>${hsEscapeFormText(d.qTo||'')}</td><td>${hsEscapeFormText(d.omrFrom||'')}</td><td>${hsEscapeFormText(d.omrTo||'')}</td><td>${hsEscapeFormText(d.manualRoom||'Auto')}</td><td style="white-space:nowrap;"><button class="btn btn-primary" style="padding:4px 8px;font-size:11px;" onclick="hsQuickEntryEditSubject('${safe}')">Edit</button> <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="hsQuickEntryRemoveSubject('${safe}')">Remove</button></td></tr>`;
+  }).filter(Boolean);
+  if(!rows.length){ box.innerHTML='<div style="padding:10px;color:#64748b;text-align:center;border:1px dashed #cbd5e1;border-radius:8px;">No subject saved yet for this day.</div>'; return; }
+  box.innerHTML='<div style="overflow-x:auto;"><table class="hs-room-table"><thead><tr><th>Subject</th><th>Male</th><th>Female</th><th>Total</th><th>QP From</th><th>QP To</th><th>OMR From</th><th>OMR To</th><th>Room</th><th>Action</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+}
+
+// THE ONLY function that persists room data from this panel.
+function hsQuickEntrySaveRoom(){
+  const sub=document.getElementById('hs_qeSubject')?.value||'';
+  if(!sub){ alert('Select a subject first.'); return; }
+  const venue=hsQuickEntryGetVenue(), date=hsQuickEntryGetDay();
+  hsDailyOpsLoad();
+  const rec=hsDailyOpsDB[hsDailyOpsKey(venue,date)];
+  const d=rec && rec.subjects && rec.subjects[sub];
+  const hasSavedData = d && ((Number(d.male)||0)>0 || (Number(d.female)||0)>0 || d.qFrom || d.omrFrom);
+  if(!hasSavedData){ alert('Save the subject entry (Male/Female/QP/OMR) with "Save Subject" before assigning a room.'); return; }
+  const room=document.getElementById('hs_qeRoom')?.value||'';
+  d.manualRoom=room;
+  hsRoomLoad();
+  const roomInfo=(hsRoomDB[venue]||[]).find(r=>r.room===room);
+  if(room && roomInfo){
+    const total=(Number(d.male)||0)+(Number(d.female)||0);
+    d.roomAllocations=[{room,seats:total}];
+    d.hall=room+' ('+total+')';
+  }else{
+    d.roomAllocations=[];
+    d.hall='';
+  }
+  rec.subjects[sub]=d;
+  hsDailyOpsDB[hsDailyOpsKey(venue,date)]=rec;
+  hsDailyOpsPersist();
+  document.getElementById('hs_qeCurrentRoom').textContent=room||'Auto';
+  document.getElementById('hs_qeRoomStatus').textContent=room?('Room "'+room+'" saved for '+sub+'.'):'Room cleared — placement set back to Auto.';
+  hsQuickEntryRenderSavedList();
+  try{ hsDailyOpsRender(); }catch(e){}
+}
+
+function hsQuickEntryInit(){
+  hsQuickEntryPopulateDays();
+  hsQuickEntryPopulateSubjects();
+  hsQuickEntryPopulateRooms();
+  hsQuickEntryClearForm();
+  hsQuickEntryRenderSavedList();
+}
+
+// Hook the simplified panel into the existing render cycle (venue/day change,
+// room add/delete, etc. already call hsDailyOpsRender()) without touching any
+// existing persistence call — this wrapper only re-populates dropdowns/list.
+const hsPreQuickEntryDailyOpsRender = hsDailyOpsRender;
+hsDailyOpsRender=function(){
+  hsPreQuickEntryDailyOpsRender();
+  hsQuickEntryPopulateDays();
+  hsQuickEntryPopulateSubjects();
+  hsQuickEntryPopulateRooms();
+  hsQuickEntryRenderSavedList();
+};
+
+/* ================================================================
    BOOTSTRAP EVERYTHING
    ================================================================ */
 cloudHydrateAndBoot(function(){
@@ -2835,6 +3114,7 @@ cloudHydrateAndBoot(function(){
   hsRecLoadPreset(6);
   hsMasterLoad();
   hsMasterRenderList();
+  hsQuickEntryInit();
 
   mpInitDataEngine();
   mpReqInitSystemWorkspace();
