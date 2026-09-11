@@ -1191,12 +1191,28 @@ function hsRoomRenderSummary(){
    everywhere a subject name is saved or looked up.
    ================================================================ */
 const HS_SUBJECT_CODE_MAP = {
-  BNGA:"Bengali (A)", BENG:"Bengali (B)", ENGA:"English (A)", ENGB:"English (B)",
-  SANT:"Santhali", ELTV:"Alternative English", ITEV:"IT & ITES", AGLV:"Agriculture (AGLV)",
-  BWLV:"Beauty & Wellness", MATH:"Mathematics", SNSK:"Sanskrit", BIOS:"Biological Science",
-  POLS:"Political Science", HIST:"History", CHEM:"Chemistry", GEGR:"Geography",
-  PHIL:"Philosophy", COMS:"Computer Science", COMA:"Accountancy", HPED:"Health & Physical Education",
-  PHYS:"Physics", NUTN:"Nutrition", EDCN:"Education"
+  // Languages
+  BNGA:"Bengali (A)", BENG:"Bengali (B)", ENGA:"English (A)", ENGB:"English (B)", SANT:"Santhali",
+  // Set I (Science)
+  PHYS:"Physics", NUTN:"Nutrition", CHEM:"Chemistry", GEGR:"Geography", ECON:"Economics",
+  ANTH:"Anthropology", SOWB:"Science of Well Being", MATH:"Mathematics", AGRI:"Agriculture",
+  BIOS:"Biological Science", STAT:"Statistics", PSYC:"Psychology", COMS:"Computer Science",
+  COMA:"Modern Computer Application", EVSC:"Environmental Science", HPED:"Health & Physical Education",
+  VISA:"Visual Arts", MUSC:"Music", CBST:"Cyber Security", AIDS:"Artificial Intelligence & Data Science",
+  FSAQ:"Fisheries & Aquaculture",
+  // Set II (Commerce) additions
+  ACCT:"Accountancy", BSTD:"Business Studies", CLPA:"Commercial Law and Preliminaries of Auditing",
+  CSTX:"Costing and Taxation", APAI:"Applied Artificial Intelligence", ENVS:"Environment Studies",
+  BMBS:"Business Mathematics and Basic Statistics",
+  // Set III (Arts) additions
+  POLS:"Political Science", EDCN:"Education", JMCN:"Journalism & Mass Communication", SNSK:"Sanskrit",
+  PRSN:"Persian", ARBC:"Arabic", BMSS:"Basic Mathematics for Social Sciences", PHIL:"Philosophy",
+  SOCG:"Sociology", HIST:"History", HDRM:"Human Development & Resource Management",
+  // Vocational (16) — may be taken as the compulsory-elective subject
+  ITEV:"IT & ITes", ATMV:"Automobile", ORTV:"Organised Retailing", SEUV:"Security",
+  HLCV:"Health Care", ELTV:"Electronics", THLV:"Tourism & Hospitality", PLBV:"Plumbing",
+  CNSV:"Construction", APLV:"Apparel", BWLV:"Beauty & Wellness", AGLV:"Agriculture (Vocational)",
+  POWV:"Power", BFIV:"Banking Financial Services & Insurance", FDPV:"Food Processing", TELV:"Telecom"
 };
 /* Reverse lookup (full name -> short WBCHSE code) + display helper.
    Used purely for on-screen / printed labels ("Bengali (A) (BNGA)") —
