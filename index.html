@@ -340,6 +340,16 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </table>
       <div style="margin-top:10px;font-size:12px;color:#475569;">Source: WBCHSE Download Centre / examination notifications. The Council currently lists Venue Supervisor Format (Data Sheet), R.A. Format, Seal Opening Format, On Duty Declaration and Confidential Format. citeturn1search0turn1search1</div>
     </div>
+
+    <div class="table-container no-print" style="padding:16px;">
+      <h3 style="margin:0 0 8px;">On Duty Declaration — Teacher-wise (all duty days)</h3>
+      <div style="font-size:9pt;color:#475569;margin-bottom:10px;">Builds one ON DUTY DECLARATION for a teacher, listing every date they were entered as Invigilator 1 / Invigilator 2 in the Subject-wise QP &amp; OMR Serial Database (Daily Ops) — instead of a separate form per date.</div>
+      <div class="control-deck" style="margin:0 0 6px;grid-template-columns:2fr 1fr 1fr;">
+        <div class="form-group"><label>Teacher (from saved Invigilator entries)</label><select id="hs_dutyTeacherSelect"><option value="">Select Teacher</option></select></div>
+        <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%;" onclick="hsDutyPopulateTeacherSelect()">Refresh Teacher List</button></div>
+        <div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="hsPrintTeacherDutyDeclaration()">Generate On Duty Form</button></div>
+      </div>
+    </div>
   </div>
 
 
@@ -378,6 +388,10 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         <div class="form-group"><label>Female</label><input type="number" min="0" id="hs_qeFemale" oninput="hsQuickEntryRecalc()"></div>
         <div class="form-group"><label>QP SL From</label><input type="text" id="hs_qeQpFrom" placeholder="e.g. PHY-00101" oninput="hsQuickEntryRecalc()"></div>
         <div class="form-group"><label>OMR SL From</label><input type="text" id="hs_qeOmrFrom" placeholder="e.g. OMR-00101" oninput="hsQuickEntryRecalc()"></div>
+      </div>
+      <div class="hs-save-strip" style="margin-top:8px;">
+        <button class="btn btn-primary" onclick="hsQuickEntryFetchFromLedger()">Auto-Fetch Male/Female from Ledger</button>
+        <span class="hs-dailyops-status" id="hs_qeLedgerStatus">Pulls the day's enrolled Male/Female figures already entered for this subject in the Progress Ledger.</span>
       </div>
       <div class="hs-official-grid" style="margin-top:12px;">
         <div class="form-group"><label>Total</label><div class="hs-auto-box" id="hs_qeTotal">0</div></div>
@@ -609,6 +623,10 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
 
     <div class="table-container no-print">
       <div class="section-title">Manual Schedule Grid Configuration (all fields live editable)</div>
+      <div style="margin:-4px 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="hsReqSyncSubjectScopeFromLedger()">Auto-Fill Subject Scope from Allotted Subjects (Ledger)</button>
+        <span style="font-size:8.5pt;color:#475569;">Pulls the subjects actually allotted per the Progress Ledger for each date (both venues), shown as WBCHSE short codes only. Rows with nothing allotted yet, or edited manually afterward, are left as-is.</span>
+      </div>
       <table class="reporting-table">
         <thead><tr>
           <th style="width:5%;">SL</th><th style="width:25%;">Base Month-Date Mapping</th>
@@ -1233,6 +1251,20 @@ function hsSubjectWithCode(name){
 function hsSubjectListWithCodes(list){
   return String(list||"").split(",").map(s=>s.trim()).filter(Boolean).map(hsSubjectWithCode).join(", ");
 }
+/* Short WBCHSE code ONLY (e.g. "PHYS") — never the full subject name and
+   never "Name (CODE)". Used for the Invigilator Requisition "Subject Scope"
+   column, which must stay compact. Accepts either a full subject name or an
+   already-short code and normalizes both to just the code. */
+function hsSubjectShortCode(name){
+  const raw=String(name||"").trim();
+  if(!raw) return "";
+  const upper=raw.toUpperCase();
+  if(HS_SUBJECT_CODE_MAP[upper]) return upper;
+  return HS_SUBJECT_NAME_TO_CODE[upper] || raw;
+}
+function hsSubjectScopeShortCodes(list){
+  return String(list||"").split(",").map(s=>s.trim()).filter(Boolean).map(hsSubjectShortCode).join(", ");
+}
 function hsNormalizeSubjectName(text){
   const raw=String(text||"").trim();
   if(!raw) return "";
@@ -1732,6 +1764,66 @@ function hsBuildDayFormPage(type,c){
     return `<section class="page generic-page"><div class="official-form-head"><img src="${HS_WBCHSE_LOGO_URL}" class="wbchse-logo" alt="WBCHSE"><div class="council-name">WEST BENGAL COUNCIL OF HIGHER SECONDARY EDUCATION</div><div class="address">Vidyasagar Bhavan, 9/2 Block DJ, Sector-II, Salt Lake, Kolkata – 700 091</div><div class="exam-line">Semester-III of Higher Secondary Examination, 2027</div></div><div class="generic-title">R. A. FORMAT</div><table><tr><th>Centre / Code</th><td>${esc(c.centre)} / ${esc(c.centreCode)}</td><th>Venue / Code</th><td>${esc(c.venue)} / ${esc(c.venueCode)}</td></tr><tr><th>Date / Day</th><td>${esc(c.date)} / ${esc(c.day)}</td><th>Subject(s)</th><td>${esc(c.subject)}</td></tr></table><table><tr><th>Sl.</th><th>Candidate / Roll / Registration</th><th>Reason / R.A. Details</th><th>Action Taken</th><th>Signature</th></tr>${Array.from({length:12},(_,i)=>`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td></tr>`).join('')}</table><div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div></section>`;
   }
   return '';
+}
+/* ================================================================
+   HS :: TEACHER-WISE ON DUTY DECLARATION
+   Scans every saved Daily Ops subject entry (both venues, all dates) for the
+   Invigilator 1 / Invigilator 2 names already entered in the Subject-wise QP
+   & OMR Serial Database, and groups the duty days by teacher name so a
+   single ON DUTY DECLARATION can be printed per teacher covering every day
+   they served, instead of one form per date.
+   ================================================================ */
+function hsParseDMYToSortable(dateStr){
+  const m=String(dateStr||'').match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if(!m) return 0;
+  return Number(m[3])*10000+Number(m[2])*100+Number(m[1]);
+}
+function hsCollectInvigilatorDutyDays(){
+  hsDailyOpsLoad();
+  const venueLabel={TFHS:'TALDANGRA FULMATI HIGH SCHOOL [H.S.] (114071)',TGHS:"TALDANGRA GIRLS' HIGH SCHOOL [H.S.] (114200)"};
+  const byTeacher={};
+  Object.keys(hsDailyOpsDB||{}).forEach(key=>{
+    const sep=key.indexOf('|'); if(sep<0) return;
+    const venue=key.slice(0,sep), date=key.slice(sep+1);
+    const rec=hsDailyOpsDB[key]; if(!rec || !rec.subjects) return;
+    const item=hsOfficialExamRoutineTimeline.find(x=>x.date===date);
+    const day=item?item.day:'';
+    Object.keys(rec.subjects).forEach(sub=>{
+      const d=rec.subjects[sub]||{};
+      [d.inv1,d.inv2].forEach(name=>{
+        const clean=String(name||'').trim();
+        if(!clean) return;
+        const dictKey=clean.toUpperCase();
+        if(!byTeacher[dictKey]) byTeacher[dictKey]={name:clean,days:[]};
+        byTeacher[dictKey].days.push({venue,venueLabel:venueLabel[venue]||venue,date,day,subject:sub});
+      });
+    });
+  });
+  return byTeacher;
+}
+function hsDutyPopulateTeacherSelect(){
+  const dd=document.getElementById('hs_dutyTeacherSelect'); if(!dd) return;
+  const map=hsCollectInvigilatorDutyDays();
+  const keys=Object.keys(map).sort((a,b)=>map[a].name.localeCompare(map[b].name));
+  const old=dd.value;
+  dd.innerHTML='<option value="">Select Teacher</option>'+keys.map(k=>`<option value="${hsEscapeFormText(map[k].name)}">${hsEscapeFormText(map[k].name)} (${map[k].days.length} day${map[k].days.length===1?'':'s'})</option>`).join('');
+  if(old && keys.includes(old.toUpperCase())) dd.value=old;
+}
+function hsPrintTeacherDutyDeclaration(){
+  const dd=document.getElementById('hs_dutyTeacherSelect');
+  const name=dd?dd.value:'';
+  if(!name) return alert('Select a teacher first. The list is built from Invigilator 1 / Invigilator 2 names already saved in the Subject-wise QP & OMR Serial Database — press "Refresh Teacher List" after entering/saving invigilator names.');
+  const map=hsCollectInvigilatorDutyDays();
+  const rec=map[name.toUpperCase()];
+  if(!rec || !rec.days.length) return alert('No duty days found for this teacher.');
+  const esc=hsEscapeFormText;
+  const days=rec.days.slice().sort((a,b)=>hsParseDMYToSortable(a.date)-hsParseDMYToSortable(b.date));
+  const rows=days.map((d,i)=>`<tr><td>${i+1}</td><td>${esc(d.date)}</td><td>${esc(d.day)}</td><td>${esc(d.venueLabel)}</td><td>${esc(hsSubjectWithCode(d.subject))}</td></tr>`).join('');
+  const c={venue:'TALDANGRA Examination Centre',venueCode:'2206',date:'',day:''};
+  const body=`<h3>ON DUTY DECLARATION</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><p>I, Sri / Smt. <b>${esc(rec.name)}</b> was engaged with examination duty related to Semester-III of H.S. Examination, 2027 on the following date(s):</p><table><tr><th>Sl.</th><th>Date</th><th>Day</th><th>Venue</th><th>Subject(s)</th></tr>${rows}</table><p>Signature of the applicant with date: __________________________________</p><p>Mobile No.: ______________________________</p><p>The above mentioned day(s) may be treated as &ldquo;ON DUTY&rdquo; in respect of Sri/Smt. <b>${esc(rec.name)}</b>.</p><p>Signature of Convenor / DI of Schools (SE) with date: ______________________________</p>`;
+  const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
+  w.document.write(`<!doctype html><html><head><title>ON DUTY DECLARATION — ${esc(rec.name)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.close();
 }
 function hsOpenMultiFormWindow(venue,dates){
   const pages=[];
@@ -2294,7 +2386,7 @@ function hsReqSyncDisplayOutputs(){
       <td><input type="text" value="${item.sub}" style="text-align:left;" oninput="hsReqUpdateRowVariable(${index}, 'sub', this.value)"></td>`;
     matrixBody.appendChild(trMatrix);
     const trLetter = document.createElement("tr");
-    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${item.count}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${hsSubjectListWithCodes(item.sub)}</td>`;
+    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${item.count}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${hsSubjectScopeShortCodes(item.sub)}</td>`;
     letterBody.appendChild(trLetter);
   });
 }
@@ -2306,8 +2398,30 @@ function hsReqUpdateRowVariable(index, key, value){
   if(letterRows[index]){
     if(key==='day'){ letterRows[index].children[0].textContent = `${value}, ${hsReqLiveSystemState.schedule[index].baseDate} ${targetYear}`; }
     if(key==='count') letterRows[index].children[1].textContent = value;
-    if(key==='sub') letterRows[index].children[2].textContent = hsSubjectListWithCodes(value);
+    if(key==='sub') letterRows[index].children[2].textContent = hsSubjectScopeShortCodes(value);
   }
+}
+// Pulls the subjects actually allotted (Progress-Ledger-driven, via
+// hsGetAllocatedSubjects) for a requisition schedule row's date, across both
+// venues, and returns them as a short-code-only comma list — never full names.
+function hsReqAllottedShortCodesForRow(rowIndex){
+  const item=hsOfficialExamRoutineTimeline[rowIndex]; if(!item) return '';
+  hsLoadSubjectAllocation();
+  const subs=new Set();
+  ['TFHS','TGHS'].forEach(v=>{ hsGetAllocatedSubjects(v,item.date).forEach(s=>subs.add(s)); });
+  return [...subs].map(hsSubjectShortCode).join(', ');
+}
+// Replaces every row's manually-typed Subject Scope with the subjects that
+// are actually allotted per the Progress Ledger for that date (short codes
+// only). Rows with nothing allotted yet are left untouched so a day off /
+// vocational label typed manually isn't wiped out.
+function hsReqSyncSubjectScopeFromLedger(){
+  hsReqLiveSystemState.schedule.forEach((row,index)=>{
+    const codes=hsReqAllottedShortCodesForRow(index);
+    if(codes) hsReqLiveSystemState.schedule[index].sub=codes;
+  });
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+  hsReqSyncDisplayOutputs();
 }
 function hsReqUpdateRecipientSchoolName(val){
   hsReqLiveSystemState.schoolName = val;
@@ -3016,6 +3130,45 @@ window.addEventListener('load',()=>{setTimeout(()=>{hsEnhancedEnsureUI();hsEnhan
    it never calls hsDailyOpsPersist(). Only "Save Subject" and
    "Save Room Data" persist anything.
    ================================================================ */
+/* Reads the Male/Female enrolled figures already entered in the Progress
+   Ledger (hsTrackingStateDatabase) for a given venue/date/subject, so Quick
+   Subject Entry can auto-fetch them instead of re-typing. Uses the per-subject
+   breakdown (row.subVals) when Subject-wise Entry is on for that day; falls
+   back to the day's single aggregate total only when just one subject runs
+   that day (otherwise the day total can't be safely split per subject).
+   Returns {male,female} or null when nothing usable is on file yet. */
+function hsLedgerSubjectCounts(venue,date,sub){
+  try{
+    if(typeof hsTrackingStateDatabase==='undefined') return null;
+    const rows=hsTrackingStateDatabase[venue];
+    if(!Array.isArray(rows)) return null;
+    const row=rows.find(r=>r.date===date);
+    if(!row) return null;
+    const subjects=hsRowSubjectList(row);
+    let arr=null;
+    if(row.subWise && row.subVals && row.subVals[sub]) arr=row.subVals[sub];
+    else if(subjects.length<=1) arr=row.vals;
+    if(!arr) return null;
+    const male=(Number(arr[0])||0)+(Number(arr[2])||0)+(Number(arr[4])||0);
+    const female=(Number(arr[1])||0)+(Number(arr[3])||0)+(Number(arr[5])||0);
+    if(male<=0 && female<=0) return null;
+    return {male,female};
+  }catch(e){ return null; }
+}
+// Manual re-fetch button — pulls the ledger figures into the form without
+// saving anything; press Save Subject afterward to persist them.
+function hsQuickEntryFetchFromLedger(){
+  const sub=document.getElementById('hs_qeSubject')?.value||'';
+  const venue=hsQuickEntryGetVenue(), date=hsQuickEntryGetDay();
+  const st=document.getElementById('hs_qeLedgerStatus');
+  if(!sub){ if(st) st.textContent='Select a subject first.'; return; }
+  const counts=hsLedgerSubjectCounts(venue,date,sub);
+  if(!counts){ if(st) st.textContent='No Male/Female figure found in the Progress Ledger for this subject/day yet.'; return; }
+  document.getElementById('hs_qeMale').value=counts.male;
+  document.getElementById('hs_qeFemale').value=counts.female;
+  hsQuickEntryRecalc();
+  if(st) st.textContent='Fetched from Progress Ledger: Male '+counts.male+', Female '+counts.female+' (press Save Subject to store).';
+}
 function hsQuickEntryGetVenue(){ return document.getElementById('hs_opsVenue')?.value||'TFHS'; }
 function hsQuickEntryGetDay(){ return document.getElementById('hs_qeDay')?.value||hsOfficialExamRoutineTimeline[0]?.date; }
 
@@ -3073,11 +3226,14 @@ function hsQuickEntrySubjectChange(){
   }else{
     hsMasterLoad();
     const m=hsSubjectQpOmrMaster[sub]||{};
-    document.getElementById('hs_qeMale').value='';
-    document.getElementById('hs_qeFemale').value='';
+    const counts=hsLedgerSubjectCounts(venue,date,sub);
+    document.getElementById('hs_qeMale').value=counts?counts.male:'';
+    document.getElementById('hs_qeFemale').value=counts?counts.female:'';
     document.getElementById('hs_qeQpFrom').value=m.qpFrom||'';
     document.getElementById('hs_qeOmrFrom').value=m.omrFrom||'';
-    document.getElementById('hs_qeStatus').textContent='Not saved';
+    document.getElementById('hs_qeStatus').textContent=counts?'Not saved — Male/Female auto-fetched from Progress Ledger':'Not saved';
+    const st=document.getElementById('hs_qeLedgerStatus');
+    if(st) st.textContent=counts?('Auto-fetched from Progress Ledger: Male '+counts.male+', Female '+counts.female+'.'):"No Male/Female figure found in the Progress Ledger for this subject/day yet.";
   }
   hsQuickEntryPopulateRooms();
   document.getElementById('hs_qeRoom').value=(d&&d.manualRoom)||'';
@@ -3235,6 +3391,7 @@ hsDailyOpsRender=function(){
   hsQuickEntryPopulateSubjects();
   hsQuickEntryPopulateRooms();
   hsQuickEntryRenderSavedList();
+  try{ hsDutyPopulateTeacherSelect(); }catch(e){}
 };
 
 /* ================================================================
@@ -3248,6 +3405,7 @@ cloudHydrateAndBoot(function(){
   hsMasterLoad();
   hsMasterRenderList();
   hsQuickEntryInit();
+  hsDutyPopulateTeacherSelect();
 
   mpInitDataEngine();
   mpReqInitSystemWorkspace();
