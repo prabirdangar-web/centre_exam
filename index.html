@@ -593,7 +593,9 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
   <!-- ---------- HS: INVIGILATOR REQUISITION ---------- -->
   <div class="tool-panel app-shell" data-tool="requisition" id="hs-requisition">
     <div class="dashboard-header no-print">
-      <div><h2>H.S. Invigilator Requisition</h2><p>Automatic invigilation duty deployment &amp; requisition letter</p></div>
+      <div><h2>H.S. Invigilator Requisition</h2><p>Automatic invigilation duty deployment &amp; requisition letter</p>
+        <p class="no-print" style="margin:2px 0 0; font-size:8.5pt;"><a href="https://prabirdangar-web.github.io/centre_exam/" target="_blank" rel="noopener" style="color:#2563eb;">Source tool: prabirdangar-web.github.io/centre_exam</a></p>
+      </div>
       <div style="display:flex; gap:8px;">
         <button class="btn btn-success" onclick="hsReqExportDataBackup()">Export JSON</button>
         <button class="btn btn-primary" onclick="document.getElementById('hs_req_importFileHandler').click()">Import JSON</button>
@@ -2354,6 +2356,34 @@ const hsDynamicRoutineTimelineBase = [
   { baseDate: "20 September", day: "Saturday", count: "-", sub: "OFF DAY" },
   { baseDate: "22 September", day: "Monday", count: "2", sub: "BIOS, POLS" }
 ];
+// Day-wise enrollment sheet, Centre 2206 (Taldangra), H.S. Exam-2027 Sem-III —
+// transcribed from the office copy. "count" here is the INVIGILATOR OTHER
+// SCHOOL figure from that sheet (teachers required on requisition from other
+// schools); "-" means none requisitioned that day. OFF DAY rows carry no
+// count/subject. Used to seed the Invigilator Requisition schedule grid on a
+// fresh/reset load, before any manual edits are cached.
+const hsReqDefaultScheduleFromEnrollmentSheet = [
+  { date: "21.09.2026", day: "Monday",    count: "20", sub: "BNGA, SANT" },
+  { date: "22.09.2026", day: "Tuesday",   count: "-",  sub: "ELTV, ITEV, AGLV" },
+  { date: "24.09.2026", day: "Thursday",  count: "20", sub: "ENGB" },
+  { date: "25.09.2026", day: "Friday",    count: "-",  sub: "OFF DAY" },
+  { date: "28.09.2026", day: "Monday",    count: "07", sub: "PHYS, NUTN, EDCN" },
+  { date: "29.09.2026", day: "Tuesday",   count: "04", sub: "COMA, HPED, ENVS" },
+  { date: "30.09.2026", day: "Wednesday", count: "04", sub: "HIST" },
+  { date: "01.10.2026", day: "Thursday",  count: "16", sub: "CHEM, GEGR" },
+  { date: "03.10.2026", day: "Saturday",  count: "-",  sub: "PHIL" },
+  { date: "12.10.2026", day: "Monday",    count: "18", sub: "MATH, SNSK" },
+  { date: "13.10.2026", day: "Tuesday",   count: "-",  sub: "OFF DAY" },
+  { date: "14.10.2026", day: "Wednesday", count: "15", sub: "BIOS, POLS" }
+];
+// Builds "21 September" / "01 October" from a "DD.MM.YYYY" string — replaces
+// the old hardcoded "+ ' September'" which was wrong for the October dates.
+function hsReqBaseDateFromDMY(dmy){
+  const monthNames=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const parts=String(dmy).split(".");
+  const dd=parts[0]||"", mm=parseInt(parts[1],10)||1;
+  return `${dd} ${monthNames[mm-1]}`;
+}
 let hsReqLiveSystemState = {};
 function hsReqInitSystemWorkspace(){
   const localCache = localStorage.getItem("ExamRequisitionSystemDataCache_HS");
@@ -2361,11 +2391,20 @@ function hsReqInitSystemWorkspace(){
     hsReqLiveSystemState.year = "2026";
     hsReqLiveSystemState.schedule = hsOfficialExamRoutineTimeline.map((x,i)=>{
       const prior = (hsReqLiveSystemState.schedule||[])[i] || {};
-      return { day:x.day, count:prior.count ?? "-", sub:x.sub, baseDate:(x.date.substring(0,2)+" September") };
+      const sheetRow = hsReqDefaultScheduleFromEnrollmentSheet[i];
+      return {
+        day:x.day,
+        count: prior.count ?? (sheetRow ? sheetRow.count : "-"),
+        sub: prior.sub ?? (sheetRow ? sheetRow.sub : x.sub),
+        baseDate: hsReqBaseDateFromDMY(x.date)
+      };
     });
     localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   }
-  else{ hsReqLiveSystemState = { schoolName: "TALDANGRA FULMATI HIGH SCHOOL [H.S.]", year: "2026", schedule: hsOfficialExamRoutineTimeline.map(x=>({day:x.day, count:"-", sub:x.sub, baseDate:(x.date.substring(0,2)+" September")})) }; }
+  else{ hsReqLiveSystemState = { schoolName: "TALDANGRA FULMATI HIGH SCHOOL [H.S.]", year: "2026", schedule: hsOfficialExamRoutineTimeline.map((x,i)=>{
+      const sheetRow = hsReqDefaultScheduleFromEnrollmentSheet[i];
+      return { day:x.day, count: sheetRow ? sheetRow.count : "-", sub: sheetRow ? sheetRow.sub : x.sub, baseDate: hsReqBaseDateFromDMY(x.date) };
+    }) }; }
   populateSchoolSelect(document.getElementById("hs_schoolSelect"), hsReqLiveSystemState.schoolName);
   document.getElementById("hs_examYearInput").value = hsReqLiveSystemState.year;
   hsReqSyncDisplayOutputs();
