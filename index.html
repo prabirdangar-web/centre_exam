@@ -638,6 +638,14 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </table>
     </div>
 
+    <div class="table-container no-print">
+      <div class="section-title">Invigilator Entry Sheet — Actual Allocation from Feeder Schools</div>
+      <div style="margin:-4px 0 12px;font-size:8.5pt;color:#475569;">
+        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above.
+      </div>
+      <div id="hs_entrySheetContainer"></div>
+    </div>
+
     <div id="requisitionLetterA4_hs" class="print-target">
       <div class="letter-header">
         <div class="contact-line">E-mail: highschooltaldangrafulmati@gmail.com</div>
@@ -657,9 +665,9 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       <div class="subject-line">Subject :- Requisition of Teachers for invigilation duty for smooth conduct of H.S. Examination-<span class="hs_outYear">2027</span> [SEM-III]</div>
       <div class="letter-body">
         Sir/Madam,<br><br>
-        As per decision taken in Block Level Meeting in Taldangra Block and in accordance with the approval of the DI/S(S.E.), Bankura you are requested to depute regular teachers from your school as mentioned in centralized invigilation duty chart prepared by the said authority for invigilation duties in the examination venues as per requirement noted below. The deputed teachers may kindly be requested to report to the Center Secretary of this venue (TALDANGRA FULMATI HIGH SCHOOL [H.S.]; <strong>Venue Code-114071</strong>; Centre Code-2206) at <strong>8:30 a.m.</strong> on the dates of examinations.
+        As per decision taken in Block Level Meeting in Taldangra Block and in accordance with the approval of the DI/S(S.E.), Bankura you are requested to depute regular teachers from your school as mentioned in centralized invigilation duty chart prepared by the said authority for invigilation duties in the examination venues as per requirement noted below. The deputed teachers may kindly be requested to report to the Center Secretary of this venue (TALDANGRA FULMATI HIGH SCHOOL [H.S.]; <strong>Venue Code-114071</strong>; Centre Code-2206) not later than <strong>9:30 a.m.</strong> on the dates of examinations.
         <br><br>
-        The examination will be held in only one paper on each day 10:00 am to 11:15 a.m. (01 hour 15 minutes) except Visual Arts, Music and Vocational Subjects for which time will be from 10:00 am to 10.45 am (45 minutes).
+        The examination will be held in only one paper on each day from <strong>11:00 am to 12:30 pm</strong> (1 hour 30 minutes).
         <br><br>Active co-operation from your end is earnestly solicited.
       </div>
       <table class="schedule-table">
@@ -883,9 +891,9 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       <div class="subject-line">Subject :- Requisition of Teachers for invigilation duty for smooth conduct of Madhyamik Pariksha (Secondary Examination)-<span class="mp_outYear">2027</span></div>
       <div class="letter-body">
         Sir/Madam,<br><br>
-        As per decision taken in Block Level Meeting in Taldangra Block and in accordance with the approval of the DI/S(S.E.), Bankura you are requested to depute regular teachers from your school as mentioned in centralized invigilation duty chart prepared by the said authority for invigilation duties in the examination venues as per requirement noted below. The deputed teachers may kindly be requested to report to the Center Secretary of this venue at <strong>9:30 a.m.</strong> on the dates of examinations.
+        As per decision taken in Block Level Meeting in Taldangra Block and in accordance with the approval of the DI/S(S.E.), Bankura you are requested to depute regular teachers from your school as mentioned in centralized invigilation duty chart prepared by the said authority for invigilation duties in the examination venues as per requirement noted below. The deputed teachers may kindly be requested to report to the Center Secretary of this venue not later than <strong>9:30 a.m.</strong> on the dates of examinations.
         <br><br>
-        As per W.B.B.S.E. Notification No. EMU/C/35 dated 13/07/2026, the examination will be held in only one subject on each day. First 15 minutes are reserved for reading the question paper only, i.e. 10:45 am to 11:00 am, and the examination runs 10:45 am to 2:00 pm.
+        As per W.B.B.S.E. Notification No. EMU/C/35 dated 13/07/2026, the examination will be held in only one subject on each day, from <strong>11:00 am to 12:30 pm</strong> (1 hour 30 minutes).
         <br><br>Active co-operation from your end is earnestly solicited.
       </div>
       <table class="schedule-table">
@@ -2407,7 +2415,9 @@ function hsReqInitSystemWorkspace(){
     }) }; }
   populateSchoolSelect(document.getElementById("hs_schoolSelect"), hsReqLiveSystemState.schoolName);
   document.getElementById("hs_examYearInput").value = hsReqLiveSystemState.year;
+  hsEntrySheetEnsureInit();
   hsReqSyncDisplayOutputs();
+  hsEntrySheetRender();
 }
 function hsReqSyncDisplayOutputs(){
   const targetYear = hsReqLiveSystemState.year || "2027";
@@ -2507,6 +2517,102 @@ function hsReqClearDataReset(){
     localStorage.removeItem("ExamRequisitionSystemDataCache_HS");
     hsReqInitSystemWorkspace();
   }
+}
+
+/* ----------------------------------------------------------------
+   HS :: INVIGILATOR ENTRY SHEET
+   Starts with two feeder-school rows per requisition date, but rows can
+   be added or removed freely so any number of feeder schools can be
+   entered for a single day. The total actually allocated is checked
+   live against the "Invigilators Count" (max required) set in the
+   schedule grid above. Stored inside the same hsReqLiveSystemState
+   object (under .entrySheet, keyed by index) so it rides along with
+   the existing Export/Import/Reset for that module.
+   ---------------------------------------------------------------- */
+function hsEntrySheetEnsureInit(){
+  if(!hsReqLiveSystemState.entrySheet) hsReqLiveSystemState.entrySheet = {};
+  hsOfficialExamRoutineTimeline.forEach((x,i)=>{
+    if(!hsReqLiveSystemState.entrySheet[i]){
+      hsReqLiveSystemState.entrySheet[i] = [{school:"",count:""},{school:"",count:""}];
+    }
+  });
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+}
+function hsEntrySheetSchoolOptionsHtml(selected){
+  let html = `<option value="">-- select school --</option>`;
+  feederSchoolRoster.forEach(name=>{
+    html += `<option value="${name}"${name===selected?' selected':''}>${name}</option>`;
+  });
+  return html;
+}
+function hsEntrySheetRowTotal(index){
+  return (hsReqLiveSystemState.entrySheet[index]||[]).reduce((sum,row)=>sum + (parseInt(row.count,10)||0), 0);
+}
+function hsEntrySheetRender(){
+  const box = document.getElementById("hs_entrySheetContainer");
+  if(!box) return;
+  let html = "";
+  hsOfficialExamRoutineTimeline.forEach((x,i)=>{
+    const sched = hsReqLiveSystemState.schedule[i] || {};
+    const required = parseInt(sched.count,10) || 0;
+    const isOffOrNone = sched.sub === "OFF DAY" || !required;
+    const fullDateStr = `${sched.day}, ${sched.baseDate} ${hsReqLiveSystemState.year||"2026"}`;
+    if(isOffOrNone){
+      html += `<div style="padding:8px 10px;border:1px solid var(--border-color);border-radius:6px;margin-bottom:8px;color:#64748b;font-size:9pt;">
+        <b>${fullDateStr}</b> — ${sched.sub==="OFF DAY" ? "OFF DAY, no entry needed." : "No invigilators requisitioned from other schools on this date."}
+      </div>`;
+      return;
+    }
+    const rows = hsReqLiveSystemState.entrySheet[i]||[{school:"",count:""},{school:"",count:""}];
+    let rowsHtml = "";
+    rows.forEach((row,r)=>{
+      const canRemove = rows.length>1;
+      rowsHtml += `<div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+        <select style="flex:1;" onchange="hsEntrySheetUpdateRow(${i},${r},'school',this.value)">${hsEntrySheetSchoolOptionsHtml(row.school)}</select>
+        <input type="number" min="0" placeholder="Count" value="${row.count}" style="width:90px;" oninput="hsEntrySheetUpdateRow(${i},${r},'count',this.value)">
+        <button type="button" class="btn btn-danger no-print" style="padding:4px 9px;font-size:9pt;${canRemove?'':'visibility:hidden;'}" onclick="hsEntrySheetRemoveRow(${i},${r})" title="Remove this school">&times;</button>
+      </div>`;
+    });
+    const total = hsEntrySheetRowTotal(i);
+    let statusHtml;
+    if(total===required) statusHtml = `<span style="color:var(--success);font-weight:600;">✓ Allocation complete — no further schools needed.</span>`;
+    else if(total<required) statusHtml = `<span style="color:#b45309;font-weight:600;">${required-total} more invigilator(s) still needed from feeder schools.</span>`;
+    else statusHtml = `<span style="color:var(--danger);font-weight:600;">Over-allocated by ${total-required} — please adjust.</span>`;
+    html += `<div style="padding:10px;border:1px solid var(--border-color);border-radius:6px;margin-bottom:10px;">
+      <div style="font-weight:600;margin-bottom:6px;">${fullDateStr} <span style="font-weight:400;color:#475569;">(Required: ${required})</span></div>
+      ${rowsHtml}
+      <button type="button" class="btn btn-primary no-print" style="padding:5px 12px;font-size:9pt;margin-bottom:8px;" onclick="hsEntrySheetAddRow(${i})">+ Add School</button>
+      <div id="hs_entryStatus_${i}" style="font-size:9pt;">Total Allocated: <b id="hs_entryTotal_${i}">${total}</b> / ${required} — ${statusHtml}</div>
+    </div>`;
+  });
+  box.innerHTML = html;
+}
+function hsEntrySheetUpdateRow(index, rowIdx, field, value){
+  hsReqLiveSystemState.entrySheet[index][rowIdx][field] = value;
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+  const required = parseInt((hsReqLiveSystemState.schedule[index]||{}).count,10) || 0;
+  const total = hsEntrySheetRowTotal(index);
+  const statusEl = document.getElementById(`hs_entryStatus_${index}`);
+  if(statusEl){
+    let statusHtml;
+    if(total===required) statusHtml = `<span style="color:var(--success);font-weight:600;">✓ Allocation complete — no further schools needed.</span>`;
+    else if(total<required) statusHtml = `<span style="color:#b45309;font-weight:600;">${required-total} more invigilator(s) still needed from feeder schools.</span>`;
+    else statusHtml = `<span style="color:var(--danger);font-weight:600;">Over-allocated by ${total-required} — please adjust.</span>`;
+    statusEl.innerHTML = `Total Allocated: <b>${total}</b> / ${required} — ${statusHtml}`;
+  }
+}
+function hsEntrySheetAddRow(index){
+  if(!hsReqLiveSystemState.entrySheet[index]) hsReqLiveSystemState.entrySheet[index] = [];
+  hsReqLiveSystemState.entrySheet[index].push({school:"",count:""});
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+  hsEntrySheetRender();
+}
+function hsEntrySheetRemoveRow(index, rowIdx){
+  const rows = hsReqLiveSystemState.entrySheet[index];
+  if(!rows || rows.length<=1) return;
+  rows.splice(rowIdx,1);
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+  hsEntrySheetRender();
 }
 
 /* ================================================================
