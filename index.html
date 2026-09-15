@@ -308,7 +308,8 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </div>
     </div>
     <div class="table-container no-print" style="padding:16px;">
-      <h3 style="margin:0 0 8px;">Centre-wise subject allotment — select applicable subjects for each day</h3>
+      <h3 style="margin:0 0 8px;">Centre-wise Subject Allotment — Day • Venue • Subject • Code</h3>
+      <div style="font-size:9pt;color:#475569;margin-bottom:10px;">Select the venue and examination day, then tick only the subjects actually held there. A complete day-wise summary is shown below.</div>
       <div class="control-deck" style="margin:0 0 12px;">
         <div class="form-group"><label>Venue</label><select id="hs_formVenue" onchange="hsRenderDaySubjectSelector()"><option value="TFHS">VENUE-1 — TALDANGRA FULMATI HIGH SCHOOL [H.S.] — 114071</option><option value="TGHS">VENUE-2 — TALDANGRA GIRLS' HIGH SCHOOL [H.S.] — 114200</option></select></div>
         <div class="form-group"><label>Examination Day</label><select id="hs_formDay" onchange="hsRenderDaySubjectSelector()"></select></div>
@@ -317,6 +318,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </div>
       <div id="hs_dayDateSelector" style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc;margin-bottom:10px;"></div>
       <div id="hs_daySubjectSelector" style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc;"></div>
+      <div id="hs_centreAllotmentSummary" style="margin-top:12px;"></div>
     </div>
     <div class="center-registry no-print">
       <div class="center-registry-title">Auto-fill Centre / Venue Master</div>
@@ -619,7 +621,9 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </div>
       <div class="form-group">
         <label>Print Out Command</label>
-        <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="window.print()">Print Request Sheet</button>
+        <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="hsGenerateSchoolWiseLetter()">Generate Letter from Date-wise Allocation</button>
+        <button class="btn btn-primary" style="width:100%; justify-content:center;margin-top:6px;" onclick="window.print()">Print Generated Letter</button>
+        <div id="hs_letterGenStatus" style="font-size:8.5pt;color:#475569;margin-top:7px;"></div>
       </div>
     </div>
 
@@ -631,8 +635,9 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </div>
       <table class="reporting-table">
         <thead><tr>
-          <th style="width:5%;">SL</th><th style="width:25%;">Base Month-Date Mapping</th>
-          <th style="width:15%;">Day</th><th style="width:20%;">Invigilators Count</th><th style="width:35%;">Subject Scope</th>
+          <th style="width:4%;">SL</th><th style="width:18%;">Date</th><th style="width:12%;">Day</th>
+          <th style="width:22%;">Venue</th><th style="width:20%;">Subject</th><th style="width:10%;">Sub Code</th>
+          <th style="width:14%;">Invigilators</th>
         </tr></thead>
         <tbody id="hs_scheduleMatrixBody"></tbody>
       </table>
@@ -641,10 +646,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     <div class="table-container no-print">
       <div class="section-title">Invigilator Entry Sheet — Actual Allocation from Feeder Schools</div>
       <div style="margin:-4px 0 12px;font-size:8.5pt;color:#475569;">
-        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above. Once saved here, each school's requisition letter shows only that school's own count for each date.
-      </div>
-      <div style="margin:-4px 0 12px;">
-        <button type="button" class="btn btn-primary no-print" onclick="hsEntrySheetApplyDefaultAll()">Auto-Fill Default Feeder Split (All Dates)</button>
+        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above.
       </div>
       <div id="hs_entrySheetContainer"></div>
     </div>
@@ -673,8 +675,11 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         The examination will be held in only one paper on each day from <strong>11:00 am to 12:30 pm</strong> (1 hour 30 minutes).
         <br><br>Active co-operation from your end is earnestly solicited.
       </div>
+      <div class="no-print" style="margin:8px 0 10px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;font-size:8.5pt;color:#475569;">
+        This letter is generated <b>school-wise from the actual Date-wise Feeder School Allocation</b>. Only dates on which the selected school is allotted invigilators are shown.
+      </div>
       <table class="schedule-table">
-        <thead><tr><th style="width:38%;">Dates of Examination</th><th style="width:22%;">Nos of Invigilator required</th><th style="width:40%;">Subject</th></tr></thead>
+        <thead><tr><th>Date</th><th>Venue</th><th>Subject</th><th>Sub Code</th><th>Invigilators</th>
         <tbody id="hs_letterTableBody"></tbody>
       </table>
       <div class="letter-footer">
@@ -1677,14 +1682,36 @@ function hsRenderDaySubjectSelector(){
   const options=hsSubjectOptions(item);
   const box=document.getElementById('hs_daySubjectSelector'); if(!box) return;
   box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;"><div><b>${hsEscapeFormText(item.date)} — ${hsEscapeFormText(item.day)}</b><div style="font-size:12px;color:#475569;margin-top:3px;">Tick the subjects actually allotted for this date. Subject names are loaded automatically from the selected day, and auto-ticked once a figure &gt;0 is entered for that subject in the Progress Ledger.</div></div><div style="display:flex;gap:6px;"><button class="btn btn-primary" onclick="hsSelectAllDaySubjects()">Select All Subjects</button><button class="btn btn-danger" onclick="hsClearDaySubjects()">Clear Subjects</button></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px;">${options.map((sub,i)=>{const ck=selected.includes(sub)?'checked':'';return `<label style="display:flex;gap:8px;align-items:flex-start;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer;"><input type="checkbox" class="hs-day-subject" value="${hsEscapeFormText(sub)}" ${ck} onchange="hsSaveCurrentDaySubjects()"><span>${hsEscapeFormText(hsSubjectWithCode(sub))}</span></label>`;}).join('')}</div><div id="hs_daySubjectStatus" style="margin-top:10px;font-size:12px;color:#475569;">${selected.length?selected.length+' subject option(s) selected.':'No subject selected.'}</div>`;
+  hsRenderCentreAllotmentSummary();
 }
 
+function hsRenderCentreAllotmentSummary(){
+  const box=document.getElementById('hs_centreAllotmentSummary'); if(!box)return;
+  hsLoadSubjectAllocation();
+  const rows=[];
+  hsOfficialExamRoutineTimeline.forEach(item=>{
+    ['TFHS','TGHS'].forEach(v=>{
+      const subs=hsGetAllocatedSubjects(v,item.date);
+      if(!subs.length)return;
+      const venue=v==='TGHS'?"VENUE-2 — TALDANGRA GIRLS' HIGH SCHOOL (114200)":"VENUE-1 — TALDANGRA FULMATI HIGH SCHOOL (114071)";
+      subs.forEach(sub=>rows.push({date:item.date,day:item.day,venue,subject:sub,code:hsSubjectShortCode(sub)}));
+    });
+  });
+  box.innerHTML=`<div style="border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:12px;">
+    <div style="font-weight:800;color:var(--accent);margin-bottom:8px;">Complete Day-wise Allotment</div>
+    ${rows.length?`<div style="overflow:auto;"><table class="reporting-table" style="min-width:900px;">
+      <thead><tr><th>Sl.</th><th>Date</th><th>Day</th><th>Venue</th><th>Subject</th><th>Sub Code</th></tr></thead>
+      <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${hsEscapeFormText(r.date)}</td><td>${hsEscapeFormText(r.day)}</td><td style="text-align:left">${hsEscapeFormText(r.venue)}</td><td style="text-align:left">${hsEscapeFormText(r.subject)}</td><td><b>${hsEscapeFormText(r.code)}</b></td></tr>`).join('')}</tbody>
+    </table></div>`:'<div style="color:#64748b;">No subjects selected yet.</div>'}
+  </div>`;
+}
 function hsSaveCurrentDaySubjects(){
   const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
   const date=(document.getElementById('hs_formDay')||{}).value||'';
   if(!date)return;
   const arr=[...document.querySelectorAll('.hs-day-subject:checked')].map(x=>x.value);
   hsCentreSubjectAllocation[hsAllocationKey(venue,date)]=arr; hsSaveSubjectAllocation();
+  hsRenderCentreAllotmentSummary();
   const st=document.getElementById('hs_daySubjectStatus'); if(st) st.textContent=arr.length?arr.length+' subject option(s) selected.':'No subject selected — this day will not generate subject-specific forms.';
 }
 function hsSelectAllDaySubjects(){
@@ -2407,6 +2434,9 @@ function hsReqInitSystemWorkspace(){
         day:x.day,
         count: prior.count ?? (sheetRow ? sheetRow.count : "-"),
         sub: prior.sub ?? (sheetRow ? sheetRow.sub : x.sub),
+        venue: prior.venue ?? hsReqAllottedVenueSummaryForRow(i),
+        subject: prior.subject ?? hsReqAllottedSubjectSummaryForRow(i),
+        subCode: prior.subCode ?? hsReqAllottedShortCodesForRow(i),
         baseDate: hsReqBaseDateFromDMY(x.date)
       };
     });
@@ -2414,7 +2444,7 @@ function hsReqInitSystemWorkspace(){
   }
   else{ hsReqLiveSystemState = { schoolName: "TALDANGRA FULMATI HIGH SCHOOL [H.S.]", year: "2026", schedule: hsOfficialExamRoutineTimeline.map((x,i)=>{
       const sheetRow = hsReqDefaultScheduleFromEnrollmentSheet[i];
-      return { day:x.day, count: sheetRow ? sheetRow.count : "-", sub: sheetRow ? sheetRow.sub : x.sub, baseDate: hsReqBaseDateFromDMY(x.date) };
+      return { day:x.day, count: sheetRow ? sheetRow.count : "-", sub: sheetRow ? sheetRow.sub : x.sub, venue: hsReqAllottedVenueSummaryForRow(i), subject: hsReqAllottedSubjectSummaryForRow(i), subCode: hsReqAllottedShortCodesForRow(i), baseDate: hsReqBaseDateFromDMY(x.date) };
     }) }; }
   populateSchoolSelect(document.getElementById("hs_schoolSelect"), hsReqLiveSystemState.schoolName);
   document.getElementById("hs_examYearInput").value = hsReqLiveSystemState.year;
@@ -2422,45 +2452,91 @@ function hsReqInitSystemWorkspace(){
   hsReqSyncDisplayOutputs();
   hsEntrySheetRender();
 }
+function hsReqBuildSchoolWiseLetterRows(){
+  const state=hsReqLiveSystemState||{};
+  const selectedSchool=String(state.schoolName||'').trim();
+  const timeline=hsOfficialExamRoutineTimeline||[];
+  const rows=[];
+  hsLoadSubjectAllocation();
+  timeline.forEach((item,index)=>{
+    const feederRows=(state.entrySheet&&state.entrySheet[index])||[];
+    const schoolAlloc=feederRows
+      .filter(r=>String(r.school||'').trim() && String(r.school||'').trim().toUpperCase()===selectedSchool.toUpperCase())
+      .reduce((sum,r)=>sum+(parseInt(r.count,10)||0),0);
+    if(!schoolAlloc) return;
+
+    const venueParts=[], subjectParts=[];
+    ['TFHS','TGHS'].forEach(v=>{
+      const subs=hsGetAllocatedSubjects(v,item.date);
+      if(!subs.length) return;
+      const venueLabel=v==='TFHS'
+        ? 'TALDANGRA FULMATI HIGH SCHOOL (114071)'
+        : "TALDANGRA GIRLS' HIGH SCHOOL (114200)";
+      venueParts.push(venueLabel);
+      subs.forEach(s=>subjectParts.push(hsSubjectWithCode(s)));
+    });
+    rows.push({
+      date:`${item.day}, ${hsReqBaseDateFromDMY(item.date)} ${state.year||'2026'}`,
+      venue:venueParts.join(' | ')||'Not allotted',
+      subject:[...new Set(subjectParts)].join(', ')||'Not allotted',
+      code:[...new Set(subjectParts.map(s=>hsSubjectShortCode(s)))].join(', '),
+      count:schoolAlloc
+    });
+  });
+  return rows;
+}
+function hsRenderSchoolWiseLetter(){
+  const body=document.getElementById('hs_letterTableBody');
+  if(!body) return;
+  body.innerHTML='';
+  const rows=hsReqBuildSchoolWiseLetterRows();
+  if(!rows.length){
+    body.innerHTML='<tr><td colspan="5" style="padding:14px;text-align:center;color:#64748b;">No date-wise invigilator allocation found for the selected school.</td></tr>';
+  }else{
+    rows.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td style="font-weight:500;text-align:left;padding-left:10px;">${hsEscapeFormText(r.date)}</td>
+        <td style="text-align:left;">${hsEscapeFormText(r.venue)}</td>
+        <td style="text-align:left;">${hsEscapeFormText(r.subject)}</td>
+        <td><b>${hsEscapeFormText(r.code)}</b></td>
+        <td style="font-weight:bold;">${hsEscapeFormText(r.count)}</td>`;
+      body.appendChild(tr);
+    });
+  }
+  const status=document.getElementById('hs_letterGenStatus');
+  if(status) status.textContent=rows.length
+    ? `Generated from ${rows.length} date-wise allocation(s) for ${selectedSchool}.`
+    : 'No allocation found for this school.';
+}
+function hsGenerateSchoolWiseLetter(){
+  hsEntrySheetEnsureInit();
+  hsRenderSchoolWiseLetter();
+  const target=document.getElementById('requisitionLetterA4_hs');
+  if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function hsReqSyncDisplayOutputs(){
   const targetYear = hsReqLiveSystemState.year || "2027";
   document.querySelectorAll(".hs_outYear").forEach(el=>el.textContent = targetYear);
   document.getElementById("hs_lblRecipientSchool").textContent = hsReqLiveSystemState.schoolName ? hsReqLiveSystemState.schoolName.toUpperCase() : "_______________________________";
   const matrixBody = document.getElementById("hs_scheduleMatrixBody");
-  const letterBody = document.getElementById("hs_letterTableBody");
-  matrixBody.innerHTML = ""; letterBody.innerHTML = "";
+  matrixBody.innerHTML = "";
   hsReqLiveSystemState.schedule.forEach((item, index)=>{
     const fullComputedDateStr = `${item.day}, ${item.baseDate} ${targetYear}`;
     const trMatrix = document.createElement("tr");
     trMatrix.innerHTML = `<td>${index+1}</td><td style="font-weight:600; color:#1e3a8a;">${fullComputedDateStr}</td>
-      <td><input type="text" value="${item.day}" oninput="hsReqUpdateRowVariable(${index}, 'day', this.value)"></td>
-      <td><input type="text" value="${item.count}" oninput="hsReqUpdateRowVariable(${index}, 'count', this.value)"></td>
-      <td><input type="text" value="${item.sub}" style="text-align:left;" oninput="hsReqUpdateRowVariable(${index}, 'sub', this.value)"></td>`;
+      <td><input type="text" value="${hsEscapeFormText(item.day||'')}" oninput="hsReqUpdateRowVariable(${index}, 'day', this.value)"></td>
+      <td><input type="text" value="${hsEscapeFormText(item.venue||'')}" style="text-align:left;" placeholder="Venue / Code" oninput="hsReqUpdateRowVariable(${index}, 'venue', this.value)"></td>
+      <td><input type="text" value="${hsEscapeFormText(item.subject||item.sub||'')}" style="text-align:left;" placeholder="Subject" oninput="hsReqUpdateRowVariable(${index}, 'subject', this.value);hsReqUpdateRowVariable(${index}, 'sub', this.value)"></td>
+      <td><input type="text" value="${hsEscapeFormText(item.subCode||hsSubjectScopeShortCodes(item.sub)||'')}" placeholder="Code" oninput="hsReqUpdateRowVariable(${index}, 'subCode', this.value)"></td>
+      <td><input type="text" value="${hsEscapeFormText(item.count||'')}" oninput="hsReqUpdateRowVariable(${index}, 'count', this.value)"></td>`;
     matrixBody.appendChild(trMatrix);
-    // Letter must show what THIS recipient school is actually sending on this
-    // date (from the saved Invigilator Entry Sheet), not the flat total
-    // required count — that was the bug: the letter ignored saved entry-sheet
-    // data entirely and always printed the same overall "count" to every school.
-    const entryRows = hsReqLiveSystemState.entrySheet && hsReqLiveSystemState.entrySheet[index];
-    const entryHasData = Array.isArray(entryRows) && entryRows.some(r=>r.school);
-    const schoolCount = hsEntrySheetCountForSchool(index, hsReqLiveSystemState.schoolName);
-    if(entryHasData && schoolCount<=0){ return; } // entry sheet says this school sends nobody this date — omit from letter
-    const displayCount = entryHasData ? schoolCount : item.count; // fallback to overall count until entry sheet is filled in
-    const trLetter = document.createElement("tr");
-    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${displayCount}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${hsSubjectScopeShortCodes(item.sub)}</td>`;
-    letterBody.appendChild(trLetter);
   });
+  hsRenderSchoolWiseLetter();
 }
 function hsReqUpdateRowVariable(index, key, value){
   hsReqLiveSystemState.schedule[index][key] = value;
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
-  const targetYear = hsReqLiveSystemState.year || "2027";
-  const letterRows = document.getElementById("hs_letterTableBody").children;
-  if(letterRows[index]){
-    if(key==='day'){ letterRows[index].children[0].textContent = `${value}, ${hsReqLiveSystemState.schedule[index].baseDate} ${targetYear}`; }
-    if(key==='count') letterRows[index].children[1].textContent = value;
-    if(key==='sub') letterRows[index].children[2].textContent = hsSubjectScopeShortCodes(value);
-  }
+  hsRenderSchoolWiseLetter();
 }
 // Pulls the subjects actually allotted (Progress-Ledger-driven, via
 // hsGetAllocatedSubjects) for a requisition schedule row's date, across both
@@ -2472,6 +2548,23 @@ function hsReqAllottedShortCodesForRow(rowIndex){
   ['TFHS','TGHS'].forEach(v=>{ hsGetAllocatedSubjects(v,item.date).forEach(s=>subs.add(s)); });
   return [...subs].map(hsSubjectShortCode).join(', ');
 }
+function hsReqAllottedVenueSummaryForRow(rowIndex){
+  const item=hsOfficialExamRoutineTimeline[rowIndex]; if(!item) return '';
+  hsLoadSubjectAllocation();
+  const labels={TFHS:'VENUE-1 — TALDANGRA FULMATI HIGH SCHOOL (114071)',TGHS:"VENUE-2 — TALDANGRA GIRLS' HIGH SCHOOL (114200)"};
+  return ['TFHS','TGHS'].map(v=>{
+    const subs=hsGetAllocatedSubjects(v,item.date);
+    return subs.length ? labels[v]+': '+subs.map(hsSubjectShortCode).join(', ') : '';
+  }).filter(Boolean).join(' | ');
+}
+function hsReqAllottedSubjectSummaryForRow(rowIndex){
+  const item=hsOfficialExamRoutineTimeline[rowIndex]; if(!item) return '';
+  hsLoadSubjectAllocation();
+  const out=[];
+  ['TFHS','TGHS'].forEach(v=>hsGetAllocatedSubjects(v,item.date).forEach(s=>{if(!out.includes(s))out.push(s);}));
+  return out.join(', ');
+}
+
 // Replaces every row's manually-typed Subject Scope with the subjects that
 // are actually allotted per the Progress Ledger for that date (short codes
 // only). Rows with nothing allotted yet are left untouched so a day off /
@@ -2489,14 +2582,12 @@ function hsReqUpdateRecipientSchoolName(val){
   document.getElementById("hs_customSchoolInput").value = "";
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   document.getElementById("hs_lblRecipientSchool").textContent = val ? val.toUpperCase() : "_______________________________";
-  hsReqSyncDisplayOutputs(); // refresh letter rows to this recipient's saved per-school counts
 }
 function hsReqUpdateCustomSchoolText(val){
   hsReqLiveSystemState.schoolName = val;
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   document.getElementById("hs_lblRecipientSchool").textContent = val ? val.toUpperCase() : "_______________________________";
   if(val.trim() !== "") document.getElementById("hs_schoolSelect").value = "";
-  hsReqSyncDisplayOutputs();
 }
 function hsReqUpdateExamYearCalendarSync(val){
   hsReqLiveSystemState.year = val;
@@ -2562,50 +2653,6 @@ function hsEntrySheetSchoolOptionsHtml(selected){
 function hsEntrySheetRowTotal(index){
   return (hsReqLiveSystemState.entrySheet[index]||[]).reduce((sum,row)=>sum + (parseInt(row.count,10)||0), 0);
 }
-// How many teachers a specific school is sending on a given schedule row,
-// per the saved Invigilator Entry Sheet (sums all rows for that school, in
-// case the same school was split across two lines).
-function hsEntrySheetCountForSchool(index, schoolName){
-  if(!schoolName) return 0;
-  return (hsReqLiveSystemState.entrySheet[index]||[])
-    .filter(r=>r.school===schoolName)
-    .reduce((sum,row)=>sum + (parseInt(row.count,10)||0), 0);
-}
-// ----------------------------------------------------------------
-// Default feeder-school split. On the maximum-requirement date(s) the
-// teachers are split across all six schools below; on every other date the
-// whole (smaller) requirement is taken from Harmasra alone.
-const hsDefaultFeederMaxSplit = [
-  {school:"HARMASHRA H S", count:6},
-  {school:"SARALIYA PAKURDIHA H S", count:3},
-  {school:"PANCHMURA M K GIRLS HIGH SCHOOL", count:5},
-  {school:"KADMA H S", count:1},
-  {school:"JAGATPUR SAMMILANI HIGH SCHOOL", count:4},
-  {school:"MANIPUR CHANDIMATA H S", count:2}
-];
-const hsDefaultFeederMaxTotal = hsDefaultFeederMaxSplit.reduce((s,r)=>s+r.count,0); // 21
-function hsEntrySheetApplyDefaultForRow(index){
-  const required = parseInt((hsReqLiveSystemState.schedule[index]||{}).count,10) || 0;
-  if(!required) return; // OFF DAY / nothing requisitioned — leave untouched
-  if(required === hsDefaultFeederMaxTotal){
-    hsReqLiveSystemState.entrySheet[index] = hsDefaultFeederMaxSplit.map(r=>({school:r.school, count:String(r.count)}));
-  }else{
-    hsReqLiveSystemState.entrySheet[index] = [{school:"HARMASHRA H S", count:String(required)}];
-  }
-}
-function hsEntrySheetApplyDefaultRow(index){
-  hsEntrySheetApplyDefaultForRow(index);
-  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
-  hsEntrySheetRender();
-  hsReqSyncDisplayOutputs();
-}
-function hsEntrySheetApplyDefaultAll(){
-  if(!confirm('Auto-fill every date\'s Invigilator Entry Sheet with the default split (Harmasra 6 / Saraliya 3 / Panch Girls 5 / Kadma 1 / Jagatpur 4 / Manipur 2 on the '+hsDefaultFeederMaxTotal+'-teacher day; Harmasra alone on every other day)? This overwrites any existing entries.')) return;
-  hsOfficialExamRoutineTimeline.forEach((x,i)=>hsEntrySheetApplyDefaultForRow(i));
-  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
-  hsEntrySheetRender();
-  hsReqSyncDisplayOutputs();
-}
 function hsEntrySheetRender(){
   const box = document.getElementById("hs_entrySheetContainer");
   if(!box) return;
@@ -2640,7 +2687,6 @@ function hsEntrySheetRender(){
       <div style="font-weight:600;margin-bottom:6px;">${fullDateStr} <span style="font-weight:400;color:#475569;">(Required: ${required})</span></div>
       ${rowsHtml}
       <button type="button" class="btn btn-primary no-print" style="padding:5px 12px;font-size:9pt;margin-bottom:8px;" onclick="hsEntrySheetAddRow(${i})">+ Add School</button>
-      <button type="button" class="btn btn-success no-print" style="padding:5px 12px;font-size:9pt;margin-bottom:8px;" onclick="hsEntrySheetApplyDefaultRow(${i})" title="Fill this date with the default feeder-school split">Use Default Split</button>
       <div id="hs_entryStatus_${i}" style="font-size:9pt;">Total Allocated: <b id="hs_entryTotal_${i}">${total}</b> / ${required} — ${statusHtml}</div>
     </div>`;
   });
@@ -2659,14 +2705,12 @@ function hsEntrySheetUpdateRow(index, rowIdx, field, value){
     else statusHtml = `<span style="color:var(--danger);font-weight:600;">Over-allocated by ${total-required} — please adjust.</span>`;
     statusEl.innerHTML = `Total Allocated: <b>${total}</b> / ${required} — ${statusHtml}`;
   }
-  hsReqSyncDisplayOutputs(); // keep the printable letter's per-school count in sync as data is saved
 }
 function hsEntrySheetAddRow(index){
   if(!hsReqLiveSystemState.entrySheet[index]) hsReqLiveSystemState.entrySheet[index] = [];
   hsReqLiveSystemState.entrySheet[index].push({school:"",count:""});
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
-  hsReqSyncDisplayOutputs();
 }
 function hsEntrySheetRemoveRow(index, rowIdx){
   const rows = hsReqLiveSystemState.entrySheet[index];
@@ -2674,7 +2718,6 @@ function hsEntrySheetRemoveRow(index, rowIdx){
   rows.splice(rowIdx,1);
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
-  hsReqSyncDisplayOutputs();
 }
 
 /* ================================================================
