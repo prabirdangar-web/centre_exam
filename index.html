@@ -641,7 +641,10 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     <div class="table-container no-print">
       <div class="section-title">Invigilator Entry Sheet — Actual Allocation from Feeder Schools</div>
       <div style="margin:-4px 0 12px;font-size:8.5pt;color:#475569;">
-        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above.
+        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above. Once saved here, each school's requisition letter shows only that school's own count for each date.
+      </div>
+      <div style="margin:-4px 0 12px;">
+        <button type="button" class="btn btn-primary no-print" onclick="hsEntrySheetApplyDefaultAll()">Auto-Fill Default Feeder Split (All Dates)</button>
       </div>
       <div id="hs_entrySheetContainer"></div>
     </div>
@@ -2434,8 +2437,17 @@ function hsReqSyncDisplayOutputs(){
       <td><input type="text" value="${item.count}" oninput="hsReqUpdateRowVariable(${index}, 'count', this.value)"></td>
       <td><input type="text" value="${item.sub}" style="text-align:left;" oninput="hsReqUpdateRowVariable(${index}, 'sub', this.value)"></td>`;
     matrixBody.appendChild(trMatrix);
+    // Letter must show what THIS recipient school is actually sending on this
+    // date (from the saved Invigilator Entry Sheet), not the flat total
+    // required count — that was the bug: the letter ignored saved entry-sheet
+    // data entirely and always printed the same overall "count" to every school.
+    const entryRows = hsReqLiveSystemState.entrySheet && hsReqLiveSystemState.entrySheet[index];
+    const entryHasData = Array.isArray(entryRows) && entryRows.some(r=>r.school);
+    const schoolCount = hsEntrySheetCountForSchool(index, hsReqLiveSystemState.schoolName);
+    if(entryHasData && schoolCount<=0){ return; } // entry sheet says this school sends nobody this date — omit from letter
+    const displayCount = entryHasData ? schoolCount : item.count; // fallback to overall count until entry sheet is filled in
     const trLetter = document.createElement("tr");
-    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${item.count}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${hsSubjectScopeShortCodes(item.sub)}</td>`;
+    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${displayCount}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${hsSubjectScopeShortCodes(item.sub)}</td>`;
     letterBody.appendChild(trLetter);
   });
 }
@@ -2477,12 +2489,14 @@ function hsReqUpdateRecipientSchoolName(val){
   document.getElementById("hs_customSchoolInput").value = "";
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   document.getElementById("hs_lblRecipientSchool").textContent = val ? val.toUpperCase() : "_______________________________";
+  hsReqSyncDisplayOutputs(); // refresh letter rows to this recipient's saved per-school counts
 }
 function hsReqUpdateCustomSchoolText(val){
   hsReqLiveSystemState.schoolName = val;
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   document.getElementById("hs_lblRecipientSchool").textContent = val ? val.toUpperCase() : "_______________________________";
   if(val.trim() !== "") document.getElementById("hs_schoolSelect").value = "";
+  hsReqSyncDisplayOutputs();
 }
 function hsReqUpdateExamYearCalendarSync(val){
   hsReqLiveSystemState.year = val;
@@ -2548,6 +2562,50 @@ function hsEntrySheetSchoolOptionsHtml(selected){
 function hsEntrySheetRowTotal(index){
   return (hsReqLiveSystemState.entrySheet[index]||[]).reduce((sum,row)=>sum + (parseInt(row.count,10)||0), 0);
 }
+// How many teachers a specific school is sending on a given schedule row,
+// per the saved Invigilator Entry Sheet (sums all rows for that school, in
+// case the same school was split across two lines).
+function hsEntrySheetCountForSchool(index, schoolName){
+  if(!schoolName) return 0;
+  return (hsReqLiveSystemState.entrySheet[index]||[])
+    .filter(r=>r.school===schoolName)
+    .reduce((sum,row)=>sum + (parseInt(row.count,10)||0), 0);
+}
+// ----------------------------------------------------------------
+// Default feeder-school split. On the maximum-requirement date(s) the
+// teachers are split across all six schools below; on every other date the
+// whole (smaller) requirement is taken from Harmasra alone.
+const hsDefaultFeederMaxSplit = [
+  {school:"HARMASHRA H S", count:6},
+  {school:"SARALIYA PAKURDIHA H S", count:3},
+  {school:"PANCHMURA M K GIRLS HIGH SCHOOL", count:5},
+  {school:"KADMA H S", count:1},
+  {school:"JAGATPUR SAMMILANI HIGH SCHOOL", count:4},
+  {school:"MANIPUR CHANDIMATA H S", count:2}
+];
+const hsDefaultFeederMaxTotal = hsDefaultFeederMaxSplit.reduce((s,r)=>s+r.count,0); // 21
+function hsEntrySheetApplyDefaultForRow(index){
+  const required = parseInt((hsReqLiveSystemState.schedule[index]||{}).count,10) || 0;
+  if(!required) return; // OFF DAY / nothing requisitioned — leave untouched
+  if(required === hsDefaultFeederMaxTotal){
+    hsReqLiveSystemState.entrySheet[index] = hsDefaultFeederMaxSplit.map(r=>({school:r.school, count:String(r.count)}));
+  }else{
+    hsReqLiveSystemState.entrySheet[index] = [{school:"HARMASHRA H S", count:String(required)}];
+  }
+}
+function hsEntrySheetApplyDefaultRow(index){
+  hsEntrySheetApplyDefaultForRow(index);
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+  hsEntrySheetRender();
+  hsReqSyncDisplayOutputs();
+}
+function hsEntrySheetApplyDefaultAll(){
+  if(!confirm('Auto-fill every date\'s Invigilator Entry Sheet with the default split (Harmasra 6 / Saraliya 3 / Panch Girls 5 / Kadma 1 / Jagatpur 4 / Manipur 2 on the '+hsDefaultFeederMaxTotal+'-teacher day; Harmasra alone on every other day)? This overwrites any existing entries.')) return;
+  hsOfficialExamRoutineTimeline.forEach((x,i)=>hsEntrySheetApplyDefaultForRow(i));
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+  hsEntrySheetRender();
+  hsReqSyncDisplayOutputs();
+}
 function hsEntrySheetRender(){
   const box = document.getElementById("hs_entrySheetContainer");
   if(!box) return;
@@ -2582,6 +2640,7 @@ function hsEntrySheetRender(){
       <div style="font-weight:600;margin-bottom:6px;">${fullDateStr} <span style="font-weight:400;color:#475569;">(Required: ${required})</span></div>
       ${rowsHtml}
       <button type="button" class="btn btn-primary no-print" style="padding:5px 12px;font-size:9pt;margin-bottom:8px;" onclick="hsEntrySheetAddRow(${i})">+ Add School</button>
+      <button type="button" class="btn btn-success no-print" style="padding:5px 12px;font-size:9pt;margin-bottom:8px;" onclick="hsEntrySheetApplyDefaultRow(${i})" title="Fill this date with the default feeder-school split">Use Default Split</button>
       <div id="hs_entryStatus_${i}" style="font-size:9pt;">Total Allocated: <b id="hs_entryTotal_${i}">${total}</b> / ${required} — ${statusHtml}</div>
     </div>`;
   });
@@ -2600,12 +2659,14 @@ function hsEntrySheetUpdateRow(index, rowIdx, field, value){
     else statusHtml = `<span style="color:var(--danger);font-weight:600;">Over-allocated by ${total-required} — please adjust.</span>`;
     statusEl.innerHTML = `Total Allocated: <b>${total}</b> / ${required} — ${statusHtml}`;
   }
+  hsReqSyncDisplayOutputs(); // keep the printable letter's per-school count in sync as data is saved
 }
 function hsEntrySheetAddRow(index){
   if(!hsReqLiveSystemState.entrySheet[index]) hsReqLiveSystemState.entrySheet[index] = [];
   hsReqLiveSystemState.entrySheet[index].push({school:"",count:""});
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
+  hsReqSyncDisplayOutputs();
 }
 function hsEntrySheetRemoveRow(index, rowIdx){
   const rows = hsReqLiveSystemState.entrySheet[index];
@@ -2613,6 +2674,7 @@ function hsEntrySheetRemoveRow(index, rowIdx){
   rows.splice(rowIdx,1);
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
+  hsReqSyncDisplayOutputs();
 }
 
 /* ================================================================
