@@ -308,17 +308,16 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </div>
     </div>
     <div class="table-container no-print" style="padding:16px;">
-      <h3 style="margin:0 0 8px;">Centre-wise Subject Allotment — Day • Venue • Subject • Code</h3>
-      <div style="font-size:9pt;color:#475569;margin-bottom:10px;">Select the venue and examination day, then tick only the subjects actually held there. A complete day-wise summary is shown below.</div>
+      <h3 style="margin:0 0 8px;">Centre-wise subject allotment — select applicable subjects for each day</h3>
+      <div style="font-size:9pt;color:#475569;margin:-4px 0 12px;">Venue is shared with every other H.S. tool (Daily Subject &amp; Duty Entry, Room Setup, Invigilator Requisition, Progress Ledger) — pick it once here and it stays selected everywhere else too. Step 1: pick the Venue and tick the Examination Date(s) below. Step 2: tick the subjects actually allotted for the highlighted date. Step 3: generate the form(s).</div>
       <div class="control-deck" style="margin:0 0 12px;">
-        <div class="form-group"><label>Venue</label><select id="hs_formVenue" onchange="hsRenderDaySubjectSelector()"><option value="TFHS">VENUE-1 — TALDANGRA FULMATI HIGH SCHOOL [H.S.] — 114071</option><option value="TGHS">VENUE-2 — TALDANGRA GIRLS' HIGH SCHOOL [H.S.] — 114200</option></select></div>
+        <div class="form-group"><label>Venue</label><select id="hs_formVenue" onchange="hsSetVenue(this.value);hsRenderDaySubjectSelector()"><option value="TFHS">VENUE-1 — TALDANGRA FULMATI HIGH SCHOOL [H.S.] — 114071</option><option value="TGHS">VENUE-2 — TALDANGRA GIRLS' HIGH SCHOOL [H.S.] — 114200</option></select></div>
         <div class="form-group"><label>Examination Day</label><select id="hs_formDay" onchange="hsRenderDaySubjectSelector()"></select></div>
         <div class="form-group"><label>Day-wise form generation</label><button class="btn btn-success" style="width:100%;" onclick="hsGenerateSelectedDayForms()">Generate Selected Day Forms</button></div>
         <div class="form-group"><label>All selected days</label><button class="btn btn-primary" style="width:100%;" onclick="hsGenerateAllSelectedDayForms()">Generate All Selected-Day Forms</button></div>
       </div>
       <div id="hs_dayDateSelector" style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc;margin-bottom:10px;"></div>
       <div id="hs_daySubjectSelector" style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc;"></div>
-      <div id="hs_centreAllotmentSummary" style="margin-top:12px;"></div>
     </div>
     <div class="center-registry no-print">
       <div class="center-registry-title">Auto-fill Centre / Venue Master</div>
@@ -340,7 +339,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
           <tr><td><strong>Confidential Format</strong></td><td>Venue Supervisor, school/code, date/time</td><td>Rule violation / untoward incident report</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('confidential')">Generate</button></td></tr>
         </tbody>
       </table>
-      <div style="margin-top:10px;font-size:12px;color:#475569;">Source: WBCHSE Download Centre / examination notifications. The Council currently lists Venue Supervisor Format (Data Sheet), R.A. Format, Seal Opening Format, On Duty Declaration and Confidential Format. citeturn1search0turn1search1</div>
+      <div style="margin-top:10px;font-size:12px;color:#475569;">Source: WBCHSE Download Centre / examination notifications. The Council currently lists Venue Supervisor Format (Data Sheet), R.A. Format, Seal Opening Format, On Duty Declaration and Confidential Format.</div>
     </div>
 
     <div class="table-container no-print" style="padding:16px;">
@@ -370,7 +369,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
 
     <div class="hs-dailyops-card no-print">
       <div class="hs-dailyops-toolbar">
-        <div class="form-group"><label>Venue</label><select id="hs_opsVenue" onchange="hsDailyOpsRender()"><option value="TFHS">VENUE-1 [114071] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] — TALDANGRA GIRLS' HIGH SCHOOL [H.S.]</option></select></div>
+        <div class="form-group"><label>Venue</label><select id="hs_opsVenue" onchange="hsSetVenue(this.value);hsDailyOpsRender()"><option value="TFHS">VENUE-1 [114071] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] — TALDANGRA GIRLS' HIGH SCHOOL [H.S.]</option></select></div>
         <div class="form-group"><label>Examination Day</label><select id="hs_opsDate" onchange="hsDailyOpsRender();hsSubjectDbRenderDD()"></select></div>
         <div class="form-group"><label>Subject Selection</label><select id="hs_opsSubjectDD" onchange="hsSubjectDbSelectChange()"><option value="">Select Subject</option></select></div>
         <div class="form-group"><label>Selected Subjects</label><div id="hs_opsSubjectCount" style="height:31px;display:flex;align-items:center;font-weight:700;padding:0 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f8fafc;">0</div></div>
@@ -444,7 +443,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       <h3 style="margin:0 0 6px;">Fixed Examination Halls / Rooms &amp; Seat Capacity</h3>
       <div style="font-size:9pt;color:#475569;margin-bottom:10px;">Enter the fixed Hall/Room No. and fixed seats first. These room capacities are saved separately for each venue and reused on all examination days. After entering student counts, use Auto Place Students to allocate students into the rooms automatically.</div>
       <div class="hs-room-grid">
-        <div class="form-group"><label>Venue</label><select id="hs_roomVenue" onchange="hsRoomRender()"><option value="TFHS">VENUE-1 [114071] - TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] - TALDANGRA GIRLS' HIGH SCHOOL [H.S.]</option></select></div>
+        <div class="form-group"><label>Venue</label><select id="hs_roomVenue" onchange="hsSetVenue(this.value);hsRoomRender()"><option value="TFHS">VENUE-1 [114071] - TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] - TALDANGRA GIRLS' HIGH SCHOOL [H.S.]</option></select></div>
         <div class="form-group"><label>Hall / Room No.</label><input id="hs_roomNo" type="text" placeholder="e.g. Room-1 / Hall-01"></div>
         <div class="form-group"><label>Fixed Seats</label><input id="hs_roomSeats" type="number" min="1" step="1" placeholder="e.g. 40"></div>
         <div class="form-group"><label>Placement basis</label><select id="hs_roomBasis"><option value="present">Present students</option><option value="enrolled">Enrolled students</option></select></div>
@@ -606,7 +605,14 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </div>
     </div>
 
-    <div class="control-deck no-print">
+    <div class="control-deck no-print" style="grid-template-columns:1.2fr 2fr 1.3fr 1fr 1fr;">
+      <div class="form-group">
+        <label>Venue (report-to venue for this letter)</label>
+        <select id="hs_reqVenue" onchange="hsSetVenue(this.value);hsReqSyncDisplayOutputs()">
+          <option value="TFHS">VENUE-1 [114071] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option>
+          <option value="TGHS">VENUE-2 [114200] — TALDANGRA GIRLS' HIGH SCHOOL [H.S.]</option>
+        </select>
+      </div>
       <div class="form-group">
         <label>Target School Recipient</label>
         <select id="hs_schoolSelect" onchange="hsReqUpdateRecipientSchoolName(this.value)"></select>
@@ -621,9 +627,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </div>
       <div class="form-group">
         <label>Print Out Command</label>
-        <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="hsGenerateSchoolWiseLetter()">Generate Letter from Date-wise Allocation</button>
-        <button class="btn btn-primary" style="width:100%; justify-content:center;margin-top:6px;" onclick="window.print()">Print Generated Letter</button>
-        <div id="hs_letterGenStatus" style="font-size:8.5pt;color:#475569;margin-top:7px;"></div>
+        <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="window.print()">Print Request Sheet</button>
       </div>
     </div>
 
@@ -631,13 +635,13 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       <div class="section-title">Manual Schedule Grid Configuration (all fields live editable)</div>
       <div style="margin:-4px 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="hsReqSyncSubjectScopeFromLedger()">Auto-Fill Subject Scope from Allotted Subjects (Ledger)</button>
-        <span style="font-size:8.5pt;color:#475569;">Pulls the subjects actually allotted per the Progress Ledger for each date (both venues), shown as WBCHSE short codes only. Rows with nothing allotted yet, or edited manually afterward, are left as-is.</span>
+        <span style="font-size:8.5pt;color:#475569;">Pulls the subjects actually allotted per the Progress Ledger for the venue selected above, for each date. Rows with nothing allotted yet, or edited manually afterward, are left as-is. Subject Code and Room are worked out automatically and are not directly editable.</span>
       </div>
       <table class="reporting-table">
         <thead><tr>
-          <th style="width:4%;">SL</th><th style="width:18%;">Date</th><th style="width:12%;">Day</th>
-          <th style="width:22%;">Venue</th><th style="width:20%;">Subject</th><th style="width:10%;">Sub Code</th>
-          <th style="width:14%;">Invigilators</th>
+          <th style="width:4%;">SL</th><th style="width:16%;">Base Month-Date Mapping</th>
+          <th style="width:9%;">Day</th><th style="width:9%;">Invigilators Count</th><th style="width:22%;">Subject Scope</th>
+          <th style="width:13%;">Subject Code (auto)</th><th style="width:17%;">Room(s) (auto)</th>
         </tr></thead>
         <tbody id="hs_scheduleMatrixBody"></tbody>
       </table>
@@ -646,7 +650,10 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     <div class="table-container no-print">
       <div class="section-title">Invigilator Entry Sheet — Actual Allocation from Feeder Schools</div>
       <div style="margin:-4px 0 12px;font-size:8.5pt;color:#475569;">
-        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above.
+        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above. Once saved here, each school's requisition letter shows only that school's own count for each date.
+      </div>
+      <div style="margin:-4px 0 12px;">
+        <button type="button" class="btn btn-primary no-print" onclick="hsEntrySheetApplyDefaultAll()">Auto-Fill Default Feeder Split (All Dates)</button>
       </div>
       <div id="hs_entrySheetContainer"></div>
     </div>
@@ -670,16 +677,17 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       <div class="subject-line">Subject :- Requisition of Teachers for invigilation duty for smooth conduct of H.S. Examination-<span class="hs_outYear">2027</span> [SEM-III]</div>
       <div class="letter-body">
         Sir/Madam,<br><br>
-        As per decision taken in Block Level Meeting in Taldangra Block and in accordance with the approval of the DI/S(S.E.), Bankura you are requested to depute regular teachers from your school as mentioned in centralized invigilation duty chart prepared by the said authority for invigilation duties in the examination venues as per requirement noted below. The deputed teachers may kindly be requested to report to the Center Secretary of this venue (TALDANGRA FULMATI HIGH SCHOOL [H.S.]; <strong>Venue Code-114071</strong>; Centre Code-2206) not later than <strong>9:30 a.m.</strong> on the dates of examinations.
+        As per decision taken in Block Level Meeting in Taldangra Block and in accordance with the approval of the DI/S(S.E.), Bankura you are requested to depute regular teachers from your school as mentioned in centralized invigilation duty chart prepared by the said authority for invigilation duties in the examination venues as per requirement noted below. The deputed teachers may kindly be requested to report to the Center Secretary of this venue (<span id="hs_reqVenueName">TALDANGRA FULMATI HIGH SCHOOL [H.S.]</span>; <strong>Venue Code-<span id="hs_reqVenueCode">114071</span></strong>; Centre Code-2206) not later than <strong>9:30 a.m.</strong> on the dates of examinations.
         <br><br>
         The examination will be held in only one paper on each day from <strong>11:00 am to 12:30 pm</strong> (1 hour 30 minutes).
         <br><br>Active co-operation from your end is earnestly solicited.
       </div>
-      <div class="no-print" style="margin:8px 0 10px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;font-size:8.5pt;color:#475569;">
-        This letter is generated <b>school-wise from the actual Date-wise Feeder School Allocation</b>. Only dates on which the selected school is allotted invigilators are shown.
-      </div>
       <table class="schedule-table">
-        <thead><tr><th>Date</th><th>Venue</th><th>Subject</th><th>Sub Code</th><th>Invigilators</th>
+        <thead><tr>
+          <th style="width:26%;">Dates of Examination</th><th style="width:12%;">Day</th>
+          <th style="width:16%;">Subject Code</th>
+          <th style="width:20%;">Room(s)</th><th style="width:26%;">Nos of Invigilator required</th>
+        </tr></thead>
         <tbody id="hs_letterTableBody"></tbody>
       </table>
       <div class="letter-footer">
@@ -687,7 +695,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         <div style="text-align:center; width:40%; font-size:9.3pt;">
           With Thanks<br><br><span style="font-family:'Courier New',monospace; font-weight:700; letter-spacing:1px;">_ _ _ _ _ _ _ _ _ _ _</span><br>
           <strong style="font-size:8.3pt; display:block; margin-top:4px;">Centre Secretary / Centre-in-Charge</strong>
-          <span style="font-size:7.8pt; color:#334155;">TALDANGRA Examination Centre<br>Centre Code: 2206<br>Venue Code: ${venueCode}</span>
+          <span style="font-size:7.8pt; color:#334155;">TALDANGRA Examination Centre<br>Centre Code: 2206<br>Venue Code: <span id="hs_reqVenueCodeFooter">114071</span></span>
         </div>
       </div>
     </div>
@@ -1130,7 +1138,7 @@ function hsRoomPersist(){
 function hsRoomKey(venue,date){return venue+'|'+date;}
 function hsRoomRender(){
   hsRoomLoad();
-  const venue=document.getElementById('hs_roomVenue')?.value||'TFHS';
+  const venue=hsSyncVenueSelectors();
   const rooms=hsRoomDB[venue]||[];
   const box=document.getElementById('hs_roomList'); if(!box)return;
   if(!rooms.length){box.innerHTML='<div style="padding:10px;color:#64748b;text-align:center;">No fixed rooms entered for this venue.</div>';hsRoomRenderSummary();return;}
@@ -1139,7 +1147,7 @@ function hsRoomRender(){
 }
 function hsRoomAdd(){
   hsRoomLoad();
-  const venue=document.getElementById('hs_roomVenue')?.value||'TFHS';
+  const venue=hsGetVenue();
   const room=(document.getElementById('hs_roomNo')?.value||'').trim();
   const seats=Math.floor(Number(document.getElementById('hs_roomSeats')?.value||0));
   if(!room||seats<1){alert('Enter Hall / Room No. and Fixed Seats first.');return;}
@@ -1151,18 +1159,18 @@ function hsRoomAdd(){
   hsRoomRender();
 }
 function hsRoomDelete(i){
-  hsRoomLoad(); const venue=document.getElementById('hs_roomVenue')?.value||'TFHS';
+  hsRoomLoad(); const venue=hsGetVenue();
   if(!hsRoomDB[venue])return; hsRoomDB[venue].splice(i,1); hsRoomPersist(); hsRoomRender();
 }
 function hsRoomClearAllocations(){
-  hsRoomLoad(); const venue=document.getElementById('hs_roomVenue')?.value||'TFHS'; const date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
+  hsRoomLoad(); const venue=hsGetVenue(); const date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
   delete hsRoomAllocDB[hsRoomKey(venue,date)]; hsRoomPersist();
   try{const rec=hsDailyOpsEnsureRecord(venue,date); Object.keys(rec.subjects||{}).forEach(k=>{rec.subjects[k].hall='';rec.subjects[k].roomAllocations=[];}); hsDailyOpsPersist();hsDailyOpsRender();}catch(e){}
   hsRoomRenderSummary();
 }
 function hsRoomAutoPlace(){
   hsRoomLoad();
-  const venue=document.getElementById('hs_roomVenue')?.value||'TFHS';
+  const venue=hsGetVenue();
   const date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
   const basis=document.getElementById('hs_roomBasis')?.value||'present';
   let remainingRooms=(hsRoomDB[venue]||[]).map(r=>({room:r.room,remaining:Math.max(0,Number(r.seats)||0)})).filter(r=>r.remaining>0);
@@ -1203,7 +1211,7 @@ function hsRoomAutoPlace(){
 function hsRoomRenderSummary(){
   const box=document.getElementById('hs_roomAllocationSummary'); if(!box)return; hsRoomLoad();
   const detail=document.getElementById('hs_roomAllocationTable');
-  const venue=document.getElementById('hs_roomVenue')?.value||'TFHS'; const date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
+  const venue=hsGetVenue(); const date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
   const a=hsRoomAllocDB[hsRoomKey(venue,date)]; if(!a){box.innerHTML='<b>Fixed rooms are ready.</b> Enter subject student counts and click <b>Auto Place Students</b>.'; if(detail)detail.innerHTML=''; return;}
   const rows=Object.entries(a.allocations||{}).map(([sub,x])=>{const rr=(x.rooms||[]).map(z=>hsEscapeFormText(z.room)+' → '+z.seats).join(' &nbsp;|&nbsp; ')||'Not placed';const manualTag=x.manual?' <span style="color:#2563eb;font-weight:700;">[Manual: '+hsEscapeFormText(x.manual)+']</span>':'';return '<div><b>'+hsEscapeFormText(hsSubjectWithCode(sub))+'</b> ('+x.count+') : '+rr+manualTag+(x.unplaced?' <span style="color:#b91c1c;font-weight:700;"> | Unplaced '+x.unplaced+'</span>':'')+'</div>';}).join('');
   box.innerHTML='<b>Auto placement — '+(a.basis==='present'?'Present':'Enrolled')+' students:</b><div style="margin-top:6px;line-height:1.7;">'+rows+'</div>';
@@ -1348,7 +1356,7 @@ function hsMasterRenderList(){
 }
 function hsDailyOpsLoadMasterSerials(){
   hsMasterLoad();
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value;
   if(!date) return;
   const rec=hsDailyOpsEnsureRecord(venue,date);
   Object.keys(rec.subjects).forEach(sub=>{
@@ -1428,7 +1436,7 @@ function hsDailyOpsEnsureRecord(venue,date){
 function hsDailyOpsRender(){
   hsRoomLoad(); hsRoomRender();
   hsDailyOpsLoad(); hsDailyOpsPopulateDates();
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS';
+  const venue=hsSyncVenueSelectors();
   const date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
   const item=hsOfficialExamRoutineTimeline.find(x=>x.date===date)||hsOfficialExamRoutineTimeline[0];
   const rec=hsDailyOpsEnsureRecord(venue,item.date);
@@ -1470,7 +1478,7 @@ function hsDailySerialEnd(start,count){
   return prefix+String(n).padStart(digits.length,'0');
 }
 function hsDailyOpsRefreshAutoCells(sub){
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value;
   if(!date)return; const rec=hsDailyOpsEnsureRecord(venue,date); const d=rec.subjects[sub]||{};
   const m=Number(d.male)||0, f=Number(d.female)||0, total=m+f, qReq=total, omrReq=total, ntp=total?Math.ceil(total/10):0;
   d.total=total; d.qReq=qReq; d.omrReq=omrReq; d.qNtp=ntp;
@@ -1480,7 +1488,7 @@ function hsDailyOpsRefreshAutoCells(sub){
   set('total',total);set('qReq',qReq);set('qNtp',ntp);set('qTo',qTo);set('omrReq',omrReq);set('omrTo',omrTo);
 }
 function hsDailyOpsLiveUpdate(el){
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value;
   if(!date||!el)return; const rec=hsDailyOpsEnsureRecord(venue,date); const sub=el.dataset.sub, field=el.dataset.field;
   rec.subjects[sub]=rec.subjects[sub]||{}; rec.subjects[sub][field]=el.value;
   if(field==='male'||field==='female'||field==='qFrom'||field==='omrFrom'){
@@ -1489,7 +1497,7 @@ function hsDailyOpsLiveUpdate(el){
   }
 }
 function hsDailyOpsSetManualRoom(sub, room){
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value;
   if(!date) return;
   const rec=hsDailyOpsEnsureRecord(venue,date);
   rec.subjects[sub]=rec.subjects[sub]||{};
@@ -1500,7 +1508,7 @@ function hsDailyOpsCollectOfficials(){
   return {venueSupervisor:document.getElementById('hs_opsVenueSupervisor')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor,centreSecretary:document.getElementById('hs_opsCentreSecretary')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary,centreInCharge:document.getElementById('hs_opsCentreInCharge')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge,councilNominee:document.getElementById('hs_opsCouncilNominee')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.councilNominee,ra:document.getElementById('hs_opsRA')?.value.trim()||'',other:document.getElementById('hs_opsOtherOfficial')?.value.trim()||''};
 }
 function hsDailyOpsSaveDay(){
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
   const rec=hsDailyOpsEnsureRecord(venue,date); rec.officials=hsDailyOpsCollectOfficials();
   document.querySelectorAll('#hs_dailyOpsSubjectBody input[data-sub]').forEach(el=>{const sub=el.dataset.sub,field=el.dataset.field;rec.subjects[sub]=rec.subjects[sub]||{};rec.subjects[sub][field]=el.value;});
   Object.values(rec.subjects||{}).forEach(d=>{if(d){d.total=(Number(d.male)||0)+(Number(d.female)||0); d.qReq=d.total; d.omrReq=d.total; d.qNtp=d.total?Math.ceil(d.total/10):0; d.qTo=hsDailySerialEnd(d.qFrom,d.qReq); d.omrTo=hsDailySerialEnd(d.omrFrom,d.omrReq);}});
@@ -1509,13 +1517,13 @@ function hsDailyOpsSaveDay(){
   document.getElementById('hs_opsDayStatus').textContent='Saved '+new Date(rec.savedAt).toLocaleString();
 }
 function hsDailyOpsSaveOfficialsTemplate(){
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS';
+  const venue=hsGetVenue();
   hsDailyOpsTemplates[venue]=hsDailyOpsCollectOfficials(); hsDailyOpsPersist();
   const date=document.getElementById('hs_opsDate')?.value; if(date){const rec=hsDailyOpsEnsureRecord(venue,date);rec.officials={...hsDailyOpsTemplates[venue]};hsDailyOpsDB[hsDailyOpsKey(venue,date)]=rec;hsDailyOpsPersist();}
   alert('Official names saved as the default for the next examination days for this venue.');
 }
 function hsDailyOpsCopyPreviousDay(){
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value;
   const idx=hsOfficialExamRoutineTimeline.findIndex(x=>x.date===date); if(idx<=0)return alert('There is no previous examination day to copy.');
   let prev=null; for(let i=idx-1;i>=0;i--){const k=hsDailyOpsKey(venue,hsOfficialExamRoutineTimeline[i].date);if(hsDailyOpsDB[k]){prev=hsDailyOpsDB[k];break;}}
   if(!prev)return alert('No saved previous-day entry found for this venue.');
@@ -1587,6 +1595,45 @@ function amountToWordsShared(num){
 }
 
 /* ================================================================
+   HS :: GLOBAL VENUE (single source of truth)
+   Every HS panel used to keep its own separate Venue dropdown
+   (hs_formVenue, hs_opsVenue, hs_roomVenue, hs_reqVenue) with no link
+   between them, so picking a venue in one tool silently left the
+   others pointed at a different venue — day/subject/room data then
+   looked "missing" simply because the wrong venue was showing. All
+   four now read/write ONE stored venue; changing any one dropdown
+   updates the rest immediately.
+   ================================================================ */
+const HS_VENUE_SELECT_IDS=['hs_formVenue','hs_opsVenue','hs_roomVenue','hs_reqVenue','hs_schoolToggle'];
+const HS_VENUE_INFO={
+  TFHS:{name:"TALDANGRA FULMATI HIGH SCHOOL [H.S.]", code:"114071"},
+  TGHS:{name:"TALDANGRA GIRLS' HIGH SCHOOL [H.S.]", code:"114200"}
+};
+function hsGetVenue(){
+  const v=localStorage.getItem('hsGlobalVenue2027');
+  return (v==='TGHS') ? 'TGHS' : 'TFHS';
+}
+function hsSyncVenueSelectors(){
+  const v=hsGetVenue();
+  HS_VENUE_SELECT_IDS.forEach(id=>{ const el=document.getElementById(id); if(el && el.value!==v) el.value=v; });
+  return v;
+}
+// Called from every Venue <select> onchange across all HS panels.
+function hsSetVenue(v){
+  v=(v==='TGHS')?'TGHS':'TFHS';
+  localStorage.setItem('hsGlobalVenue2027', v);
+  hsSyncVenueSelectors();
+  // Progress Ledger keeps its own "hsActiveSchool" variable/rendering — keep
+  // it in step with the shared venue too, and refresh its view if visible.
+  if(typeof hsActiveSchool!=="undefined"){
+    hsActiveSchool=v;
+    const hdr=document.getElementById("hs_headerTitle");
+    if(hdr && typeof hsTrackingStateDatabase!=="undefined"){ hdr.textContent=`HS::${hsTrackingStateDatabase["year"]} ${v} EXAMINATION LEDGER`; }
+    try{ if(typeof hsRenderReportingMatrixTable==="function") hsRenderReportingMatrixTable(); }catch(e){}
+  }
+}
+
+/* ================================================================
    HS :: WBCHSE CENTRE FORMS
    ================================================================ */
 function hsEscapeFormText(v){
@@ -1648,14 +1695,14 @@ function hsRenderFormDays(){
 function hsRenderDayDateSelector(){
   const box=document.getElementById('hs_dayDateSelector'); if(!box)return;
   hsLoadSubjectAllocation();
-  const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
+  const venue=hsGetVenue();
   const active=(document.getElementById('hs_formDay')||{}).value||hsOfficialExamRoutineTimeline[0].date;
   const selectedDates=JSON.parse(localStorage.getItem('hsCentreSelectedDates2027')||'{}')[venue]||[];
   const checked=selectedDates.length?selectedDates:([active]);
   box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px;"><div><b>Cover Page — Select Examination Dates</b><div style="font-size:12px;color:#475569;margin-top:3px;">Tick the dates required on the cover page. The Subject DD / subject tick selection below follows the currently active date.</div></div><div style="display:flex;gap:6px;"><button class="btn btn-primary" onclick="hsSelectAllFormDates()">Select All Dates</button><button class="btn btn-danger" onclick="hsClearFormDates()">Clear Dates</button></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px;">${hsOfficialExamRoutineTimeline.map(x=>{const ck=checked.includes(x.date)?'checked':'';return `<label style="display:flex;gap:8px;align-items:center;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;"><input type="checkbox" class="hs-cover-date" value="${hsEscapeFormText(x.date)}" ${ck} onchange="hsSaveSelectedFormDates()"><span><b>${hsEscapeFormText(x.date)}</b> — ${hsEscapeFormText(x.day)}</span></label>`;}).join('')}</div><div id="hs_coverDateStatus" style="margin-top:9px;font-size:12px;color:#475569;">${checked.length} date(s) selected for cover/form generation.</div>`;
 }
 function hsSaveSelectedFormDates(){
-  const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
+  const venue=hsGetVenue();
   const dates=[...document.querySelectorAll('.hs-cover-date:checked')].map(x=>x.value);
   let db={}; try{db=JSON.parse(localStorage.getItem('hsCentreSelectedDates2027')||'{}')||{};}catch(e){db={};}
   db[venue]=dates; localStorage.setItem('hsCentreSelectedDates2027',JSON.stringify(db));
@@ -1673,7 +1720,7 @@ function hsRenderDaySubjectSelector(){
   hsLoadSubjectAllocation();
   hsRenderFormDays();
   hsRenderDayDateSelector();
-  const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
+  const venue=hsSyncVenueSelectors();
   const date=(document.getElementById('hs_formDay')||{}).value||hsOfficialExamRoutineTimeline[0].date;
   const item=hsOfficialExamRoutineTimeline.find(x=>x.date===date)||hsOfficialExamRoutineTimeline[0];
   hsSyncSubjectAllocationFromLedger(venue,item.date);
@@ -1682,36 +1729,14 @@ function hsRenderDaySubjectSelector(){
   const options=hsSubjectOptions(item);
   const box=document.getElementById('hs_daySubjectSelector'); if(!box) return;
   box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;"><div><b>${hsEscapeFormText(item.date)} — ${hsEscapeFormText(item.day)}</b><div style="font-size:12px;color:#475569;margin-top:3px;">Tick the subjects actually allotted for this date. Subject names are loaded automatically from the selected day, and auto-ticked once a figure &gt;0 is entered for that subject in the Progress Ledger.</div></div><div style="display:flex;gap:6px;"><button class="btn btn-primary" onclick="hsSelectAllDaySubjects()">Select All Subjects</button><button class="btn btn-danger" onclick="hsClearDaySubjects()">Clear Subjects</button></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px;">${options.map((sub,i)=>{const ck=selected.includes(sub)?'checked':'';return `<label style="display:flex;gap:8px;align-items:flex-start;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer;"><input type="checkbox" class="hs-day-subject" value="${hsEscapeFormText(sub)}" ${ck} onchange="hsSaveCurrentDaySubjects()"><span>${hsEscapeFormText(hsSubjectWithCode(sub))}</span></label>`;}).join('')}</div><div id="hs_daySubjectStatus" style="margin-top:10px;font-size:12px;color:#475569;">${selected.length?selected.length+' subject option(s) selected.':'No subject selected.'}</div>`;
-  hsRenderCentreAllotmentSummary();
 }
 
-function hsRenderCentreAllotmentSummary(){
-  const box=document.getElementById('hs_centreAllotmentSummary'); if(!box)return;
-  hsLoadSubjectAllocation();
-  const rows=[];
-  hsOfficialExamRoutineTimeline.forEach(item=>{
-    ['TFHS','TGHS'].forEach(v=>{
-      const subs=hsGetAllocatedSubjects(v,item.date);
-      if(!subs.length)return;
-      const venue=v==='TGHS'?"VENUE-2 — TALDANGRA GIRLS' HIGH SCHOOL (114200)":"VENUE-1 — TALDANGRA FULMATI HIGH SCHOOL (114071)";
-      subs.forEach(sub=>rows.push({date:item.date,day:item.day,venue,subject:sub,code:hsSubjectShortCode(sub)}));
-    });
-  });
-  box.innerHTML=`<div style="border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:12px;">
-    <div style="font-weight:800;color:var(--accent);margin-bottom:8px;">Complete Day-wise Allotment</div>
-    ${rows.length?`<div style="overflow:auto;"><table class="reporting-table" style="min-width:900px;">
-      <thead><tr><th>Sl.</th><th>Date</th><th>Day</th><th>Venue</th><th>Subject</th><th>Sub Code</th></tr></thead>
-      <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${hsEscapeFormText(r.date)}</td><td>${hsEscapeFormText(r.day)}</td><td style="text-align:left">${hsEscapeFormText(r.venue)}</td><td style="text-align:left">${hsEscapeFormText(r.subject)}</td><td><b>${hsEscapeFormText(r.code)}</b></td></tr>`).join('')}</tbody>
-    </table></div>`:'<div style="color:#64748b;">No subjects selected yet.</div>'}
-  </div>`;
-}
 function hsSaveCurrentDaySubjects(){
-  const venue=(document.getElementById('hs_formVenue')||{}).value||'TFHS';
+  const venue=hsGetVenue();
   const date=(document.getElementById('hs_formDay')||{}).value||'';
   if(!date)return;
   const arr=[...document.querySelectorAll('.hs-day-subject:checked')].map(x=>x.value);
   hsCentreSubjectAllocation[hsAllocationKey(venue,date)]=arr; hsSaveSubjectAllocation();
-  hsRenderCentreAllotmentSummary();
   const st=document.getElementById('hs_daySubjectStatus'); if(st) st.textContent=arr.length?arr.length+' subject option(s) selected.':'No subject selected — this day will not generate subject-specific forms.';
 }
 function hsSelectAllDaySubjects(){
@@ -1725,9 +1750,9 @@ function hsGetAllocatedSubjects(venue,date){
   const key=hsAllocationKey(venue,date); return (hsCentreSubjectAllocation[key]||[]).slice();
 }
 function hsGetCentreFormContext(venueOverride,dateOverride){
-  const venueKey=venueOverride || (document.getElementById('hs_formVenue')?.value || document.getElementById('hs_schoolToggle')?.value || 'TFHS');
-  const venue=venueKey==='TGHS'?"TALDANGRA GIRLS' HIGH SCHOOL [H.S.]":'TALDANGRA FULMATI HIGH SCHOOL [H.S.]';
-  const code=venueKey==='TGHS'?'114200':'114071';
+  const venueKey=venueOverride || hsGetVenue();
+  const venue=HS_VENUE_INFO[venueKey].name;
+  const code=HS_VENUE_INFO[venueKey].code;
   const date=dateOverride || document.getElementById('hs_formDay')?.value || document.getElementById('hs_activeDayFocus')?.value || hsOfficialExamRoutineTimeline[0].date;
   const item=hsOfficialExamRoutineTimeline.find(x=>x.date===date)||hsOfficialExamRoutineTimeline[0];
   const subjects=hsGetAllocatedSubjects(venueKey,item.date);
@@ -1764,11 +1789,11 @@ function hsPrintCentreForm(type,venueOverride,dateOverride){
   w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.official-form-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0;border-bottom:1px solid #333}.official-top-table{margin:0!important}.official-top-table .blank-col{width:11%}.official-top-table th{width:31%;font-size:14px}.official-top-table td{font-size:14px}.official-detail-table{margin-top:0!important}.official-section-note{font-weight:700;margin:12px 0 4px}h3{text-align:center;margin:0 0 10px}.small{font-size:9pt}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top;min-height:22px}th{background:#f1f5f9}.lines{border-bottom:1px solid #333;line-height:28px}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script></body></html>`); w.document.close();
 }
 function hsGenerateSelectedDayForms(){
-  hsSaveCurrentDaySubjects(); hsSaveSelectedFormDates(); const venue=document.getElementById('hs_formVenue')?.value||'TFHS'; const date=document.getElementById('hs_formDay')?.value||hsOfficialExamRoutineTimeline[0].date; const subs=hsGetAllocatedSubjects(venue,date); if(!subs.length)return alert('No subject selected for this day.');
+  hsSaveCurrentDaySubjects(); hsSaveSelectedFormDates(); const venue=hsGetVenue(); const date=document.getElementById('hs_formDay')?.value||hsOfficialExamRoutineTimeline[0].date; const subs=hsGetAllocatedSubjects(venue,date); if(!subs.length)return alert('No subject selected for this day.');
   hsOpenMultiFormWindow(venue,[date]);
 }
 function hsGenerateAllSelectedDayForms(){
-  hsSaveCurrentDaySubjects(); hsSaveSelectedFormDates(); const venue=document.getElementById('hs_formVenue')?.value||'TFHS'; const ticked=hsGetSelectedFormDates(venue); const dates=(ticked.length?ticked:hsOfficialExamRoutineTimeline.map(x=>x.date).filter(d=>hsGetAllocatedSubjects(venue,d).length)); const valid=dates.filter(d=>hsGetAllocatedSubjects(venue,d).length); if(!valid.length)return alert('Tick at least one examination date and select subject(s) for that date.'); hsOpenMultiFormWindow(venue,valid);
+  hsSaveCurrentDaySubjects(); hsSaveSelectedFormDates(); const venue=hsGetVenue(); const ticked=hsGetSelectedFormDates(venue); const dates=(ticked.length?ticked:hsOfficialExamRoutineTimeline.map(x=>x.date).filter(d=>hsGetAllocatedSubjects(venue,d).length)); const valid=dates.filter(d=>hsGetAllocatedSubjects(venue,d).length); if(!valid.length)return alert('Tick at least one examination date and select subject(s) for that date.'); hsOpenMultiFormWindow(venue,valid);
 }
 function hsBuildDayFormPage(type,c){
   const esc=hsEscapeFormText;
@@ -2160,6 +2185,7 @@ function hsImportCurrentYearPDF(input){
 }
 
 function hsInitDataEngine(){
+  hsActiveSchool = hsSyncVenueSelectors(); // start every panel, including this one, on the same saved venue
   const cached = localStorage.getItem("ExamReportingLedgerCache_HS");
   if(cached){ hsTrackingStateDatabase = JSON.parse(cached);
     ["TFHS","TGHS"].forEach(sch=>{
@@ -2346,7 +2372,7 @@ function hsHighlightAndPrepareDualSlips(selectedIndex){
   }
 }
 function hsChangeSchoolView(schoolValue){
-  hsActiveSchool = schoolValue;
+  hsSetVenue(schoolValue); // also syncs every other HS panel's venue dropdown
   document.getElementById("hs_headerTitle").textContent = `HS::${hsTrackingStateDatabase["year"]} ${schoolValue} EXAMINATION LEDGER`;
   hsRenderReportingMatrixTable();
 }
@@ -2423,6 +2449,22 @@ function hsReqBaseDateFromDMY(dmy){
   return `${dd} ${monthNames[mm-1]}`;
 }
 let hsReqLiveSystemState = {};
+// Fills in the venue name / venue code wherever the printed letter refers to
+// "this venue" (report-to line + footer), and keeps the hs_reqVenue dropdown
+// itself in step with the one shared HS venue. This also fixes the old bug
+// where the footer literally printed the broken text "${venueCode}" instead
+// of an actual value.
+function hsReqSyncVenueDisplay(){
+  const v=hsSyncVenueSelectors();
+  const info=HS_VENUE_INFO[v];
+  const nameEl=document.getElementById("hs_reqVenueName");
+  const codeEl=document.getElementById("hs_reqVenueCode");
+  const codeFootEl=document.getElementById("hs_reqVenueCodeFooter");
+  if(nameEl) nameEl.textContent=info.name;
+  if(codeEl) codeEl.textContent=info.code;
+  if(codeFootEl) codeFootEl.textContent=info.code;
+  return v;
+}
 function hsReqInitSystemWorkspace(){
   const localCache = localStorage.getItem("ExamRequisitionSystemDataCache_HS");
   if(localCache){ hsReqLiveSystemState = JSON.parse(localCache);
@@ -2434,9 +2476,6 @@ function hsReqInitSystemWorkspace(){
         day:x.day,
         count: prior.count ?? (sheetRow ? sheetRow.count : "-"),
         sub: prior.sub ?? (sheetRow ? sheetRow.sub : x.sub),
-        venue: prior.venue ?? hsReqAllottedVenueSummaryForRow(i),
-        subject: prior.subject ?? hsReqAllottedSubjectSummaryForRow(i),
-        subCode: prior.subCode ?? hsReqAllottedShortCodesForRow(i),
         baseDate: hsReqBaseDateFromDMY(x.date)
       };
     });
@@ -2444,7 +2483,7 @@ function hsReqInitSystemWorkspace(){
   }
   else{ hsReqLiveSystemState = { schoolName: "TALDANGRA FULMATI HIGH SCHOOL [H.S.]", year: "2026", schedule: hsOfficialExamRoutineTimeline.map((x,i)=>{
       const sheetRow = hsReqDefaultScheduleFromEnrollmentSheet[i];
-      return { day:x.day, count: sheetRow ? sheetRow.count : "-", sub: sheetRow ? sheetRow.sub : x.sub, venue: hsReqAllottedVenueSummaryForRow(i), subject: hsReqAllottedSubjectSummaryForRow(i), subCode: hsReqAllottedShortCodesForRow(i), baseDate: hsReqBaseDateFromDMY(x.date) };
+      return { day:x.day, count: sheetRow ? sheetRow.count : "-", sub: sheetRow ? sheetRow.sub : x.sub, baseDate: hsReqBaseDateFromDMY(x.date) };
     }) }; }
   populateSchoolSelect(document.getElementById("hs_schoolSelect"), hsReqLiveSystemState.schoolName);
   document.getElementById("hs_examYearInput").value = hsReqLiveSystemState.year;
@@ -2452,127 +2491,88 @@ function hsReqInitSystemWorkspace(){
   hsReqSyncDisplayOutputs();
   hsEntrySheetRender();
 }
-function hsReqBuildSchoolWiseLetterRows(){
-  const state=hsReqLiveSystemState||{};
-  const selectedSchool=String(state.schoolName||'').trim();
-  const timeline=hsOfficialExamRoutineTimeline||[];
-  const rows=[];
-  hsLoadSubjectAllocation();
-  timeline.forEach((item,index)=>{
-    const feederRows=(state.entrySheet&&state.entrySheet[index])||[];
-    const schoolAlloc=feederRows
-      .filter(r=>String(r.school||'').trim() && String(r.school||'').trim().toUpperCase()===selectedSchool.toUpperCase())
-      .reduce((sum,r)=>sum+(parseInt(r.count,10)||0),0);
-    if(!schoolAlloc) return;
-
-    const venueParts=[], subjectParts=[];
-    ['TFHS','TGHS'].forEach(v=>{
-      const subs=hsGetAllocatedSubjects(v,item.date);
-      if(!subs.length) return;
-      const venueLabel=v==='TFHS'
-        ? 'TALDANGRA FULMATI HIGH SCHOOL (114071)'
-        : "TALDANGRA GIRLS' HIGH SCHOOL (114200)";
-      venueParts.push(venueLabel);
-      subs.forEach(s=>subjectParts.push(hsSubjectWithCode(s)));
-    });
-    rows.push({
-      date:`${item.day}, ${hsReqBaseDateFromDMY(item.date)} ${state.year||'2026'}`,
-      venue:venueParts.join(' | ')||'Not allotted',
-      subject:[...new Set(subjectParts)].join(', ')||'Not allotted',
-      code:[...new Set(subjectParts.map(s=>hsSubjectShortCode(s)))].join(', '),
-      count:schoolAlloc
-    });
+// Rooms actually saved (Daily Ops → Quick Entry "Save Room Data") for the
+// subjects allotted at this venue/date. Auto — never hand-typed here.
+function hsReqRoomsForRow(rowIndex, venueKey){
+  const item=hsOfficialExamRoutineTimeline[rowIndex]; if(!item) return '';
+  const v=venueKey||hsGetVenue();
+  hsDailyOpsLoad();
+  const rec=hsDailyOpsDB[hsDailyOpsKey(v,item.date)];
+  if(!rec || !rec.subjects) return '';
+  const rooms=new Set();
+  hsGetAllocatedSubjects(v,item.date).forEach(sub=>{
+    const d=rec.subjects[sub];
+    if(d && d.manualRoom) rooms.add(d.manualRoom);
   });
-  return rows;
-}
-function hsRenderSchoolWiseLetter(){
-  const body=document.getElementById('hs_letterTableBody');
-  if(!body) return;
-  body.innerHTML='';
-  const rows=hsReqBuildSchoolWiseLetterRows();
-  if(!rows.length){
-    body.innerHTML='<tr><td colspan="5" style="padding:14px;text-align:center;color:#64748b;">No date-wise invigilator allocation found for the selected school.</td></tr>';
-  }else{
-    rows.forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td style="font-weight:500;text-align:left;padding-left:10px;">${hsEscapeFormText(r.date)}</td>
-        <td style="text-align:left;">${hsEscapeFormText(r.venue)}</td>
-        <td style="text-align:left;">${hsEscapeFormText(r.subject)}</td>
-        <td><b>${hsEscapeFormText(r.code)}</b></td>
-        <td style="font-weight:bold;">${hsEscapeFormText(r.count)}</td>`;
-      body.appendChild(tr);
-    });
-  }
-  const status=document.getElementById('hs_letterGenStatus');
-  if(status) status.textContent=rows.length
-    ? `Generated from ${rows.length} date-wise allocation(s) for ${selectedSchool}.`
-    : 'No allocation found for this school.';
-}
-function hsGenerateSchoolWiseLetter(){
-  hsEntrySheetEnsureInit();
-  hsRenderSchoolWiseLetter();
-  const target=document.getElementById('requisitionLetterA4_hs');
-  if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+  return [...rooms].join(', ');
 }
 function hsReqSyncDisplayOutputs(){
+  const venueKey=hsReqSyncVenueDisplay();
   const targetYear = hsReqLiveSystemState.year || "2027";
   document.querySelectorAll(".hs_outYear").forEach(el=>el.textContent = targetYear);
   document.getElementById("hs_lblRecipientSchool").textContent = hsReqLiveSystemState.schoolName ? hsReqLiveSystemState.schoolName.toUpperCase() : "_______________________________";
   const matrixBody = document.getElementById("hs_scheduleMatrixBody");
-  matrixBody.innerHTML = "";
+  const letterBody = document.getElementById("hs_letterTableBody");
+  matrixBody.innerHTML = ""; letterBody.innerHTML = "";
   hsReqLiveSystemState.schedule.forEach((item, index)=>{
     const fullComputedDateStr = `${item.day}, ${item.baseDate} ${targetYear}`;
+    const subjectCode = hsSubjectScopeShortCodes(item.sub);
+    const rooms = hsReqRoomsForRow(index, venueKey);
     const trMatrix = document.createElement("tr");
     trMatrix.innerHTML = `<td>${index+1}</td><td style="font-weight:600; color:#1e3a8a;">${fullComputedDateStr}</td>
-      <td><input type="text" value="${hsEscapeFormText(item.day||'')}" oninput="hsReqUpdateRowVariable(${index}, 'day', this.value)"></td>
-      <td><input type="text" value="${hsEscapeFormText(item.venue||'')}" style="text-align:left;" placeholder="Venue / Code" oninput="hsReqUpdateRowVariable(${index}, 'venue', this.value)"></td>
-      <td><input type="text" value="${hsEscapeFormText(item.subject||item.sub||'')}" style="text-align:left;" placeholder="Subject" oninput="hsReqUpdateRowVariable(${index}, 'subject', this.value);hsReqUpdateRowVariable(${index}, 'sub', this.value)"></td>
-      <td><input type="text" value="${hsEscapeFormText(item.subCode||hsSubjectScopeShortCodes(item.sub)||'')}" placeholder="Code" oninput="hsReqUpdateRowVariable(${index}, 'subCode', this.value)"></td>
-      <td><input type="text" value="${hsEscapeFormText(item.count||'')}" oninput="hsReqUpdateRowVariable(${index}, 'count', this.value)"></td>`;
+      <td><input type="text" value="${item.day}" oninput="hsReqUpdateRowVariable(${index}, 'day', this.value)"></td>
+      <td><input type="text" value="${item.count}" oninput="hsReqUpdateRowVariable(${index}, 'count', this.value)"></td>
+      <td><input type="text" value="${item.sub}" style="text-align:left;" oninput="hsReqUpdateRowVariable(${index}, 'sub', this.value)"></td>
+      <td style="color:#475569;">${hsEscapeFormText(subjectCode)||'&mdash;'}</td>
+      <td style="color:#475569;">${hsEscapeFormText(rooms)||'Auto'}</td>`;
     matrixBody.appendChild(trMatrix);
+    // Letter must show what THIS recipient school is actually sending on this
+    // date (from the saved Invigilator Entry Sheet), not the flat total
+    // required count — that was the bug: the letter ignored saved entry-sheet
+    // data entirely and always printed the same overall "count" to every school.
+    const entryRows = hsReqLiveSystemState.entrySheet && hsReqLiveSystemState.entrySheet[index];
+    const entryHasData = Array.isArray(entryRows) && entryRows.some(r=>r.school);
+    const schoolCount = hsEntrySheetCountForSchool(index, hsReqLiveSystemState.schoolName);
+    if(entryHasData && schoolCount<=0){ return; } // entry sheet says this school sends nobody this date — omit from letter
+    const displayCount = entryHasData ? schoolCount : item.count; // fallback to overall count until entry sheet is filled in
+    const trLetter = document.createElement("tr");
+    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td>
+      <td>${hsEscapeFormText(item.day)}</td>
+      <td style="font-weight:600;">${hsEscapeFormText(subjectCode)||'&mdash;'}</td>
+      <td>${hsEscapeFormText(rooms)||'&mdash;'}</td>
+      <td style="font-weight:bold;">${displayCount}</td>`;
+    letterBody.appendChild(trLetter);
   });
-  hsRenderSchoolWiseLetter();
 }
 function hsReqUpdateRowVariable(index, key, value){
   hsReqLiveSystemState.schedule[index][key] = value;
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
-  hsRenderSchoolWiseLetter();
+  // Day/Subject affect the letter's computed date string and the derived
+  // Subject Code column too, so the simplest correct thing is a full
+  // re-render rather than hand-patching individual cells out of sync.
+  hsReqSyncDisplayOutputs();
 }
 // Pulls the subjects actually allotted (Progress-Ledger-driven, via
-// hsGetAllocatedSubjects) for a requisition schedule row's date, across both
-// venues, and returns them as a short-code-only comma list — never full names.
-function hsReqAllottedShortCodesForRow(rowIndex){
+// hsGetAllocatedSubjects) for a requisition schedule row's date, AT THE
+// VENUE CURRENTLY SELECTED for this letter — never both venues merged
+// together, since a venue's requisition letter should only ever list that
+// venue's own subjects. Returns full subject names (short codes are shown
+// separately, in their own column, derived automatically).
+function hsReqAllottedSubjectsForRow(rowIndex, venueKey){
   const item=hsOfficialExamRoutineTimeline[rowIndex]; if(!item) return '';
   hsLoadSubjectAllocation();
-  const subs=new Set();
-  ['TFHS','TGHS'].forEach(v=>{ hsGetAllocatedSubjects(v,item.date).forEach(s=>subs.add(s)); });
-  return [...subs].map(hsSubjectShortCode).join(', ');
+  const v=venueKey||hsGetVenue();
+  return hsGetAllocatedSubjects(v,item.date).join(', ');
 }
-function hsReqAllottedVenueSummaryForRow(rowIndex){
-  const item=hsOfficialExamRoutineTimeline[rowIndex]; if(!item) return '';
-  hsLoadSubjectAllocation();
-  const labels={TFHS:'VENUE-1 — TALDANGRA FULMATI HIGH SCHOOL (114071)',TGHS:"VENUE-2 — TALDANGRA GIRLS' HIGH SCHOOL (114200)"};
-  return ['TFHS','TGHS'].map(v=>{
-    const subs=hsGetAllocatedSubjects(v,item.date);
-    return subs.length ? labels[v]+': '+subs.map(hsSubjectShortCode).join(', ') : '';
-  }).filter(Boolean).join(' | ');
-}
-function hsReqAllottedSubjectSummaryForRow(rowIndex){
-  const item=hsOfficialExamRoutineTimeline[rowIndex]; if(!item) return '';
-  hsLoadSubjectAllocation();
-  const out=[];
-  ['TFHS','TGHS'].forEach(v=>hsGetAllocatedSubjects(v,item.date).forEach(s=>{if(!out.includes(s))out.push(s);}));
-  return out.join(', ');
-}
-
 // Replaces every row's manually-typed Subject Scope with the subjects that
-// are actually allotted per the Progress Ledger for that date (short codes
-// only). Rows with nothing allotted yet are left untouched so a day off /
-// vocational label typed manually isn't wiped out.
+// are actually allotted per the Progress Ledger, for the venue selected
+// above, for that date. Rows with nothing allotted yet are left untouched
+// so a day off / vocational label typed manually isn't wiped out.
 function hsReqSyncSubjectScopeFromLedger(){
+  const venueKey=hsGetVenue();
   hsReqLiveSystemState.schedule.forEach((row,index)=>{
-    const codes=hsReqAllottedShortCodesForRow(index);
-    if(codes) hsReqLiveSystemState.schedule[index].sub=codes;
+    const names=hsReqAllottedSubjectsForRow(index, venueKey);
+    if(names) hsReqLiveSystemState.schedule[index].sub=names;
   });
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsReqSyncDisplayOutputs();
@@ -2582,12 +2582,14 @@ function hsReqUpdateRecipientSchoolName(val){
   document.getElementById("hs_customSchoolInput").value = "";
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   document.getElementById("hs_lblRecipientSchool").textContent = val ? val.toUpperCase() : "_______________________________";
+  hsReqSyncDisplayOutputs(); // refresh letter rows to this recipient's saved per-school counts
 }
 function hsReqUpdateCustomSchoolText(val){
   hsReqLiveSystemState.schoolName = val;
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   document.getElementById("hs_lblRecipientSchool").textContent = val ? val.toUpperCase() : "_______________________________";
   if(val.trim() !== "") document.getElementById("hs_schoolSelect").value = "";
+  hsReqSyncDisplayOutputs();
 }
 function hsReqUpdateExamYearCalendarSync(val){
   hsReqLiveSystemState.year = val;
@@ -2653,6 +2655,50 @@ function hsEntrySheetSchoolOptionsHtml(selected){
 function hsEntrySheetRowTotal(index){
   return (hsReqLiveSystemState.entrySheet[index]||[]).reduce((sum,row)=>sum + (parseInt(row.count,10)||0), 0);
 }
+// How many teachers a specific school is sending on a given schedule row,
+// per the saved Invigilator Entry Sheet (sums all rows for that school, in
+// case the same school was split across two lines).
+function hsEntrySheetCountForSchool(index, schoolName){
+  if(!schoolName) return 0;
+  return (hsReqLiveSystemState.entrySheet[index]||[])
+    .filter(r=>r.school===schoolName)
+    .reduce((sum,row)=>sum + (parseInt(row.count,10)||0), 0);
+}
+// ----------------------------------------------------------------
+// Default feeder-school split. On the maximum-requirement date(s) the
+// teachers are split across all six schools below; on every other date the
+// whole (smaller) requirement is taken from Harmasra alone.
+const hsDefaultFeederMaxSplit = [
+  {school:"HARMASHRA H S", count:6},
+  {school:"SARALIYA PAKURDIHA H S", count:3},
+  {school:"PANCHMURA M K GIRLS HIGH SCHOOL", count:5},
+  {school:"KADMA H S", count:1},
+  {school:"JAGATPUR SAMMILANI HIGH SCHOOL", count:4},
+  {school:"MANIPUR CHANDIMATA H S", count:2}
+];
+const hsDefaultFeederMaxTotal = hsDefaultFeederMaxSplit.reduce((s,r)=>s+r.count,0); // 21
+function hsEntrySheetApplyDefaultForRow(index){
+  const required = parseInt((hsReqLiveSystemState.schedule[index]||{}).count,10) || 0;
+  if(!required) return; // OFF DAY / nothing requisitioned — leave untouched
+  if(required === hsDefaultFeederMaxTotal){
+    hsReqLiveSystemState.entrySheet[index] = hsDefaultFeederMaxSplit.map(r=>({school:r.school, count:String(r.count)}));
+  }else{
+    hsReqLiveSystemState.entrySheet[index] = [{school:"HARMASHRA H S", count:String(required)}];
+  }
+}
+function hsEntrySheetApplyDefaultRow(index){
+  hsEntrySheetApplyDefaultForRow(index);
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+  hsEntrySheetRender();
+  hsReqSyncDisplayOutputs();
+}
+function hsEntrySheetApplyDefaultAll(){
+  if(!confirm('Auto-fill every date\'s Invigilator Entry Sheet with the default split (Harmasra 6 / Saraliya 3 / Panch Girls 5 / Kadma 1 / Jagatpur 4 / Manipur 2 on the '+hsDefaultFeederMaxTotal+'-teacher day; Harmasra alone on every other day)? This overwrites any existing entries.')) return;
+  hsOfficialExamRoutineTimeline.forEach((x,i)=>hsEntrySheetApplyDefaultForRow(i));
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+  hsEntrySheetRender();
+  hsReqSyncDisplayOutputs();
+}
 function hsEntrySheetRender(){
   const box = document.getElementById("hs_entrySheetContainer");
   if(!box) return;
@@ -2687,6 +2733,7 @@ function hsEntrySheetRender(){
       <div style="font-weight:600;margin-bottom:6px;">${fullDateStr} <span style="font-weight:400;color:#475569;">(Required: ${required})</span></div>
       ${rowsHtml}
       <button type="button" class="btn btn-primary no-print" style="padding:5px 12px;font-size:9pt;margin-bottom:8px;" onclick="hsEntrySheetAddRow(${i})">+ Add School</button>
+      <button type="button" class="btn btn-success no-print" style="padding:5px 12px;font-size:9pt;margin-bottom:8px;" onclick="hsEntrySheetApplyDefaultRow(${i})" title="Fill this date with the default feeder-school split">Use Default Split</button>
       <div id="hs_entryStatus_${i}" style="font-size:9pt;">Total Allocated: <b id="hs_entryTotal_${i}">${total}</b> / ${required} — ${statusHtml}</div>
     </div>`;
   });
@@ -2705,12 +2752,14 @@ function hsEntrySheetUpdateRow(index, rowIdx, field, value){
     else statusHtml = `<span style="color:var(--danger);font-weight:600;">Over-allocated by ${total-required} — please adjust.</span>`;
     statusEl.innerHTML = `Total Allocated: <b>${total}</b> / ${required} — ${statusHtml}`;
   }
+  hsReqSyncDisplayOutputs(); // keep the printable letter's per-school count in sync as data is saved
 }
 function hsEntrySheetAddRow(index){
   if(!hsReqLiveSystemState.entrySheet[index]) hsReqLiveSystemState.entrySheet[index] = [];
   hsReqLiveSystemState.entrySheet[index].push({school:"",count:""});
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
+  hsReqSyncDisplayOutputs();
 }
 function hsEntrySheetRemoveRow(index, rowIdx){
   const rows = hsReqLiveSystemState.entrySheet[index];
@@ -2718,6 +2767,7 @@ function hsEntrySheetRemoveRow(index, rowIdx){
   rows.splice(rowIdx,1);
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
+  hsReqSyncDisplayOutputs();
 }
 
 /* ================================================================
@@ -3120,7 +3170,7 @@ function hsSubjectDbRenderDD(keepValue){
   // Always load the selected subject's stored master QP/OMR serials immediately.
   const selected=dd.value||'';
   if(selected){
-    const venue=document.getElementById('hs_opsVenue')?.value||'TFHS';
+    const venue=hsGetVenue();
     const date=document.getElementById('hs_opsDate')?.value;
     if(date){
       const rec=hsDailyOpsEnsureRecord(venue,date);
@@ -3140,7 +3190,7 @@ function hsSubjectDbSelectChange(){
   const sub=document.getElementById('hs_opsSubjectDD')?.value||'';
   if(!sub)return;
   hsDailyOpsLoad();
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value;
   if(!date)return;
   const rec=hsDailyOpsEnsureRecord(venue,date), d=rec.subjects[sub]||{};
   const m=hsSubjectQpOmrMaster[sub]||{};
@@ -3185,7 +3235,7 @@ function hsEnhancedRenderRoomCaps(){
   hsEnhancedEnsureUI();
   const box=document.getElementById('hs_dayRoomCapsTable'); if(!box)return;
   hsRoomLoad(); hsDailyOpsLoad();
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS';
+  const venue=hsGetVenue();
   const date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0]?.date;
   const rooms=hsRoomDB[venue]||[];
   const rec=hsDailyOpsEnsureRecord(venue,date);
@@ -3199,7 +3249,7 @@ function hsEnhancedRenderRoomCaps(){
     }).join('')+'</tbody></table>';
 }
 function hsEnhancedSaveRoomMax(el){
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value;
   if(!date||!el)return;
   hsDailyOpsLoad(); const rec=hsDailyOpsEnsureRecord(venue,date); rec.roomMax=rec.roomMax||{};
   hsRoomLoad(); const room=el.dataset.roomMax; const fixed=(hsRoomDB[venue]||[]).find(r=>r.room===room)?.seats||1;
@@ -3217,7 +3267,7 @@ function hsEnhancedSerialStartAfter(start,count){
 }
 function hsEnhancedAutoAllocate(showAlert){
   hsRoomLoad(); hsDailyOpsLoad();
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS';
+  const venue=hsGetVenue();
   const date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0]?.date;
   const basis=document.getElementById('hs_roomBasis')?.value||'present';
   const rooms=hsRoomDB[venue]||[];
@@ -3285,7 +3335,7 @@ function hsEnhancedRenderRoomSerialTable(){
   const anchor=document.getElementById('hs_dayRoomCaps'); if(!anchor)return;
   let box=document.getElementById('hs_roomSerialChain');
   if(!box){box=document.createElement('div');box.id='hs_roomSerialChain';box.className='hs-dailyops-card no-print';anchor.parentNode.insertBefore(box,anchor.nextSibling);}
-  hsDailyOpsLoad(); const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value; const rec=hsDailyOpsDB[hsDailyOpsKey(venue,date)]||{};
+  hsDailyOpsLoad(); const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value; const rec=hsDailyOpsDB[hsDailyOpsKey(venue,date)]||{};
   const rows=[];
   Object.entries(rec.subjects||{}).forEach(([sub,d])=>{
     (d.roomSerials||[]).forEach(z=>rows.push({sub,d,z}));
@@ -3302,7 +3352,7 @@ hsDailyOpsRender=function(){
   hsEnhancedRenderRoomCaps();
   hsSubjectDbRenderDD();
   hsEnhancedRenderRoomSerialTable();
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value;
   if(date){
     const rec=hsDailyOpsEnsureRecord(venue,date);
     const hasCounts=Object.values(rec.subjects||{}).some(d=>(Number(d.male)||0)+(Number(d.female)||0)>0);
@@ -3322,7 +3372,7 @@ hsDailyOpsLiveUpdate=function(el){
 const hsOriginalRenderDaySubjectSelector=hsRenderDaySubjectSelector;
 hsRenderDaySubjectSelector=function(){
   hsOriginalRenderDaySubjectSelector();
-  const venue=document.getElementById('hs_formVenue')?.value||'TFHS', date=document.getElementById('hs_formDay')?.value;
+  const venue=hsGetVenue(), date=document.getElementById('hs_formDay')?.value;
   if(!date)return;
   const key=hsAllocationKey(venue,date); hsLoadSubjectAllocation();
   const selected=hsCentreSubjectAllocation[key]||[];
@@ -3330,7 +3380,7 @@ hsRenderDaySubjectSelector=function(){
   if(!selected.length && boxes.length){ boxes.forEach(x=>x.checked=true); hsSaveCurrentDaySubjects(); }
 };
 function hsEnhancedGenerateVSForm(){
-  const venue=document.getElementById('hs_opsVenue')?.value||'TFHS', date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0]?.date;
+  const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0]?.date;
   if(!hsEnhancedAutoAllocate(false))return;
   hsOpenMultiFormWindow(venue,[date]);
 }
@@ -3419,7 +3469,7 @@ function hsQuickEntryFetchFromLedger(){
   hsQuickEntryRecalc();
   if(st) st.textContent='Fetched from Progress Ledger: Male '+counts.male+', Female '+counts.female+' (press Save Subject to store).';
 }
-function hsQuickEntryGetVenue(){ return document.getElementById('hs_opsVenue')?.value||'TFHS'; }
+function hsQuickEntryGetVenue(){ return hsGetVenue(); }
 function hsQuickEntryGetDay(){ return document.getElementById('hs_qeDay')?.value||hsOfficialExamRoutineTimeline[0]?.date; }
 
 function hsQuickEntryPopulateDays(){
