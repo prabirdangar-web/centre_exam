@@ -2077,7 +2077,7 @@ function hsImportCurrentYearExcel(input){
         hsTrackingStateDatabase.year="2026";
         hsTrackingStateDatabase.source={type:"Excel",file:file.name,importedAt:new Date().toISOString(),centre:"TALDANGRA",centreCode:"2206",note:"Source dates were not 2026; official WBCHSE 2026 routine retained."};
         localStorage.setItem("ExamReportingLedgerCache_HS",JSON.stringify(hsTrackingStateDatabase));
-        document.getElementById("hs_examYear").value="2026";
+        document.getElementById("hs_examYear").value="2027";
         hsPopulateDateDropdown();
         hsRenderReportingMatrixTable();
         hsSetImportStatus("Previous/different-year Excel detected. Official WBCHSE 2026 routine retained; source dates were not used to replace the dashboard.",false);
