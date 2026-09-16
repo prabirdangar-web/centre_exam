@@ -269,6 +269,44 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     });
   }catch(e){ console.warn('Firebase init failed — app will run on local storage only.', e); }
 </script>
+
+<style id="letterA4Patch">
+/* ======= A4 SINGLE-PAGE PORTRAIT REQUISITION LETTER ======= */
+@page{ size:A4 portrait; margin:10mm; }
+
+#requisitionLetterA4_hs, #requisitionLetterA4_mp{
+  width:190mm; max-width:190mm; min-height:277mm;
+  margin:16px auto; padding:9mm 10mm; box-sizing:border-box;
+  display:flex; flex-direction:column;
+}
+#requisitionLetterA4_hs .letter-header, #requisitionLetterA4_mp .letter-header{
+  padding-bottom:8px; margin-bottom:10px;
+}
+.letter-header h2.lh-main{
+  white-space:nowrap; overflow:hidden; display:block; width:100%;
+  font-size:22pt; line-height:1.15; letter-spacing:.2px;
+}
+.letter-header .contact-line{ font-size:10.4pt; }
+.letter-header .sub-address{ font-size:12.4pt; letter-spacing:.35px; margin-top:6px; }
+.letter-footer{ margin-top:auto; padding-top:18px; }
+
+.letter-edit{ outline:none; border-bottom:1px dotted #94a3b8; }
+.letter-edit:focus{ background:#fffbeb; border-bottom:1px solid #d97706; }
+
+@media print{
+  html,body{ background:#fff !important; }
+  #requisitionLetterA4_hs, #requisitionLetterA4_mp{
+    width:100%; max-width:100%; min-height:262mm;
+    margin:0; padding:0; border:0; border-radius:0; box-shadow:none;
+    page-break-after:avoid; break-after:avoid;
+  }
+  .letter-header h2.lh-main{
+    background:none !important; -webkit-text-fill-color:#000 !important; color:#000 !important;
+  }
+  .letter-edit{ border-bottom:none !important; }
+  table.schedule-table, .letter-footer{ page-break-inside:avoid; }
+}
+</style>
 </head>
 <body>
 
@@ -634,6 +672,14 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         <input type="text" id="hs_examYearInput" value="2027" oninput="hsReqUpdateExamYearCalendarSync(this.value)">
       </div>
       <div class="form-group">
+        <label>Letter / Memo Date</label>
+        <input type="date" id="hs_letterDateInput" onchange="letterApplyDate('hs', this.value)">
+      </div>
+      <div class="form-group">
+        <label>Memo / Ref No.</label>
+        <input type="text" id="hs_letterRefInput" oninput="letterApplyRef('hs', this.value)">
+      </div>
+      <div class="form-group">
         <label>Print Out Command</label>
         <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="window.print()">Print Request Sheet</button>
       </div>
@@ -670,13 +716,13 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       <div class="letter-header">
         <div class="contact-line">E-mail: highschooltaldangrafulmati@gmail.com</div>
         <div class="contact-line">Mob No.-9434654678/9933035811 (Centre Secretary)</div>
-        <h2>TALDANGRA H.S.<span class="hs_outYear">2027</span> [SEM-III] EXAMINATION CENTRE COMMITTEE</h2>
+        <h2 class="lh-main">TALDANGRA H.S. <span class="hs_outYear">2027</span> [SEM-III] EXAMINATION CENTRE COMMITTEE</h2>
         <div class="sub-address">P.O. &amp; BLOCK:- TALDANGRA * SUB. DIV.:- KHATRA * DIST. :- BANKURA * PIN-722152</div>
       </div>
       <table class="meta-table"><tr>
-        <td style="width:48%;">Ref: HS/<span class="hs_outYear">2027</span> [SEM-III]/2207/34</td>
+        <td style="width:48%;">Ref: <span class="letter-edit" id="hs_letterRefCell" contenteditable="true">HS/2027 [SEM-III]/2207/34</span></td>
         <td style="width:27%; text-align:center;">CENTER CODE: 2206</td>
-        <td style="width:25%; text-align:right;">28th June <span class="hs_outYear">2027</span></td>
+        <td style="width:25%; text-align:right;">Date: <span class="letter-edit" id="hs_letterDateCell" contenteditable="true">--</span></td>
       </tr></table>
       <div style="margin-bottom:14px;">
         TO<br>The Headmaster / Headmistress / Teacher-in-Charge<br>
@@ -880,6 +926,14 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         <input type="text" id="mp_examYearInput" value="2027" oninput="mpReqUpdateExamYearCalendarSync(this.value)">
       </div>
       <div class="form-group">
+        <label>Letter / Memo Date</label>
+        <input type="date" id="mp_letterDateInput" onchange="letterApplyDate('mp', this.value)">
+      </div>
+      <div class="form-group">
+        <label>Memo / Ref No.</label>
+        <input type="text" id="mp_letterRefInput" oninput="letterApplyRef('mp', this.value)">
+      </div>
+      <div class="form-group">
         <label>Print Out Command</label>
         <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="window.print()">Print Request Sheet</button>
       </div>
@@ -900,13 +954,13 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       <div class="letter-header">
         <div class="contact-line">E-mail: highschooltaldangrafulmati@gmail.com</div>
         <div class="contact-line">Mob No.-9434654678/9933035811 (Centre Secretary)</div>
-        <h2>TALDANGRA MADHYAMIK <span class="mp_outYear">2027</span> EXAMINATION CENTRE COMMITTEE</h2>
+        <h2 class="lh-main">TALDANGRA MADHYAMIK <span class="mp_outYear">2027</span> EXAMINATION CENTRE COMMITTEE</h2>
         <div class="sub-address">P.O. &amp; BLOCK:- TALDANGRA * SUB. DIV.:- KHATRA * DIST. :- BANKURA * PIN-722152</div>
       </div>
       <table class="meta-table"><tr>
-        <td style="width:48%;">Ref: MP/<span class="mp_outYear">2027</span>/2207/34</td>
+        <td style="width:48%;">Ref: <span class="letter-edit" id="mp_letterRefCell" contenteditable="true">MP/2027/2207/34</span></td>
         <td style="width:27%; text-align:center;">CENTER CODE: <span id="mp_centerCodeLabel">2206</span></td>
-        <td style="width:25%; text-align:right;">13th July <span class="mp_outYear">2027</span></td>
+        <td style="width:25%; text-align:right;">Date: <span class="letter-edit" id="mp_letterDateCell" contenteditable="true">--</span></td>
       </tr></table>
       <div style="margin-bottom:14px;">
         TO<br>The Headmaster / Headmistress / Teacher-in-Charge<br>
@@ -3756,6 +3810,101 @@ cloudHydrateAndBoot(function(){
   mpReqInitSystemWorkspace();
   mpRecPopulatePresetSelect();
   mpRecLoadPreset(6);
+});
+</script>
+
+<script>
+/* ==========================================================
+   LETTER DATE (defaults to today, fully editable) +
+   ONE-LINE AUTO-FIT LETTERHEAD  +  A4 single-page helpers
+   ========================================================== */
+function letterOrdinalSuffix(n){
+  if(n>3 && n<21) return "th";
+  return ({1:"st",2:"nd",3:"rd"})[n%10] || "th";
+}
+function letterFormatLongDate(d){
+  const months=["January","February","March","April","May","June","July",
+                "August","September","October","November","December"];
+  return d.getDate()+letterOrdinalSuffix(d.getDate())+" "+months[d.getMonth()]+" "+d.getFullYear();
+}
+function letterTodayISO(){
+  const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function letterApplyDate(prefix, isoVal){
+  const cell=document.getElementById(prefix+"_letterDateCell");
+  if(!cell) return;
+  if(!isoVal){ cell.textContent="--"; return; }
+  const parts=isoVal.split("-");
+  const d=new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+  if(isNaN(d.getTime())) return;
+  cell.textContent=letterFormatLongDate(d);
+  try{ localStorage.setItem("letterDate_"+prefix, isoVal); }catch(e){}
+}
+function letterApplyRef(prefix, val){
+  const cell=document.getElementById(prefix+"_letterRefCell");
+  if(cell) cell.textContent=val;
+  try{ localStorage.setItem("letterRef_"+prefix, val); }catch(e){}
+}
+function letterInitDateAndRef(){
+  ["hs","mp"].forEach(function(prefix){
+    const inp=document.getElementById(prefix+"_letterDateInput");
+    const refInp=document.getElementById(prefix+"_letterRefInput");
+    let iso=null;
+    try{ iso=localStorage.getItem("letterDate_"+prefix); }catch(e){}
+    if(!iso) iso=letterTodayISO();          /* default = TODAY */
+    if(inp) inp.value=iso;
+    letterApplyDate(prefix, iso);
+
+    const refCell=document.getElementById(prefix+"_letterRefCell");
+    let ref=null;
+    try{ ref=localStorage.getItem("letterRef_"+prefix); }catch(e){}
+    if(!ref && refCell) ref=refCell.textContent.trim();
+    if(refInp) refInp.value=ref||"";
+    if(ref) letterApplyRef(prefix, ref);
+
+    /* typing straight into the letter keeps the control box in sync */
+    if(refCell){
+      refCell.addEventListener("input", function(){
+        if(refInp) refInp.value=refCell.textContent.trim();
+        try{ localStorage.setItem("letterRef_"+prefix, refCell.textContent.trim()); }catch(e){}
+      });
+    }
+  });
+}
+
+/* ---- keep the main school / committee name on ONE line, as large as it fits ---- */
+function letterFitHeadline(){
+  document.querySelectorAll(".letter-header h2.lh-main").forEach(function(el){
+    const box=el.parentElement;
+    if(!box || box.clientWidth===0) return;      /* panel hidden — skip */
+    let size=23.5;                                /* start big */
+    el.style.fontSize=size+"pt";
+    let guard=0;
+    while(el.scrollWidth > el.clientWidth+1 && size > 9 && guard < 120){
+      size -= 0.4; guard++;
+      el.style.fontSize=size.toFixed(2)+"pt";
+    }
+  });
+}
+window.addEventListener("resize", letterFitHeadline);
+window.addEventListener("beforeprint", letterFitHeadline);
+document.addEventListener("click", function(ev){
+  if(ev.target.closest && ev.target.closest(".tool-btn, .board-btn")){
+    setTimeout(letterFitHeadline, 60);
+  }
+});
+document.addEventListener("input", function(ev){
+  if(ev.target && (ev.target.id==="hs_examYearInput" || ev.target.id==="mp_examYearInput")){
+    setTimeout(letterFitHeadline, 30);
+  }
+});
+
+window.addEventListener("load", function(){
+  letterInitDateAndRef();
+  letterFitHeadline();
+  setTimeout(letterFitHeadline, 400);
+  setTimeout(letterFitHeadline, 1200);
 });
 </script>
 </body>
