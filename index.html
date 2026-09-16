@@ -1675,9 +1675,23 @@ function hsSyncSubjectAllocationFromLedger(venue,date){
         const arr=row.subVals[sub]||[];
         return arr.some(v=>(Number(v)||0)>0);
       });
-    } else {
+    } else if(daySubjects.length===1){
+      // Single-subject day: one aggregate total unambiguously belongs to
+      // that one subject, so it's safe to auto-tick it.
       const total=(row.vals||[]).reduce((a,b)=>a+(Number(b)||0),0);
       if(total>0) ledgerAllotted=daySubjects.slice();
+    } else {
+      // Multi-subject day (e.g. the combined Vocational block) with only a
+      // plain aggregate total entered — not Subject-wise Entry. We cannot
+      // tell which of the several subjects that total belongs to, so do
+      // NOT guess "all subjects allotted". Leave whatever the headmaster
+      // ticked by hand in the Centre-wise subject allotment panel alone.
+      // (Previously this defaulted to "select every subject for the day",
+      // which silently overwrote a narrower manual tick — e.g. only
+      // ELTV/ITEV/AGLV — back to "all 16 vocational subjects" on every
+      // re-render, making a particular subject's selection appear to
+      // never save.)
+      return;
     }
     if(!ledgerAllotted.length) return;
     const key=hsAllocationKey(venue,date);
@@ -1902,10 +1916,20 @@ function hsOpenMultiFormWindow(venue,dates){
 
 /* ================================================================
    HS :: PROGRESS LEDGER
+   Semester-III H.S. Examination, 2027 routine — revised per WBCHSE
+   Notification No. L/PR/357/2026 dated 15.09.2026 (Karam Puja
+   revision): the 22.09.2026 Vocational block was withdrawn and its
+   16 vocational subjects added as the 2nd Half (2:00–3:00 pm) of
+   13.10.2026, alongside that date's existing 1st Half subjects.
+   The 22.09.2026 row is kept (not deleted) as a "No Examination"
+   placeholder rather than removed, because every row below is
+   consumed by INDEX (see hsInitDataEngine/hsResetToDefaults), and
+   deleting a row would silently shift every later date's already-
+   saved Progress Ledger figures onto the wrong date.
    ================================================================ */
 const hsOfficialExamRoutineTimeline = [
   { date: "21.09.2026", day: "Monday", sub: "Bengali (A), English (A), Hindi (A), Nepali (A), Urdu, Santhali, Odia, Telugu, Punjabi" },
-  { date: "22.09.2026", day: "Tuesday", sub: "Health Care, Automobile, Organised Retailing, Security, IT & ITES, Electronics, Tourism & Hospitality, Plumbing, Construction, Apparel, Beauty & Wellness, Agriculture (AGLV), Power, Banking Financial Service & Insurance, Food Processing, Telecom – All Vocational Subjects" },
+  { date: "22.09.2026", day: "Tuesday", sub: "No Examination — Vocational Subjects shifted to 13.10.2026 (2nd Half) vide WBCHSE Notification No. L/PR/357/2026 dated 15.09.2026" },
   { date: "24.09.2026", day: "Thursday", sub: "English (B), Bengali (B), Hindi (B), Nepali (B), Alternative English" },
   { date: "25.09.2026", day: "Friday", sub: "Economics, Anthropology, Science of Well Being, Applied Artificial Intelligence" },
   { date: "28.09.2026", day: "Monday", sub: "Physics, Nutrition, Education, Accountancy" },
@@ -1914,7 +1938,7 @@ const hsOfficialExamRoutineTimeline = [
   { date: "01.10.2026", day: "Thursday", sub: "Chemistry, Geography, Human Development and Resource Management, Business Studies" },
   { date: "03.10.2026", day: "Saturday", sub: "Philosophy" },
   { date: "12.10.2026", day: "Monday", sub: "Mathematics, Business Mathematics and Business Statistics, Basic Mathematics for Social Sciences, Agriculture (AGRI), Journalism and Mass Communication, Sanskrit, Persian, Arabic" },
-  { date: "13.10.2026", day: "Tuesday", sub: "Cyber Security, Artificial Intelligence, Data Science, Sociology, Artificial Intelligence and Data Science, Fisheries and Aquaculture" },
+  { date: "13.10.2026", day: "Tuesday", sub: "Cyber Security, Artificial Intelligence, Data Science, Sociology, Artificial Intelligence and Data Science, Fisheries and Aquaculture, Health Care, Automobile, Organised Retailing, Security, IT & ITES, Electronics, Tourism & Hospitality, Plumbing, Construction, Apparel, Beauty & Wellness, Agriculture (AGLV), Power, Banking Financial Service & Insurance, Food Processing, Telecom" },
   { date: "14.10.2026", day: "Wednesday", sub: "Biological Science, Political Science, Costing and Taxation" }
 ];
 
@@ -2428,7 +2452,7 @@ const hsDynamicRoutineTimelineBase = [
 // fresh/reset load, before any manual edits are cached.
 const hsReqDefaultScheduleFromEnrollmentSheet = [
   { date: "21.09.2026", day: "Monday",    count: "21", sub: "BNGA, SANT" },
-  { date: "22.09.2026", day: "Tuesday",   count: "-",  sub: "ELTV, ITEV, AGLV" },
+  { date: "22.09.2026", day: "Tuesday",   count: "-",  sub: "OFF DAY" },
   { date: "24.09.2026", day: "Thursday",  count: "21", sub: "ENGB" },
   { date: "25.09.2026", day: "Friday",    count: "-",  sub: "OFF DAY" },
   { date: "28.09.2026", day: "Monday",    count: "07", sub: "PHYS, NUTN, EDCN" },
@@ -2437,7 +2461,7 @@ const hsReqDefaultScheduleFromEnrollmentSheet = [
   { date: "01.10.2026", day: "Thursday",  count: "16", sub: "CHEM, GEGR" },
   { date: "03.10.2026", day: "Saturday",  count: "-",  sub: "PHIL" },
   { date: "12.10.2026", day: "Monday",    count: "18", sub: "MATH, SNSK" },
-  { date: "13.10.2026", day: "Tuesday",   count: "-",  sub: "OFF DAY" },
+  { date: "13.10.2026", day: "Tuesday",   count: "-",  sub: "ELTV, ITEV, AGLV (2nd Half)" },
   { date: "14.10.2026", day: "Wednesday", count: "15", sub: "BIOS, POLS" }
 ];
 // Builds "21 September" / "01 October" from a "DD.MM.YYYY" string — replaces
