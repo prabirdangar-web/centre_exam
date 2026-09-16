@@ -3458,8 +3458,9 @@ window.addEventListener('load',()=>{setTimeout(()=>{hsEnhancedEnsureUI();hsEnhan
    Ledger (hsTrackingStateDatabase) for a given venue/date/subject, so Quick
    Subject Entry can auto-fetch them instead of re-typing. Uses the per-subject
    breakdown (row.subVals) when Subject-wise Entry is on for that day; falls
-   back to the day's single aggregate total only when just one subject runs
-   that day (otherwise the day total can't be safely split per subject).
+   back to the day's single aggregate total only when just one subject is
+   actually running for THIS CENTRE that day (otherwise the day total can't
+   be safely split per subject).
    Returns {male,female} or null when nothing usable is on file yet. */
 function hsLedgerSubjectCounts(venue,date,sub){
   try{
@@ -3468,10 +3469,22 @@ function hsLedgerSubjectCounts(venue,date,sub){
     if(!Array.isArray(rows)) return null;
     const row=rows.find(r=>r.date===date);
     if(!row) return null;
-    const subjects=hsRowSubjectList(row);
     let arr=null;
     if(row.subWise && row.subVals && row.subVals[sub]) arr=row.subVals[sub];
-    else if(subjects.length<=1) arr=row.vals;
+    else {
+      // Not Subject-wise Entry — a plain aggregate total is only safe to
+      // hand to THIS subject when the centre has just one subject actually
+      // allotted that day. Previously this checked the full nationally-
+      // scheduled subject list for the date (hsRowSubjectList) instead of
+      // this centre's own allotment — since WBCHSE almost always schedules
+      // several subjects/languages together on one date even when a given
+      // centre only runs one of them, that made "length<=1" false on
+      // nearly every date, so Auto-Fetch reported "no figure found"
+      // everywhere except genuinely single-subject national days.
+      const allotted=hsGetAllocatedSubjects(venue,date);
+      if(allotted.length===1 && allotted[0]===sub){ arr=row.vals; }
+      else if(!allotted.length && hsRowSubjectList(row).length<=1){ arr=row.vals; }
+    }
     if(!arr) return null;
     const male=(Number(arr[0])||0)+(Number(arr[2])||0)+(Number(arr[4])||0);
     const female=(Number(arr[1])||0)+(Number(arr[3])||0)+(Number(arr[5])||0);
