@@ -3573,13 +3573,26 @@ window.addEventListener('load',()=>{setTimeout(()=>{hsEnhancedEnsureUI();hsEnhan
    actually running for THIS CENTRE that day (otherwise the day total can't
    be safely split per subject).
    Returns {male,female} or null when nothing usable is on file yet. */
-function hsLedgerSubjectCounts(venue,date,sub){
+/* Returns a richer status than a bare {male,female}|null so the UI can
+   tell the difference between "nothing on file yet" and "this day has
+   an aggregate total on file but it can't safely be split across the
+   several subjects scheduled that day" — the latter used to come back
+   silently as "no figure found" for every subject on the day, which
+   looked like a bug ("all day all sub not fetched") rather than the
+   deliberate refusal-to-guess it actually is.
+   Returns one of:
+     {state:'ok', male, female}         — safe figure found
+     {state:'ambiguous', total, subjectCount} — multi-subject day, only
+                                           a combined total on file, not
+                                           split per subject yet
+     {state:'none'}                     — nothing usable on file */
+function hsLedgerSubjectStatus(venue,date,sub){
   try{
-    if(typeof hsTrackingStateDatabase==='undefined') return null;
+    if(typeof hsTrackingStateDatabase==='undefined') return {state:'none'};
     const rows=hsTrackingStateDatabase[venue];
-    if(!Array.isArray(rows)) return null;
+    if(!Array.isArray(rows)) return {state:'none'};
     const row=rows.find(r=>r.date===date);
-    if(!row) return null;
+    if(!row) return {state:'none'};
     let arr=null;
     if(row.subWise && row.subVals && row.subVals[sub]) arr=row.subVals[sub];
     else {
@@ -3595,13 +3608,29 @@ function hsLedgerSubjectCounts(venue,date,sub){
       const allotted=hsGetAllocatedSubjects(venue,date);
       if(allotted.length===1 && allotted[0]===sub){ arr=row.vals; }
       else if(!allotted.length && hsRowSubjectList(row).length<=1){ arr=row.vals; }
+      else {
+        // Multi-subject day with only a combined total on file — cannot
+        // safely be assigned to this one subject. Report this explicitly
+        // instead of falling through to a plain "not found".
+        const dayTotal=(row.vals||[]).reduce((a,b)=>a+(Number(b)||0),0);
+        const subjectCount=(allotted.length||hsRowSubjectList(row).length);
+        if(dayTotal>0) return {state:'ambiguous', total:dayTotal, subjectCount};
+        return {state:'none'};
+      }
     }
-    if(!arr) return null;
+    if(!arr) return {state:'none'};
     const male=(Number(arr[0])||0)+(Number(arr[2])||0)+(Number(arr[4])||0);
     const female=(Number(arr[1])||0)+(Number(arr[3])||0)+(Number(arr[5])||0);
-    if(male<=0 && female<=0) return null;
-    return {male,female};
-  }catch(e){ return null; }
+    if(male<=0 && female<=0) return {state:'none'};
+    return {state:'ok', male, female};
+  }catch(e){ return {state:'none'}; }
+}
+// Back-compat wrapper for any caller that just wants a plain
+// {male,female}|null and doesn't need to distinguish 'ambiguous' from
+// 'none'.
+function hsLedgerSubjectCounts(venue,date,sub){
+  const st=hsLedgerSubjectStatus(venue,date,sub);
+  return st.state==='ok' ? {male:st.male,female:st.female} : null;
 }
 // Manual re-fetch button — pulls the ledger figures into the form without
 // saving anything; press Save Subject afterward to persist them.
@@ -3610,12 +3639,19 @@ function hsQuickEntryFetchFromLedger(){
   const venue=hsQuickEntryGetVenue(), date=hsQuickEntryGetDay();
   const st=document.getElementById('hs_qeLedgerStatus');
   if(!sub){ if(st) st.textContent='Select a subject first.'; return; }
-  const counts=hsLedgerSubjectCounts(venue,date,sub);
-  if(!counts){ if(st) st.textContent='No Male/Female figure found in the Progress Ledger for this subject/day yet.'; return; }
-  document.getElementById('hs_qeMale').value=counts.male;
-  document.getElementById('hs_qeFemale').value=counts.female;
+  const status=hsLedgerSubjectStatus(venue,date,sub);
+  if(status.state==='ambiguous'){
+    if(st){
+      st.style.color='#b45309';
+      st.textContent='⚠ '+status.subjectCount+' subjects are scheduled this day but the Progress Ledger only has one combined total ('+status.total+') — not split per subject, so nothing was auto-filled. Open the Progress Ledger, click "Subject-wise Entry" on this day\'s row, enter Male/Female for each subject, then Auto-Fetch again.';
+    }
+    return;
+  }
+  if(status.state!=='ok'){ if(st){ st.style.color=''; st.textContent='No Male/Female figure found in the Progress Ledger for this subject/day yet.'; } return; }
+  document.getElementById('hs_qeMale').value=status.male;
+  document.getElementById('hs_qeFemale').value=status.female;
   hsQuickEntryRecalc();
-  if(st) st.textContent='Fetched from Progress Ledger: Male '+counts.male+', Female '+counts.female+' (press Save Subject to store).';
+  if(st){ st.style.color=''; st.textContent='Fetched from Progress Ledger: Male '+status.male+', Female '+status.female+' (press Save Subject to store).'; }
 }
 function hsQuickEntryGetVenue(){ return hsGetVenue(); }
 function hsQuickEntryGetDay(){ return document.getElementById('hs_qeDay')?.value||hsOfficialExamRoutineTimeline[0]?.date; }
@@ -3674,14 +3710,26 @@ function hsQuickEntrySubjectChange(){
   }else{
     hsMasterLoad();
     const m=hsSubjectQpOmrMaster[sub]||{};
-    const counts=hsLedgerSubjectCounts(venue,date,sub);
+    const status=hsLedgerSubjectStatus(venue,date,sub);
+    const counts=status.state==='ok'?status:null;
     document.getElementById('hs_qeMale').value=counts?counts.male:'';
     document.getElementById('hs_qeFemale').value=counts?counts.female:'';
     document.getElementById('hs_qeQpFrom').value=m.qpFrom||'';
     document.getElementById('hs_qeOmrFrom').value=m.omrFrom||'';
     document.getElementById('hs_qeStatus').textContent=counts?'Not saved — Male/Female auto-fetched from Progress Ledger':'Not saved';
     const st=document.getElementById('hs_qeLedgerStatus');
-    if(st) st.textContent=counts?('Auto-fetched from Progress Ledger: Male '+counts.male+', Female '+counts.female+'.'):"No Male/Female figure found in the Progress Ledger for this subject/day yet.";
+    if(st){
+      if(status.state==='ok'){
+        st.style.color='';
+        st.textContent='Auto-fetched from Progress Ledger: Male '+status.male+', Female '+status.female+'.';
+      } else if(status.state==='ambiguous'){
+        st.style.color='#b45309';
+        st.textContent='⚠ '+status.subjectCount+' subjects are scheduled this day but the Progress Ledger only has one combined total ('+status.total+') — not split per subject yet. Open the Progress Ledger, click "Subject-wise Entry" on this day\'s row, then enter Male/Female for each subject.';
+      } else {
+        st.style.color='';
+        st.textContent="No Male/Female figure found in the Progress Ledger for this subject/day yet.";
+      }
+    }
   }
   hsQuickEntryPopulateRooms();
   document.getElementById('hs_qeRoom').value=(d&&d.manualRoom)||'';
