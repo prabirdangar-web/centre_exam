@@ -389,10 +389,10 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     </div>
 
     <div class="table-container no-print" style="padding:16px;">
-      <h3 style="margin:0 0 8px;">On Duty Declaration — Teacher-wise (all duty days)</h3>
-      <div style="font-size:9pt;color:#475569;margin-bottom:10px;">Builds one ON DUTY DECLARATION for a teacher, listing every date they were entered as Invigilator 1 / Invigilator 2 in the Subject-wise QP &amp; OMR Serial Database (Daily Ops) — instead of a separate form per date.</div>
+      <h3 style="margin:0 0 8px;">On Duty Declaration — School-wise, Teacher-wise (all duty days)</h3>
+      <div style="font-size:9pt;color:#475569;margin-bottom:10px;">Builds one ON DUTY DECLARATION for a teacher, listing every date they served. The Teacher list below is grouped by feeder school, then by teacher within that school — sourced from the "Teacher name(s)" typed against each feeder school in the Invigilator Entry Sheet (Invigilator Requisition tab) — instead of a separate form per date.</div>
       <div class="control-deck" style="margin:0 0 6px;grid-template-columns:2fr 1fr 1fr;">
-        <div class="form-group"><label>Teacher (from saved Invigilator entries)</label><select id="hs_dutyTeacherSelect"><option value="">Select Teacher</option></select></div>
+        <div class="form-group"><label>Teacher (grouped by feeder school)</label><select id="hs_dutyTeacherSelect"><option value="">Select Teacher</option></select></div>
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%;" onclick="hsDutyPopulateTeacherSelect()">Refresh Teacher List</button></div>
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="hsPrintTeacherDutyDeclaration()">Generate On Duty Form</button></div>
       </div>
@@ -704,7 +704,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     <div class="table-container no-print">
       <div class="section-title">Invigilator Entry Sheet — Actual Allocation from Feeder Schools</div>
       <div style="margin:-4px 0 12px;font-size:8.5pt;color:#475569;">
-        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above. Once saved here, each school's requisition letter shows only that school's own count for each date.
+        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above. Once saved here, each school's requisition letter shows only that school's own count for each date. Optionally, type the actual teacher name(s) sent by that school (comma-separated) in the field below the count — this is extra detail only, it does not change the Count or the allocation totals, but it does drive the School-wise / Teacher-wise On Duty Declaration further down this tool.
       </div>
       <div style="margin:-4px 0 12px;">
         <button type="button" class="btn btn-primary no-print" onclick="hsEntrySheetApplyDefaultAll()">Auto-Fill Default Feeder Split (All Dates)</button>
@@ -1907,61 +1907,80 @@ function hsBuildDayFormPage(type,c){
   return '';
 }
 /* ================================================================
-   HS :: TEACHER-WISE ON DUTY DECLARATION
-   Scans every saved Daily Ops subject entry (both venues, all dates) for the
-   Invigilator 1 / Invigilator 2 names already entered in the Subject-wise QP
-   & OMR Serial Database, and groups the duty days by teacher name so a
-   single ON DUTY DECLARATION can be printed per teacher covering every day
-   they served, instead of one form per date.
+   HS :: SCHOOL-WISE / TEACHER-WISE ON DUTY DECLARATION
+   Sourced from the Invigilator Entry Sheet (Invigilator Requisition tab) —
+   the free-text "Teacher name(s)" entered against each feeder school, for
+   each requisition date. Names are grouped first by feeder SCHOOL, then by
+   TEACHER within that school, so a single ON DUTY DECLARATION can be
+   printed per teacher covering every day they served, instead of one form
+   per date. (Earlier revision sourced this from the Daily Ops Invigilator
+   1/2 fields — superseded so the same feeder-school names typed once in
+   the Entry Sheet drive both the requisition letter and this declaration.)
    ================================================================ */
 function hsParseDMYToSortable(dateStr){
   const m=String(dateStr||'').match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
   if(!m) return 0;
   return Number(m[3])*10000+Number(m[2])*100+Number(m[1]);
 }
-function hsCollectInvigilatorDutyDays(){
-  hsDailyOpsLoad();
-  const venueLabel={TFHS:'TALDANGRA FULMATI HIGH SCHOOL [H.S.] (114071)',TGHS:"TALDANGRA GIRLS' HIGH SCHOOL [H.S.] (114200)"};
-  const byTeacher={};
-  Object.keys(hsDailyOpsDB||{}).forEach(key=>{
-    const sep=key.indexOf('|'); if(sep<0) return;
-    const venue=key.slice(0,sep), date=key.slice(sep+1);
-    const rec=hsDailyOpsDB[key]; if(!rec || !rec.subjects) return;
-    const item=hsOfficialExamRoutineTimeline.find(x=>x.date===date);
-    const day=item?item.day:'';
-    Object.keys(rec.subjects).forEach(sub=>{
-      const d=rec.subjects[sub]||{};
-      [d.inv1,d.inv2].forEach(name=>{
-        const clean=String(name||'').trim();
-        if(!clean) return;
-        const dictKey=clean.toUpperCase();
-        if(!byTeacher[dictKey]) byTeacher[dictKey]={name:clean,days:[]};
-        byTeacher[dictKey].days.push({venue,venueLabel:venueLabel[venue]||venue,date,day,subject:sub});
+function hsCollectFeederSchoolDutyDays(){
+  hsEntrySheetEnsureInit();
+  const venue=hsGetVenue();
+  const venueLabel={TFHS:'TALDANGRA FULMATI HIGH SCHOOL [H.S.] (114071)',TGHS:"TALDANGRA GIRLS' HIGH SCHOOL [H.S.] (114200)"}[venue]||venue;
+  const bySchool={};
+  hsOfficialExamRoutineTimeline.forEach((x,i)=>{
+    const sched=hsReqLiveSystemState.schedule[i]||{};
+    const rows=hsReqLiveSystemState.entrySheet[i]||[];
+    rows.forEach(row=>{
+      const school=String(row.school||'').trim();
+      const names=hsEntrySheetTeacherNames(row);
+      if(!school || !names.length) return;
+      if(!bySchool[school]) bySchool[school]={};
+      names.forEach(name=>{
+        const dictKey=name.toUpperCase();
+        if(!bySchool[school][dictKey]) bySchool[school][dictKey]={name,days:[]};
+        bySchool[school][dictKey].days.push({venue,venueLabel,date:x.date,day:sched.day||x.day,subject:sched.sub||x.sub});
       });
     });
   });
-  return byTeacher;
+  return bySchool;
 }
+function hsDutyOptionValue(school,name){ return school+'||'+name; }
 function hsDutyPopulateTeacherSelect(){
   const dd=document.getElementById('hs_dutyTeacherSelect'); if(!dd) return;
-  const map=hsCollectInvigilatorDutyDays();
-  const keys=Object.keys(map).sort((a,b)=>map[a].name.localeCompare(map[b].name));
+  const bySchool=hsCollectFeederSchoolDutyDays();
+  const schools=Object.keys(bySchool).sort();
   const old=dd.value;
-  dd.innerHTML='<option value="">Select Teacher</option>'+keys.map(k=>`<option value="${hsEscapeFormText(map[k].name)}">${hsEscapeFormText(map[k].name)} (${map[k].days.length} day${map[k].days.length===1?'':'s'})</option>`).join('');
-  if(old && keys.includes(old.toUpperCase())) dd.value=old;
+  let html='<option value="">Select Teacher</option>';
+  schools.forEach(school=>{
+    const teachers=bySchool[school];
+    const keys=Object.keys(teachers).sort((a,b)=>teachers[a].name.localeCompare(teachers[b].name));
+    if(!keys.length) return;
+    html+=`<optgroup label="${hsEscapeFormText(school)}">`;
+    keys.forEach(k=>{
+      const t=teachers[k];
+      const val=hsDutyOptionValue(school,t.name);
+      html+=`<option value="${hsEscapeFormText(val)}">${hsEscapeFormText(t.name)} (${t.days.length} day${t.days.length===1?'':'s'})</option>`;
+    });
+    html+='</optgroup>';
+  });
+  dd.innerHTML=html;
+  const match=Array.from(dd.options).some(o=>o.value===old);
+  if(old && match) dd.value=old;
 }
 function hsPrintTeacherDutyDeclaration(){
   const dd=document.getElementById('hs_dutyTeacherSelect');
-  const name=dd?dd.value:'';
-  if(!name) return alert('Select a teacher first. The list is built from Invigilator 1 / Invigilator 2 names already saved in the Subject-wise QP & OMR Serial Database — press "Refresh Teacher List" after entering/saving invigilator names.');
-  const map=hsCollectInvigilatorDutyDays();
-  const rec=map[name.toUpperCase()];
+  const val=dd?dd.value:'';
+  if(!val) return alert('Select a teacher first. The list is grouped by feeder school and built from the "Teacher name(s)" typed against each school in the Invigilator Entry Sheet (Invigilator Requisition tab) — press "Refresh Teacher List" after saving names there.');
+  const sep=val.indexOf('||');
+  const school=val.slice(0,sep), name=val.slice(sep+2);
+  const bySchool=hsCollectFeederSchoolDutyDays();
+  const rec=(bySchool[school]||{})[name.toUpperCase()];
   if(!rec || !rec.days.length) return alert('No duty days found for this teacher.');
   const esc=hsEscapeFormText;
   const days=rec.days.slice().sort((a,b)=>hsParseDMYToSortable(a.date)-hsParseDMYToSortable(b.date));
   const rows=days.map((d,i)=>`<tr><td>${i+1}</td><td>${esc(d.date)}</td><td>${esc(d.day)}</td><td>${esc(d.venueLabel)}</td><td>${esc(hsSubjectWithCode(d.subject))}</td></tr>`).join('');
   const c={venue:'TALDANGRA Examination Centre',venueCode:'2206',date:'',day:''};
-  const body=`<h3>ON DUTY DECLARATION</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><p>I, Sri / Smt. <b>${esc(rec.name)}</b> was engaged with examination duty related to Semester-III of H.S. Examination, 2027 on the following date(s):</p><table><tr><th>Sl.</th><th>Date</th><th>Day</th><th>Venue</th><th>Subject(s)</th></tr>${rows}</table><p>Signature of the applicant with date: __________________________________</p><p>Mobile No.: ______________________________</p><p>The above mentioned day(s) may be treated as &ldquo;ON DUTY&rdquo; in respect of Sri/Smt. <b>${esc(rec.name)}</b>.</p><p>Signature of Convenor / DI of Schools (SE) with date: ______________________________</p>`;
+  const body=`<h3>ON DUTY DECLARATION</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><p>I, Sri / Smt. <b>${esc(rec.name)}</b> of <b>${esc(school)}</b> was engaged with examination duty related to Semester-III of H.S. Examination, 2027 on the following date(s):</p><table><tr><th>Sl.</th><th>Date</th><th>Day</th><th>Venue</th><th>Subject(s)</th></tr>${rows}</table><p>Signature of the applicant with date: __________________________________</p><p>Mobile No.: ______________________________</p><p>The above mentioned day(s) may be treated as &ldquo;ON DUTY&rdquo; in respect of Sri/Smt. <b>${esc(rec.name)}</b> of <b>${esc(school)}</b>.</p><p>Signature of Convenor / DI of Schools (SE) with date: ______________________________</p>`;
   const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
   w.document.write(`<!doctype html><html><head><title>ON DUTY DECLARATION — ${esc(rec.name)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script></body></html>`);
   w.document.close();
@@ -2770,8 +2789,10 @@ function hsEntrySheetEnsureInit(){
   if(!hsReqLiveSystemState.entrySheet) hsReqLiveSystemState.entrySheet = {};
   hsOfficialExamRoutineTimeline.forEach((x,i)=>{
     if(!hsReqLiveSystemState.entrySheet[i]){
-      hsReqLiveSystemState.entrySheet[i] = [{school:"",count:""},{school:"",count:""}];
+      hsReqLiveSystemState.entrySheet[i] = [{school:"",count:"",teachers:""},{school:"",count:"",teachers:""}];
     }
+    // migrate rows saved before the "teachers" field existed
+    hsReqLiveSystemState.entrySheet[i].forEach(row=>{ if(row.teachers===undefined) row.teachers=""; });
   });
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
 }
@@ -2781,6 +2802,14 @@ function hsEntrySheetSchoolOptionsHtml(selected){
     html += `<option value="${name}"${name===selected?' selected':''}>${name}</option>`;
   });
   return html;
+}
+// Splits the free-text "Teacher Names" field of an entry-sheet row (comma
+// or newline separated) into a clean array of names. Purely descriptive —
+// the row's "count" field stays the number actually depended upon for
+// allocation totals; names are extra detail layered on top, and feed the
+// School-wise / Teacher-wise On Duty Declaration below.
+function hsEntrySheetTeacherNames(row){
+  return String((row||{}).teachers||"").split(/[,\n]/).map(s=>s.trim()).filter(Boolean);
 }
 function hsEntrySheetRowTotal(index){
   return (hsReqLiveSystemState.entrySheet[index]||[]).reduce((sum,row)=>sum + (parseInt(row.count,10)||0), 0);
@@ -2811,9 +2840,9 @@ function hsEntrySheetApplyDefaultForRow(index){
   const required = parseInt((hsReqLiveSystemState.schedule[index]||{}).count,10) || 0;
   if(!required) return; // OFF DAY / nothing requisitioned — leave untouched
   if(required === hsDefaultFeederMaxTotal){
-    hsReqLiveSystemState.entrySheet[index] = hsDefaultFeederMaxSplit.map(r=>({school:r.school, count:String(r.count)}));
+    hsReqLiveSystemState.entrySheet[index] = hsDefaultFeederMaxSplit.map(r=>({school:r.school, count:String(r.count), teachers:""}));
   }else{
-    hsReqLiveSystemState.entrySheet[index] = [{school:"HARMASHRA H S", count:String(required)}];
+    hsReqLiveSystemState.entrySheet[index] = [{school:"HARMASHRA H S", count:String(required), teachers:""}];
   }
 }
 function hsEntrySheetApplyDefaultRow(index){
@@ -2821,6 +2850,7 @@ function hsEntrySheetApplyDefaultRow(index){
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
   hsReqSyncDisplayOutputs();
+  try{ hsDutyPopulateTeacherSelect(); }catch(e){}
 }
 function hsEntrySheetApplyDefaultAll(){
   if(!confirm('Auto-fill every date\'s Invigilator Entry Sheet with the default split (Harmasra 6 / Saraliya 3 / Panch Girls 5 / Kadma 1 / Jagatpur 4 / Manipur 2 on the '+hsDefaultFeederMaxTotal+'-teacher day; Harmasra alone on every other day)? This overwrites any existing entries.')) return;
@@ -2828,6 +2858,7 @@ function hsEntrySheetApplyDefaultAll(){
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
   hsReqSyncDisplayOutputs();
+  try{ hsDutyPopulateTeacherSelect(); }catch(e){}
 }
 function hsEntrySheetRender(){
   const box = document.getElementById("hs_entrySheetContainer");
@@ -2848,10 +2879,15 @@ function hsEntrySheetRender(){
     let rowsHtml = "";
     rows.forEach((row,r)=>{
       const canRemove = rows.length>1;
-      rowsHtml += `<div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-        <select style="flex:1;" onchange="hsEntrySheetUpdateRow(${i},${r},'school',this.value)">${hsEntrySheetSchoolOptionsHtml(row.school)}</select>
-        <input type="number" min="0" placeholder="Count" value="${row.count}" style="width:90px;" oninput="hsEntrySheetUpdateRow(${i},${r},'count',this.value)">
-        <button type="button" class="btn btn-danger no-print" style="padding:4px 9px;font-size:9pt;${canRemove?'':'visibility:hidden;'}" onclick="hsEntrySheetRemoveRow(${i},${r})" title="Remove this school">&times;</button>
+      const names = hsEntrySheetTeacherNames(row);
+      rowsHtml += `<div style="border:1px dashed #cbd5e1;border-radius:6px;padding:6px;margin-bottom:6px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select style="flex:1;" onchange="hsEntrySheetUpdateRow(${i},${r},'school',this.value)">${hsEntrySheetSchoolOptionsHtml(row.school)}</select>
+          <input type="number" min="0" placeholder="Count" value="${row.count}" style="width:90px;" oninput="hsEntrySheetUpdateRow(${i},${r},'count',this.value)">
+          <button type="button" class="btn btn-danger no-print" style="padding:4px 9px;font-size:9pt;${canRemove?'':'visibility:hidden;'}" onclick="hsEntrySheetRemoveRow(${i},${r})" title="Remove this school">&times;</button>
+        </div>
+        <input type="text" placeholder="Teacher name(s) sent by this school — comma-separated (optional detail; does not affect the Count above)" value="${row.teachers?row.teachers.replace(/"/g,'&quot;'):''}" style="width:100%;margin-top:5px;font-size:9pt;" oninput="hsEntrySheetUpdateRow(${i},${r},'teachers',this.value)">
+        ${names.length?`<div style="font-size:8pt;color:#475569;margin-top:3px;">${names.length} name${names.length===1?'':'s'} entered: ${names.map(n=>hsEscapeFormText(n)).join(', ')}</div>`:''}
       </div>`;
     });
     const total = hsEntrySheetRowTotal(i);
@@ -2883,13 +2919,15 @@ function hsEntrySheetUpdateRow(index, rowIdx, field, value){
     statusEl.innerHTML = `Total Allocated: <b>${total}</b> / ${required} — ${statusHtml}`;
   }
   hsReqSyncDisplayOutputs(); // keep the printable letter's per-school count in sync as data is saved
+  try{ hsDutyPopulateTeacherSelect(); }catch(e){} // keep On Duty Declaration's school/teacher list in sync
 }
 function hsEntrySheetAddRow(index){
   if(!hsReqLiveSystemState.entrySheet[index]) hsReqLiveSystemState.entrySheet[index] = [];
-  hsReqLiveSystemState.entrySheet[index].push({school:"",count:""});
+  hsReqLiveSystemState.entrySheet[index].push({school:"",count:"",teachers:""});
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
   hsReqSyncDisplayOutputs();
+  try{ hsDutyPopulateTeacherSelect(); }catch(e){}
 }
 function hsEntrySheetRemoveRow(index, rowIdx){
   const rows = hsReqLiveSystemState.entrySheet[index];
@@ -2898,6 +2936,7 @@ function hsEntrySheetRemoveRow(index, rowIdx){
   localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
   hsEntrySheetRender();
   hsReqSyncDisplayOutputs();
+  try{ hsDutyPopulateTeacherSelect(); }catch(e){}
 }
 
 /* ================================================================
