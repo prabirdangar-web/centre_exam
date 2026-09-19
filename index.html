@@ -569,7 +569,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       <div><h2>Room-wise Allotment of Invigilator — H.S. Examination, 2027 [Semester-III]</h2><p>Type each invigilator's Room No. (R.N.) against the examination date. The Venue Supervisor Data Sheet picks Invigilator 1 / 2 for every room from this chart automatically (still editable on the sheet).</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-success" onclick="hsRdPrint()">Print Allotment Chart (A4 Landscape)</button>
-        <button class="btn btn-success" onclick="hsRdPrintDeclaration()">Declaration (Compact A4 — one page/date)</button>
+        <button class="btn btn-success" onclick="hsRdPrintDeclaration()">Declaration (Compact A4 — max 2 pages/day)</button>
         <button class="btn btn-success" onclick="hsRdPrintSpecimenSignature()">Specimen Signature List (Compact A4)</button>
         <button class="btn btn-primary" onclick="hsRdAddRow()">+ Add Row</button>
         <button class="btn btn-danger" onclick="hsRdClearRN()">Clear All R.N.</button>
@@ -588,6 +588,27 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       <div style="font-size:8.5pt;color:#475569;margin-bottom:8px;">Room No. can be typed as <b>1</b> or <b>Room-1</b> — it is matched to the fixed rooms (Daily Subject &amp; Duty Entry) by number. Two invigilators per room fill Invigilator 1 and 2 on the V.S. Data Sheet; date columns follow the 2027 [SEM-III] routine. A date on which <b>no student is allotted</b> at the selected venue (Progress Ledger / Daily Entry totals are zero) is treated as an <b>off day</b> and dropped from this chart and its print automatically. Names and schools are pre-loaded from the office roster.</div>
       <div id="hs_rdOffNote" style="font-size:8.5pt;font-weight:600;color:#9a3412;background:#fff7ed;border:1px solid #fdba74;border-radius:4px;padding:5px 8px;margin-bottom:8px;display:none;"></div>
       <div class="rd-scroll"><table id="hs_rdTable" class="rd-table"></table></div>
+    </div>
+    <div class="hs-dailyops-card no-print">
+      <div style="font-size:9pt;font-weight:700;margin-bottom:4px;">Print options — Declaration &amp; Specimen Signature List</div>
+      <div style="font-size:8.5pt;color:#475569;margin-bottom:8px;">Declaration: choose <b>one day</b> or <b>all days</b>, add <b>5–10 blank rows per day</b> for extra names, and tick <b>Fit in 2 A4 pages</b> to auto-shrink row height so each day never runs past two sheets. Specimen Signature List: one signature column per invigilator (signed once, valid for all days) plus extra blank rows at the end.</div>
+      <div class="hs-dailyops-toolbar" style="grid-template-columns:1.8fr 1.2fr 1.5fr 1.2fr;">
+        <div class="form-group"><label>Declaration — generate for</label><select id="hs_declPrintDate"><option value="ALL">All dates (one set per day)</option></select></div>
+        <div class="form-group"><label>Declaration — blank rows per day</label><select id="hs_declBlank" onchange="hsPrintOptSave()"><option value="0">0 (none)</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10" selected>10</option></select></div>
+        <div class="form-group"><label>Declaration — page fit</label><label style="text-transform:none;font-weight:600;display:flex;gap:6px;align-items:center;height:31px;"><input type="checkbox" id="hs_declFit" style="width:auto;" checked onchange="hsPrintOptSave()"> Fit each day in 2 A4 pages</label></div>
+        <div class="form-group"><label>Specimen list — extra blank rows</label><input type="number" id="hs_spBlank" min="0" max="60" value="10" onchange="hsPrintOptSave()"></div>
+      </div>
+    </div>
+    <div class="hs-dailyops-card no-print">
+      <div style="font-size:9pt;font-weight:700;margin-bottom:4px;">Declaration — names for a specific date (optional)</div>
+      <div style="font-size:8.5pt;color:#475569;margin-bottom:8px;">By default the Declaration print lists <b>every teacher in the roster above, for every date</b>. Pick a date below and use the multiple-choice list to keep only certain names on that one date's Declaration — everything else stays on the default (all teachers).</div>
+      <div class="hs-dailyops-toolbar" style="grid-template-columns:1.3fr 3fr 1fr 1fr;align-items:start;">
+        <div class="form-group"><label>Date</label><select id="hs_declDate" onchange="hsDeclSelOnDateChange()"></select></div>
+        <div class="form-group"><label>Names for this date (multiple choice — ctrl/cmd-click to pick several)</label><select id="hs_declNames" multiple size="8" style="width:100%;"></select></div>
+        <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%;" onclick="hsDeclSelSave()">Save for this Date</button></div>
+        <div class="form-group"><label>&nbsp;</label><button class="btn btn-danger" style="width:100%;" onclick="hsDeclSelReset()">Reset to All Teachers</button></div>
+      </div>
+      <div id="hs_declStatus" style="font-size:8.5pt;font-weight:600;color:#475569;margin-top:4px;">—</div>
     </div>
   </div>
 
@@ -4223,6 +4244,7 @@ function hsRdRender(){
   box.innerHTML=h+'</tbody>';
   const named=rows.filter(r=>r.n).length;
   const st=document.getElementById('hs_rdStatus'); if(st) st.textContent=named+' invigilator name(s) in '+rows.length+' row(s) — saved automatically.';
+  try{hsDeclSelRenderPicker();}catch(e){}
 }
 function hsRdEdit(i,f,v){ hsRdLoad(); const r=hsRdDB[hsGetVenue()].rows[i]; if(!r) return; r[f]=v; hsRdPersist(); }
 function hsRdEditRN(i,date,v){
@@ -4302,25 +4324,127 @@ td.l{text-align:left;font-weight:600}td.rn{font-weight:700;font-size:8pt}
   w.document.close();
 }
 
-/* ---------------- HS :: DECLARATION OF INVIGILATORS (compact A4, one page per date) ----------------
-   Sub-Invigilators of every feeder school, pooled together ("Sub Inv — All School, All dates").
-   One page is generated automatically for EACH live examination date at the venue (off days are
-   already dropped by hsRdDates) — the person does not pick dates one at a time. Every page repeats
-   its own full heading (council block + venue line + subject/date), and the invigilator table's own
-   header row repeats on every printed sheet if a date's roster overflows one page. Subject is shown
-   in 4-letter WBCHSE code form (hsRdCodes -> hsRdCode -> hsSubjectCode4), matching every other
-   generated form in this tool. */
-function hsRdPrintDeclaration(){
+/* ---------------- HS :: DECLARATION NAME SELECTION (per date, optional override) ----------------
+   Default behaviour: EVERY teacher in the Room-wise Invigilator Allotment roster is added to the
+   Declaration, for every date, automatically — R.N. assignment is no longer required. This store
+   only holds an OPTIONAL per-date override: office staff can open the multiple-choice list below the
+   roster, pick a date, and select ("multiple choice") just the names that should appear on THAT
+   date's Declaration. Saving an empty / untouched date always falls back to "all teachers". */
+const HS_DECL_SEL_KEY='hsDeclNames2027';
+let hsDeclSelDB={};
+function hsDeclSelLoad(){ try{hsDeclSelDB=JSON.parse(localStorage.getItem(HS_DECL_SEL_KEY)||'{}')||{};}catch(e){hsDeclSelDB={};} }
+function hsDeclSelPersist(){ try{localStorage.setItem(HS_DECL_SEL_KEY,JSON.stringify(hsDeclSelDB));}catch(e){} }
+function hsDeclAllNames(venue){
   hsRdLoad();
+  const seen=new Set(), out=[];
+  (hsRdDB[venue]&&hsRdDB[venue].rows||[]).forEach(r=>{ if(r.n && !seen.has(r.n)){ seen.add(r.n); out.push(r.n); } });
+  return out;
+}
+/* Rebuilds the Date dropdown + multiple-choice Names list to match the current venue/roster,
+   keeping whichever date was already picked (defaulting to the first live date). */
+function hsDeclSelRenderPicker(){
+  const dateSel=document.getElementById('hs_declDate'); if(!dateSel) return;
+  const venue=hsGetVenue(), dates=hsRdDates(venue), esc=hsRdEsc;
+  const prevDate=dateSel.value;
+  dateSel.innerHTML=dates.map(d=>`<option value="${esc(d.date)}">${esc(hsRdShortDate(d.date))} — ${esc(d.day)}</option>`).join('');
+  if(dates.some(d=>d.date===prevDate)) dateSel.value=prevDate;
+  const pSel=document.getElementById('hs_declPrintDate');
+  if(pSel){
+    const prevP=pSel.value;
+    pSel.innerHTML='<option value="ALL">All dates (one set per day)</option>'+dates.map(d=>`<option value="${esc(d.date)}">Only ${esc(hsRdShortDate(d.date))} — ${esc(d.day)}</option>`).join('');
+    if(prevP==='ALL' || dates.some(d=>d.date===prevP)) pSel.value=prevP;
+  }
+  if(!window._hsPrintOptLoaded){ window._hsPrintOptLoaded=true; hsPrintOptLoad(); }
+  hsDeclSelOnDateChange();
+}
+/* Remembers the blank-row / fit choices so they survive a reload. */
+const HS_PRINT_OPT_KEY='hsPrintOpts2027';
+function hsPrintOptLoad(){
+  try{
+    const o=JSON.parse(localStorage.getItem(HS_PRINT_OPT_KEY)||'{}')||{};
+    const b=document.getElementById('hs_declBlank'), f=document.getElementById('hs_declFit'), sp=document.getElementById('hs_spBlank');
+    if(b && o.declBlank!==undefined) b.value=String(o.declBlank);
+    if(f && o.declFit!==undefined) f.checked=!!o.declFit;
+    if(sp && o.spBlank!==undefined) sp.value=o.spBlank;
+  }catch(e){}
+}
+function hsPrintOptSave(){
+  try{
+    const b=document.getElementById('hs_declBlank'), f=document.getElementById('hs_declFit'), sp=document.getElementById('hs_spBlank');
+    localStorage.setItem(HS_PRINT_OPT_KEY,JSON.stringify({declBlank:b?b.value:'10',declFit:f?f.checked:true,spBlank:sp?sp.value:'10'}));
+  }catch(e){}
+}
+/* Refreshes the multiple-choice Names list for whichever date is now selected — every name is
+   pre-selected when no override is saved for that date (i.e. "currently: all teachers"). */
+function hsDeclSelOnDateChange(){
+  hsDeclSelLoad();
+  const dateSel=document.getElementById('hs_declDate'), namesSel=document.getElementById('hs_declNames'), status=document.getElementById('hs_declStatus');
+  if(!dateSel || !namesSel) return;
+  const venue=hsGetVenue(), date=dateSel.value, esc=hsRdEsc, all=hsDeclAllNames(venue);
+  const saved=(hsDeclSelDB[venue]||{})[date];
+  namesSel.innerHTML=all.map(n=>`<option value="${esc(n)}"${(!saved||saved.includes(n))?' selected':''}>${esc(n)}</option>`).join('');
+  if(status) status.textContent = saved ? (saved.length+' of '+all.length+' teacher(s) chosen for this date.') : ('Using all '+all.length+' teacher(s) (default) for this date.');
+}
+/* Saves the ticked names as this date's override. Selecting everything (or saving with nothing
+   changed) is equivalent to the default, but is still stored explicitly so it prints exactly what
+   was chosen. */
+function hsDeclSelSave(){
+  const dateSel=document.getElementById('hs_declDate'), namesSel=document.getElementById('hs_declNames'); if(!dateSel||!namesSel) return;
+  hsDeclSelLoad();
+  const venue=hsGetVenue(), date=dateSel.value;
+  const picked=Array.from(namesSel.selectedOptions).map(o=>o.value);
+  if(!picked.length) return alert('Pick at least one name, or use "Reset to All Teachers" instead.');
+  hsDeclSelDB[venue]=hsDeclSelDB[venue]||{};
+  hsDeclSelDB[venue][date]=picked;
+  hsDeclSelPersist();
+  hsDeclSelOnDateChange();
+}
+/* Drops any saved override for the selected date, so that date's Declaration goes back to
+   listing every teacher in the roster by default. */
+function hsDeclSelReset(){
+  const dateSel=document.getElementById('hs_declDate'); if(!dateSel) return;
+  hsDeclSelLoad();
+  const venue=hsGetVenue(), date=dateSel.value;
+  if(hsDeclSelDB[venue]) delete hsDeclSelDB[venue][date];
+  hsDeclSelPersist();
+  hsDeclSelOnDateChange();
+}
+
+/* ---------------- HS :: DECLARATION OF INVIGILATORS (compact A4, max 2 pages per day) ----------------
+   Sub-Invigilators of every feeder school, pooled together. Generated for ALL live examination
+   dates (one block per day, off days already dropped by hsRdDates) or for ONE chosen day
+   (#hs_declPrintDate). By default EVERY teacher in the roster is listed on EVERY day; the optional
+   multiple-choice picker can narrow a single date to specific names (hsDeclSelDB).
+   Each day also gets 0/5-10 BLANK numbered rows (#hs_declBlank) for hand-written extra names.
+   "Fit each day in 2 A4 pages" (#hs_declFit) shrinks row height / font per day so that
+   roster + blank rows always fit within two portrait A4 sheets. Every day repeats its own full
+   heading, and the table header row repeats on page 2. */
+function hsRdPrintDeclaration(){
+  hsRdLoad(); hsDeclSelLoad();
   const venue=hsGetVenue(), V=HS_VENUE_INFO[venue], esc=hsRdEsc;
-  const dates=hsRdDates(venue);
-  if(!dates.length) return alert('No examination date to print for this venue.');
-  const rows=hsRdDB[venue].rows;
+  const allDates=hsRdDates(venue);
+  if(!allDates.length) return alert('No examination date to print for this venue.');
+  const pick=(document.getElementById('hs_declPrintDate')||{}).value||'ALL';
+  const dates=(pick==='ALL')?allDates:allDates.filter(d=>d.date===pick);
+  if(!dates.length) return alert('The selected date is not a live examination date at this venue.');
+  const blanks=Math.max(0,Math.min(30,parseInt((document.getElementById('hs_declBlank')||{}).value,10)||0));
+  const fitEl=document.getElementById('hs_declFit'); const fit=fitEl?fitEl.checked:true;
+  const rows=hsRdDB[venue].rows.filter(r=>r.n);
   const venueLine='VENUE NAME &amp; CODE: '+esc(V.name.replace('[H.S.]','(H.S.)'))+' ['+esc(V.code)+'] &nbsp;;&nbsp; CENTRE NAME &amp; CODE: TALDANGRA [2206]';
+  /* Two A4 portrait sheets (10 mm margins): table body room ~ 436 mm after heading, header rows,
+     signature line and a safety allowance for page-bottom gaps. */
+  const CAP_MM=436, MAX_RH=6.4, MIN_RH=3.6;
+  let overflow=0;
   const body=dates.map((d,di)=>{
-    const onDuty=rows.filter(r=>r.n && r.rn && r.rn[d.date]);
-    const trs=onDuty.map((r,i)=>`<tr><td>${i+1}</td><td class="l">${esc(r.n)}</td><td>Invigilator</td><td class="l">${esc(r.s)}</td><td></td></tr>`).join('');
-    return `<div class="pg" style="${di?'page-break-before:always;break-before:page;':''}">
+    const override=(hsDeclSelDB[venue]||{})[d.date];
+    const onDuty=override ? rows.filter(r=>override.includes(r.n)) : rows;
+    const total=onDuty.length+blanks;
+    let rh=MAX_RH;
+    if(fit){ rh=Math.min(MAX_RH,Math.floor(CAP_MM/Math.max(1,total)*10)/10); if(rh<MIN_RH){ rh=MIN_RH; overflow++; } }
+    const fs=Math.max(5.6,+(7.8*rh/MAX_RH).toFixed(1)), pd=rh<5?0.3:1;
+    const trs=onDuty.map((r,i)=>`<tr><td>${i+1}</td><td class="l">${esc(r.n)}</td><td>Invigilator</td><td class="l">${esc(r.s)}</td><td></td></tr>`).join('')
+      + Array.from({length:blanks},(_,j)=>`<tr class="bl"><td>${onDuty.length+j+1}</td><td></td><td></td><td></td><td></td></tr>`).join('');
+    return `<div class="pg" style="--rh:${rh}mm;--fs:${fs}pt;--pd:${pd}mm;${di?'page-break-before:always;break-before:page;':''}">
       <div class="hd">
         <img src="${HS_WBCHSE_LOGO_URL}" class="logo" alt="WBCHSE">
         <div class="council">WEST BENGAL COUNCIL OF HIGHER SECONDARY EDUCATION</div>
@@ -4331,10 +4455,11 @@ function hsRdPrintDeclaration(){
       <p class="dtxt">It is hereby declared that mobile or such electronic devices are not with me in this H.S.-2027 [Semester-III] Examination Centre in compliance with the existing rules of W.B.C.H.S.E.</p>
       <div class="meta"><span>SUBJECT: <b>${esc(hsRdCodes(venue,d))}</b></span><span>Date: <b>${esc(hsRdShortDate(d.date))} — ${esc(d.day)}</b></span></div>
       <table><thead><tr><th style="width:8%">Sl</th><th style="width:26%">Name of the Invigilator</th><th style="width:16%">Designation</th><th style="width:26%">Name of the School</th><th>Signature of the Invigilator with date</th></tr></thead>
-      <tbody>${trs || '<tr><td colspan="5">No invigilator R.N. set for this date yet.</td></tr>'}</tbody></table>
+      <tbody>${trs || '<tr><td colspan="5">No teacher available for this date.</td></tr>'}</tbody></table>
       <div class="sg">Signature of Venue Supervisor with Date &amp; Seal</div>
     </div>`;
   }).join('');
+  const note='Declaration of Invigilators — Compact A4. '+(pick==='ALL'?'One set per examination date':'Single day: '+hsRdShortDate(dates[0].date))+'; '+blanks+' blank row(s) per day'+(fit?'; each day fitted within 2 A4 pages':'')+'.'+(overflow?' WARNING: '+overflow+' day(s) have too many rows for 2 pages even at minimum row height.':'');
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Declaration of Invigilators — ${esc(V.code)}</title><style>
 @page{size:A4;margin:10mm}*{box-sizing:border-box}
@@ -4351,24 +4476,24 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff}
 .dtxt{font-size:8.7pt;text-align:justify;margin:0 0 7px}
 .meta{display:flex;justify-content:space-between;font-size:9pt;font-weight:700;margin-bottom:6px}
 table{width:100%;border-collapse:collapse}
-th,td{border:.25mm solid #333;padding:1mm 1.5mm;font-size:7.8pt;text-align:center;vertical-align:middle;line-height:1.15}
+th,td{border:.25mm solid #333;padding:var(--pd,1mm) 1.5mm;font-size:var(--fs,7.8pt);text-align:center;vertical-align:middle;line-height:1.1}
 th{font-weight:700;background:#f1f5f9}
 td.l{text-align:left}
 thead{display:table-header-group}
-tbody tr{height:6.4mm;page-break-inside:avoid;break-inside:avoid}
-.sg{text-align:right;font-size:8pt;font-weight:700;margin:4mm 2mm 0}
+tbody tr{height:var(--rh,6.4mm);page-break-inside:avoid;break-inside:avoid}
+.sg{text-align:right;font-size:8pt;font-weight:700;margin:4mm 2mm 0;page-break-inside:avoid;break-inside:avoid}
 [contenteditable]{outline:none}
 @media screen{body{background:#e5e7eb}.pg{background:#fff;padding:10mm;margin:10px auto;max-width:210mm;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>Declaration of Invigilators — Compact A4. One page per examination date, generated automatically; subject shown as code.</span><button onclick="window.print()">Print</button></div>${body}</body></html>`);
+</style></head><body><div class="tb no-print"><span>${esc(note)}</span><button onclick="window.print()">Print</button></div>${body}</body></html>`);
   w.document.close();
 }
 
-/* ---------------- HS :: SPECIMEN SIGNATURE LIST OF INVIGILATORS (compact A4) ----------------
-   Single pooled roster of every sub-invigilator from every feeder school at the venue ("Sub Inv —
-   All School, All") — not date-specific, so it is generated once. The table header row repeats
-   automatically on every printed page (thead:table-header-group) if the roster overflows one sheet,
-   so the heading is never missing on later pages either. */
+/* ---------------- HS :: SPECIMEN SIGNATURE LIST OF INVIGILATORS (compact A4 portrait) ----------------
+   Single pooled roster of every sub-invigilator from every feeder school at the venue — not
+   date-specific, so it is generated ONCE and the signature given here serves all days. One
+   Signature column only (no extra columns), followed by N extra blank numbered rows
+   (#hs_spBlank, default 10) for late additions. The header row repeats on every printed page. */
 function hsRdPrintSpecimenSignature(){
   hsRdLoad();
   const venue=hsGetVenue(), V=HS_VENUE_INFO[venue], esc=hsRdEsc;
@@ -4379,31 +4504,34 @@ function hsRdPrintSpecimenSignature(){
   const list=order.map(k=>groups[k]).sort((a,b)=>(!a.k!==!b.k)?(a.k?-1:1):((b.count-a.count)||(a.first-b.first)));
   rows=[].concat(...list.map(g=>g.rows));
   if(!rows.length) return alert('No invigilator name/school in the Room-wise Invigilator Allotment roster for this venue.');
+  const extra=Math.max(0,Math.min(60,parseInt((document.getElementById('hs_spBlank')||{}).value,10)||0));
   const venueLine='CENTRE :- TALDANGRA &nbsp;;&nbsp; CENTRE CODE -2206 &nbsp;&nbsp;::&nbsp;&nbsp; VENUE: '+esc(V.name.replace('[H.S.]','(H.S.)'))+' &nbsp;::&nbsp; VENUE CODE: '+esc(V.code);
-  const trs=rows.map((r,i)=>`<tr><td>${i+1}</td><td class="l">${esc(r.n)}</td><td class="l">${esc(r.s)}</td><td></td></tr>`).join('');
+  const trs=rows.map((r,i)=>`<tr><td>${i+1}</td><td class="l">${esc(r.n)}</td><td class="l">${esc(r.s)}</td><td></td></tr>`).join('')
+    + Array.from({length:extra},(_,j)=>`<tr class="bl"><td>${rows.length+j+1}</td><td class="l"></td><td class="l"></td><td></td></tr>`).join('');
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Specimen Signature List — ${esc(V.code)}</title><style>
-@page{size:A4;margin:10mm}*{box-sizing:border-box}
+@page{size:A4;margin:8mm}*{box-sizing:border-box}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff}
 .tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
 .tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
 .pg{width:100%}
 .hd{text-align:center;border-bottom:2px solid #111;padding-bottom:5px;margin-bottom:7px}
 .ttl{font-weight:700;font-size:11.5pt;text-decoration:underline}
-.vl{font-size:9pt;font-weight:700;text-align:center;margin:4px 0 8px}
-table{width:100%;border-collapse:collapse}
-th,td{border:.25mm solid #333;padding:.9mm 1.5mm;font-size:7.8pt;text-align:center;vertical-align:middle;line-height:1.15}
+.vl{font-size:8.6pt;font-weight:700;text-align:center;margin:4px 0 8px}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{border:.25mm solid #333;padding:.7mm 1.5mm;font-size:8pt;text-align:center;vertical-align:middle;line-height:1.1}
 th{font-weight:700;background:#f1f5f9}
 td.l{text-align:left}
 thead{display:table-header-group}
-tbody tr{height:6mm;page-break-inside:avoid;break-inside:avoid}
+tbody tr{height:7.5mm;page-break-inside:avoid;break-inside:avoid}
 [contenteditable]{outline:none}
-@media screen{body{background:#e5e7eb}.pg{background:#fff;padding:10mm;margin:10px auto;max-width:210mm;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
+@media screen{body{background:#e5e7eb}.pg{background:#fff;padding:8mm;margin:10px auto;max-width:210mm;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>Specimen Signature List of Invigilators — Compact A4. Column headings repeat on every printed page.</span><button onclick="window.print()">Print</button></div>
-<div class="pg"><div class="hd"><div class="ttl" contenteditable="true">INVIGILATOR'S LIST — H.S. EXAMINATION, 2027 [SEMESTER-III]</div></div>
+</style></head><body><div class="tb no-print"><span>Specimen Signature List of Invigilators — Compact A4 portrait, one signature column (signed once for all days), ${extra} extra blank row(s). Column headings repeat on every printed page.</span><button onclick="window.print()">Print</button></div>
+<div class="pg"><div class="hd"><div class="ttl" contenteditable="true">INVIGILATOR'S LIST — SPECIMEN SIGNATURE — H.S. EXAMINATION, 2027 [SEMESTER-III]</div></div>
 <div class="vl" contenteditable="true">${venueLine}</div>
-<table><thead><tr><th style="width:8%">Sl.No</th><th style="width:32%">Name of the Invigilator(s)</th><th style="width:36%">Invigilator's School Name</th><th>Specimen Signature</th></tr></thead>
+<table><colgroup><col style="width:6%"><col style="width:29%"><col style="width:31%"><col style="width:34%"></colgroup>
+<thead><tr><th>Sl.No</th><th>Name of the Invigilator(s)</th><th>Invigilator's School Name</th><th>Signature</th></tr></thead>
 <tbody>${trs}</tbody></table></div></body></html>`);
   w.document.close();
 }
