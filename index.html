@@ -307,6 +307,19 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
   table.schedule-table, .letter-footer{ page-break-inside:avoid; }
 }
 </style>
+<style id="rdVsPatchCss">
+/* Room-wise Invigilator Allotment panel */
+.rd-scroll{overflow:auto;max-height:70vh;border:1px solid #cbd5e1;border-radius:8px}
+table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width:100%}
+.rd-table th,.rd-table td{border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:3px 4px;background:#fff}
+.rd-table thead th{position:sticky;top:0;background:#0f172a;color:#fff;z-index:2;font-size:8pt;text-align:center;vertical-align:top}
+.rd-table th small{display:block;font-weight:500;opacity:.85;font-size:7pt;white-space:normal;line-height:1.2}
+.rd-table input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:4px;padding:4px 5px;font-size:9pt}
+.rd-table input.rd-rn{width:70px;text-align:center;font-weight:700;border-color:#2563eb}
+.rd-table td:first-child{text-align:center;font-weight:700;color:#64748b}
+.tool-tabs{--accent:#1e3a8a}
+.rd-del{border:none;background:#fee2e2;color:#b91c1c;border-radius:4px;cursor:pointer;font-weight:700;padding:2px 8px}
+</style>
 </head>
 <body>
 
@@ -335,6 +348,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
   <button class="tool-btn" data-tool="receipt" onclick="switchTool('receipt')"><span class="dot"></span>Fee Receipt</button>
   <button class="tool-btn" data-tool="forms" onclick="switchTool('forms')"><span class="dot"></span>WBCHSE Centre Forms</button>
   <button class="tool-btn" data-tool="dailyops" onclick="switchTool('dailyops')"><span class="dot"></span>Daily Subject &amp; Duty Entry</button>
+  <button class="tool-btn" data-tool="roomduty" onclick="switchTool('roomduty');hsRdRender()"><span class="dot"></span>Room-wise Invigilator Allotment</button>
 </div>
 
 <!-- ============================================================ HS BOARD PANE ============================================================ -->
@@ -351,6 +365,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         <button class="btn btn-primary" onclick="hsPrintCentreForm('seal')">Seal Opening Format</button>
         <button class="btn btn-primary" onclick="hsPrintCentreForm('duty')">On Duty Declaration</button>
         <button class="btn btn-primary" onclick="hsPrintCentreForm('confidential')">Confidential Format</button>
+        <button class="btn btn-primary" onclick="hsPrintSpeedPost()">Speed Post Cover</button>
       </div>
     </div>
     <div class="table-container no-print" style="padding:16px;">
@@ -378,11 +393,13 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       <table class="reporting-table">
         <thead><tr><th>Form</th><th>Auto-generated data</th><th>Use</th><th>Print</th></tr></thead>
         <tbody>
-          <tr><td><strong>Venue Supervisor Format (Data Sheet)</strong></td><td>Centre, venue, venue code, exam year, examination date/subject</td><td>Invigilator / venue data collection</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('venue')">Generate</button></td></tr>
+          <tr><td><strong>Venue Supervisor Format (Data Sheet)</strong></td><td>Centre, venue, date, subject, 16 rooms with QP / OMR serials and invigilators (A4 landscape)</td><td>Invigilator / venue data collection</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('venue')">Generate</button></td></tr>
           <tr><td><strong>R.A. Format</strong></td><td>Centre, venue, date, subject and candidate details</td><td>R.A. / related examination record</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('ra')">Generate</button></td></tr>
           <tr><td><strong>Seal Opening Format</strong></td><td>Centre, venue, date, subject and question-paper carton details</td><td>Opening/seal record</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('seal')">Generate</button></td></tr>
           <tr><td><strong>On Duty Declaration</strong></td><td>Exam year, period, school and staff name</td><td>On-duty certification</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('duty')">Generate</button></td></tr>
           <tr><td><strong>Confidential Format</strong></td><td>Venue Supervisor, school/code, date/time</td><td>Rule violation / untoward incident report</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('confidential')">Generate</button></td></tr>
+          <tr><td><strong>Speed Post Cover (Insured)</strong></td><td>Date of examination, BNPL / Contract ID, To: Deputy Secretary (MRO) Midnapore, From: venue</td><td>Insured Speed Post parcel — official seal box included</td><td><button class="btn btn-primary" onclick="hsPrintSpeedPost()">Generate</button></td></tr>
+          <tr><td><strong>Room-wise Allotment of Invigilator</strong></td><td>Invigilator, school, Room No. and signature for every 2027 examination date</td><td>Room duty chart; also feeds Invigilator 1 / 2 on the V.S. Data Sheet</td><td><button class="btn btn-primary" onclick="switchTool('roomduty');hsRdRender()">Open</button></td></tr>
         </tbody>
       </table>
       <div style="margin-top:10px;font-size:12px;color:#475569;">Source: WBCHSE Download Centre / examination notifications. The Council currently lists Venue Supervisor Format (Data Sheet), R.A. Format, Seal Opening Format, On Duty Declaration and Confidential Format.</div>
@@ -433,8 +450,8 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         <div class="form-group"><label>Subject</label><select id="hs_qeSubject" onchange="hsQuickEntrySubjectChange()"><option value="">Select Subject</option></select></div>
         <div class="form-group"><label>Male</label><input type="number" min="0" id="hs_qeMale" oninput="hsQuickEntryRecalc()"></div>
         <div class="form-group"><label>Female</label><input type="number" min="0" id="hs_qeFemale" oninput="hsQuickEntryRecalc()"></div>
-        <div class="form-group"><label>QP SL From</label><input type="text" id="hs_qeQpFrom" placeholder="e.g. PHY-00101" oninput="hsQuickEntryRecalc()"></div>
-        <div class="form-group"><label>OMR SL From</label><input type="text" id="hs_qeOmrFrom" placeholder="e.g. OMR-00101" oninput="hsQuickEntryRecalc()"></div>
+        <div class="form-group"><label>QP SL From</label><input type="text" id="hs_qeQpFrom" placeholder="16-digit QP serial" oninput="hsQuickEntryRecalc()"></div>
+        <div class="form-group"><label>OMR SL From</label><input type="text" id="hs_qeOmrFrom" placeholder="16-digit OMR serial" oninput="hsQuickEntryRecalc()"></div>
       </div>
       <div class="hs-save-strip" style="margin-top:8px;">
         <button class="btn btn-primary" onclick="hsQuickEntryFetchFromLedger()">Auto-Fetch Male/Female from Ledger</button>
@@ -512,8 +529,8 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       </div>
       <div class="hs-dailyops-toolbar" style="grid-template-columns:1.4fr 1fr 1fr auto;">
         <div class="form-group"><label>Subject Name</label><input id="hs_masterSubjectName" type="text" placeholder="e.g. Physics or PHYS — code and full name are treated as the same subject"></div>
-        <div class="form-group"><label>QP Serial Start</label><input id="hs_masterQpFrom" type="text" placeholder="e.g. PHY-00101"></div>
-        <div class="form-group"><label>OMR Serial Start</label><input id="hs_masterOmrFrom" type="text" placeholder="e.g. OMR-00101"></div>
+        <div class="form-group"><label>QP Serial Start</label><input id="hs_masterQpFrom" type="text" placeholder="16-digit QP serial"></div>
+        <div class="form-group"><label>OMR Serial Start</label><input id="hs_masterOmrFrom" type="text" placeholder="16-digit OMR serial"></div>
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="hsMasterSaveSubject()">Save / Update</button></div>
       </div>
       <div id="hs_masterSubjectList" style="margin-top:10px;"></div>
@@ -542,6 +559,30 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
         </table>
       </div>
       <div style="margin-top:9px;font-size:8.5pt;color:#475569;"><b>Serial entry:</b> <b>ONLY ENTER the starting QP SL and starting OMR SL</b> in the two white boxes marked <b>ENTER ... SL FROM</b> (or use <b>Load Master QP/OMR</b> above to auto-fill from the stored subject master). The ending serial, required quantity and pouch quantity are generated automatically from Total students. Do not enter SL To / Required manually.  The room allocation below is generated automatically from the fixed seat capacities, or pinned per subject using the <b>Manual Room</b> column. The figures in the supplied sample are used only as a format reference; they are not imported as current 2027 [SEM-III] data.</div>
+    </div>
+  </div>
+
+  <!-- ---------- HS: ROOM-WISE INVIGILATOR ALLOTMENT ---------- -->
+  <div class="tool-panel app-shell" data-tool="roomduty" id="hs-roomduty">
+    <div class="dashboard-header no-print">
+      <div><h2>Room-wise Allotment of Invigilator — H.S. Examination, 2027 [Semester-III]</h2><p>Type each invigilator's Room No. (R.N.) against the examination date. The Venue Supervisor Data Sheet picks Invigilator 1 / 2 for every room from this chart automatically (still editable on the sheet).</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-success" onclick="hsRdPrint()">Print Allotment Chart (A4 Landscape)</button>
+        <button class="btn btn-primary" onclick="hsRdAddRow()">+ Add Row</button>
+        <button class="btn btn-danger" onclick="hsRdClearRN()">Clear All R.N.</button>
+      </div>
+    </div>
+    <div class="hs-dailyops-card no-print">
+      <div class="hs-dailyops-toolbar" style="grid-template-columns:2fr 1.2fr 1.2fr 1.6fr;">
+        <div class="form-group"><label>Venue</label><select id="hs_rdVenue" onchange="hsSetVenue(this.value);hsRdRender()"><option value="TFHS">VENUE-1 [114071] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] — TALDANGRA GIRLS' HIGH SCHOOL [H.S.]</option></select></div>
+        <div class="form-group"><label>Dates per printed sheet</label><select id="hs_rdPer"><option value="6" selected>6 dates (wide signature boxes)</option><option value="4">4 dates</option><option value="3">3 dates</option><option value="1">1 date</option><option value="11">All dates on one sheet (compact)</option></select></div>
+        <div class="form-group"><label>Spare blank rows</label><label style="text-transform:none;font-weight:600;display:flex;gap:6px;align-items:center;height:31px;"><input type="checkbox" id="hs_rdSpare" style="width:auto;"> Print trailing blank rows too</label></div>
+        <div class="form-group"><label>Status</label><div id="hs_rdStatus" style="height:31px;display:flex;align-items:center;font-weight:600;padding:0 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f8fafc;font-size:9pt;">—</div></div>
+      </div>
+    </div>
+    <div class="hs-dailyops-card no-print">
+      <div style="font-size:8.5pt;color:#475569;margin-bottom:8px;">Room No. can be typed as <b>1</b> or <b>Room-1</b> — it is matched to the fixed rooms (Daily Subject &amp; Duty Entry) by number. Two invigilators per room fill Invigilator 1 and 2 on the V.S. Data Sheet; date columns follow the 2027 [SEM-III] routine (22.09.2026 has no examination). Names and schools are pre-loaded from the office roster.</div>
+      <div class="rd-scroll"><table id="hs_rdTable" class="rd-table"></table></div>
     </div>
   </div>
 
@@ -1067,7 +1108,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
 const CLOUD_SYNC_KEYS = [
   'hsFixedRooms2027','hsRoomAllocations2027','hsSubjectQpOmrMaster2027',
   'hsDailyOpsDB2027','hsDailyOpsOfficialsTemplates2027',
-  'hsCentreSubjectAllocation2027','hsCentreSelectedDates2027',
+  'hsCentreSubjectAllocation2027','hsCentreSelectedDates2027','hsRoomDuty2027',
   'ExamReportingLedgerCache_HS','ExamReportingLedgerCache_MP',
   'ExamRequisitionSystemDataCache_HS','ExamRequisitionSystemDataCache_MP'
 ];
@@ -1536,7 +1577,7 @@ function hsDailySerialEnd(start,count){
   const raw=String(start).trim();
   const m=raw.match(/^(.*?)(\d+)$/);
   if(!m){const n=Number(raw);return Number.isFinite(n)?String(n+Number(count)-1):'';}
-  const prefix=m[1], digits=m[2]; const n=Number(digits)+Number(count)-1;
+  const prefix=m[1], digits=m[2]; const n=BigInt(digits)+BigInt(Math.floor(Number(count)))-1n;
   return prefix+String(n).padStart(digits.length,'0');
 }
 function hsDailyOpsRefreshAutoCells(sub){
@@ -1666,7 +1707,7 @@ function amountToWordsShared(num){
    four now read/write ONE stored venue; changing any one dropdown
    updates the rest immediately.
    ================================================================ */
-const HS_VENUE_SELECT_IDS=['hs_formVenue','hs_opsVenue','hs_roomVenue','hs_reqVenue','hs_schoolToggle'];
+const HS_VENUE_SELECT_IDS=['hs_formVenue','hs_opsVenue','hs_roomVenue','hs_reqVenue','hs_schoolToggle','hs_rdVenue'];
 const HS_VENUE_INFO={
   TFHS:{name:"TALDANGRA FULMATI HIGH SCHOOL [H.S.]", code:"114071"},
   TGHS:{name:"TALDANGRA GIRLS' HIGH SCHOOL [H.S.]", code:"114200"}
@@ -1845,6 +1886,7 @@ function hsFormHeaderHtml(c){
 function hsPrintCentreForm(type,venueOverride,dateOverride){
   const c=hsGetCentreFormContext(venueOverride,dateOverride); const esc=hsEscapeFormText;
   if(!c.subjects.length && ['venue','ra','seal'].includes(type)) return alert(`No subject selected for ${c.date} at ${c.venue}. Select the allotted subject(s) first.`);
+  if(type==='venue') return hsOpenMultiFormWindow(c.venueKey,[c.date],['venue']);
   let title='',body='';
   if(type==='venue'){ title='VENUE SUPERVISOR FORMAT (DATA SHEET)'; body=`<div class="official-form-title">VENUE SUPERVISOR FORMAT (DATA SHEET)</div>
 <table class="official-top-table">
@@ -1985,13 +2027,14 @@ function hsPrintTeacherDutyDeclaration(){
   w.document.write(`<!doctype html><html><head><title>ON DUTY DECLARATION — ${esc(rec.name)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script></body></html>`);
   w.document.close();
 }
-function hsOpenMultiFormWindow(venue,dates){
+function hsOpenMultiFormWindow(venue,dates,types){
   const pages=[];
-  dates.forEach(date=>{ const c=hsGetCentreFormContext(venue,date); ['venue','ra','seal'].forEach(type=>pages.push(hsBuildDayFormPage(type,c))); });
+  dates.forEach(date=>{ const c=hsGetCentreFormContext(venue,date); (types||['venue','ra','seal']).forEach(type=>pages.push(hsBuildDayFormPage(type,c))); });
   const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
   w.document.write(`<!doctype html><html><head><title>WBCHSE Day-wise Centre Forms</title><style>
 @page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#222;background:#fff}.page{page-break-after:always;min-height:100vh;position:relative}.venue-official-page{width:100%;padding:15mm 11mm 10mm}.venue-logo-wrap{text-align:center;margin:0 0 4mm}.venue-logo{width:25mm;height:25mm;object-fit:contain}.venue-main-title{text-align:center;font-size:16pt;font-weight:700;text-decoration:underline;margin:0 0 4mm}.venue-subtitle{text-align:center;font-size:9pt;font-weight:700;line-height:1.3;margin-bottom:5mm}.venue-meta{display:flex;justify-content:space-between;font-size:10.5pt;font-weight:600;margin:0 0 3mm}.venue-meta>div{width:48%;white-space:nowrap}.venue-data-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.2pt}.venue-data-table th,.venue-data-table td{border:1px solid #555;padding:1.5mm 1mm;text-align:center;vertical-align:middle}.venue-data-table th{font-weight:700}.venue-data-table .hall-col{width:5%}.venue-data-table .inv-col{width:13%}.venue-data-table .sig-col{width:11%}.venue-data-table tbody td{height:10mm}.venue-notes{font-size:8pt;line-height:1.45;margin-top:2.5mm}.venue-signature{text-align:right;margin-top:7mm;margin-right:4mm;font-size:8.5pt;line-height:1.4}.seal-official-page{width:100%;padding:15mm 20mm 12mm}.seal-logo-wrap{text-align:center;margin-bottom:2mm}.seal-logo{width:22mm;height:22mm;object-fit:contain}.seal-title{text-align:center;font-size:15pt;font-weight:700;margin-bottom:5mm}.seal-subtitle{text-align:center;font-size:11pt;font-weight:700;margin-bottom:4mm}.seal-box{border:1px solid #555;padding:4mm 5mm 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;line-height:1.65}.seal-box p{margin:0 0 5mm}.write-line{display:inline-block;min-width:105mm;border-bottom:1px solid #777;vertical-align:bottom}.short-line{display:inline-block;min-width:32mm;border-bottom:1px solid #777;text-align:center}.seal-person-table{width:100%;border-collapse:collapse;margin-top:2mm;font-size:10pt;line-height:1.1}.seal-person-table th,.seal-person-table td{border:1px solid #555;padding:1.7mm;text-align:left;height:11mm}.seal-person-table th{text-align:center;font-weight:700}.seal-person-table th:first-child,.seal-person-table td:first-child{width:8%}.seal-person-table th:nth-child(2){width:43%}.seal-person-table th:nth-child(3){width:18%}.seal-person-table th:nth-child(4){width:31%}.seal-meta{display:flex;justify-content:space-between;margin:8mm 0 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt}.seal-meta.single{display:block;margin-top:6mm}.seal-signature{text-align:center;margin-top:20mm;font-family:Georgia,'Times New Roman',serif;font-size:10pt}.generic-page{padding:12mm}.generic-page .official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.generic-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #555;padding:6px;vertical-align:top}th{font-weight:700}.sig{margin-top:35px;display:flex;justify-content:space-between}
-</style></head><body>${pages.join('')}<script>window.onload=()=>window.print();<\/script></body></html>`); w.document.close();
+${HS_VS_LAND_CSS}
+</style></head><body>${hsVsToolbar()}${pages.join('')}</body></html>`); w.document.close();
 }
 
 
@@ -3437,7 +3480,7 @@ function hsEnhancedSerialStartAfter(start,count){
   if(!end)return '';
   const m=String(end).match(/^(.*?)(\d+)$/);
   if(!m){const n=Number(end);return Number.isFinite(n)?String(n+1):'';}
-  return m[1]+String(Number(m[2])+1).padStart(m[2].length,'0');
+  return m[1]+String(BigInt(m[2])+1n).padStart(m[2].length,'0');
 }
 function hsEnhancedAutoAllocate(showAlert){
   hsRoomLoad(); hsDailyOpsLoad();
@@ -4042,6 +4085,295 @@ window.addEventListener("load", function(){
   setTimeout(letterFitHeadline, 400);
   setTimeout(letterFitHeadline, 1200);
 });
+</script>
+
+<script id="rdVsPatchJs">
+/* ================================================================
+   HS :: ROOM-WISE INVIGILATOR ALLOTMENT (2027 [SEM-III])
+        + LANDSCAPE A4 VENUE SUPERVISOR DATA SHEET (16 ROOMS)
+        + INSURED SPEED POST COVER (MRO, MIDNAPORE)
+   - Allotment chart: one row per invigilator, one Room No. (R.N.)
+     per examination date. Stored per venue in localStorage key
+     hsRoomDuty2027 (mirrored to Firestore like every other key).
+   - Venue Supervisor Data Sheet reads that chart: for each room on
+     each date, the invigilators whose R.N. matches the room fill the
+     "Name of the Invigilator 1 / 2" boxes automatically. Every cell on
+     the printed sheet stays editable in the preview window.
+   ================================================================ */
+const HS_RD_KEY='hsRoomDuty2027';
+const HS_RD_SEED=[["KABITA MANDAL", "TALDANGRA FULMATI H.S."], ["MRINMAYEE CHAKRABORTY", "TALDANGRA FULMATI H.S."], ["BIDHAN CH GHOSH", "TALDANGRA FULMATI H.S."], ["PARTHA MISHRA", "TALDANGRA FULMATI H.S."], ["SAHADEB BASKEY", "TALDANGRA FULMATI H.S."], ["TANMOY CHAKRABORTY", "TALDANGRA FULMATI H.S."], ["SUJATA MAHATA", "TALDANGRA FULMATI H.S."], ["BELA MAHATA", "TALDANGRA FULMATI H.S."], ["SAMPA PATI", "TALDANGRA FULMATI H.S."], ["ANTARA GHORAI", "TALDANGRA FULMATI H.S."], ["SWAPNA MAHANTI", "TALDANGRA FULMATI H.S."], ["SABYASACHI MANDAL", "TALDANGRA FULMATI H.S."], ["SHEPHALI MAJI", "TALDANGRA FULMATI H.S."], ["DIPTIMAN SAHA", "TALDANGRA FULMATI H.S."], ["PAPIYA MAJI", "TALDANGRA FULMATI H.S."], ["KANTI MALLA", "TALDANGRA FULMATI H.S."], ["", ""], ["", ""], ["SAURABH DAS", "SARALIYA PAKURDIHA H S"], ["PRABIR CHATTERJEE", "SARALIYA PAKURDIHA H S"], ["CHANDI KUMBHAKAR", "SARALIYA PAKURDIHA H S"], ["GOKUL MANDAL", "SARALIYA PAKURDIHA H S"], ["MAITREE KARMAKAR", "SARALIYA PAKURDIHA H S"], ["KAVITA SEN", "SARALIYA PAKURDIHA H S"], ["SABUJ BARAN MANDAL", "SARALIYA PAKURDIHA H S"], ["ANITA BHUI", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["MAHUA PATRA", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["BISHNUPRIYA GHOSH", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["BHARATI MANDAL", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["SHAMPA MANDAL", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["FALGUNI SOO", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["GITA HANSDA", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["SOMA KUNDU", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["MITALI DAS", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["SEEMA DEY", "PANCHMURA M K GIRLS HIGH SCHOOL"], ["PARTHA SARATHI MAJI", "JAGATPUR SAMMILANI HIGH SCHOOL"], ["JIBAN KHETRAPAL", "JAGATPUR SAMMILANI HIGH SCHOOL"], ["SISIR BASKEY", "JAGATPUR SAMMILANI HIGH SCHOOL"], ["SULEKHA MANDAL", "JAGATPUR SAMMILANI HIGH SCHOOL"], ["RASAMOY DEWASI", "JAGATPUR SAMMILANI HIGH SCHOOL"], ["BALARAM DE", "JAGATPUR SAMMILANI HIGH SCHOOL"], ["MILAN PAL", "HARMASHRA H S"], ["PINTU MONDAL", "HARMASHRA H S"], ["SRIPARNA BASU", "HARMASHRA H S"], ["NIRUP PRAMANIK", "HARMASHRA H S"], ["SILADITYA CHAUDHURY", "HARMASHRA H S"], ["", "HARMASHRA H S"], ["", "HARMASHRA H S"], ["", "HARMASHRA H S"], ["", "HARMASHRA H S"], ["SUBRATA CHATTARAJ", "PAKSARA S SIKSHAYATAN"], ["JAYA DAS", "PAKSARA S SIKSHAYATAN"], ["SOUMYA KANTI DE", "PAKSARA S SIKSHAYATAN"], ["MANJUSHA BANDYOPADHYAY", "PAKSARA S SIKSHAYATAN"], ["GOURANGA PAN", "PAKSARA S SIKSHAYATAN"], ["KANCHAN SINHA MAHAPATRA", "PAKSARA S SIKSHAYATAN"], ["UJJWAL KUMAR SAHA", "PAKSARA S SIKSHAYATAN"], ["MADHUSUDAN PAUL", "MANIPUR CHANDIMATA H S"], ["BHARAT MONDAL", "MANIPUR CHANDIMATA H S"], ["SUBHAS SAREN", "MANIPUR CHANDIMATA H S"], ["BIBHAS KONAR", "MANIPUR CHANDIMATA H S"], ["", "ASNA JR HIGH SCHOOL"], ["", "BRAHMANDANGA JR HIGH SCHOOL"], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""]];
+let hsRdDB={};
+function hsRdEsc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function hsRdLoad(){
+  try{hsRdDB=JSON.parse(localStorage.getItem(HS_RD_KEY)||'{}')||{};}catch(e){hsRdDB={};}
+  ['TFHS','TGHS'].forEach(v=>{
+    if(!hsRdDB[v]||!Array.isArray(hsRdDB[v].rows)||!hsRdDB[v].rows.length){
+      const base=(v==='TFHS')?HS_RD_SEED:Array.from({length:40},()=>['','']);
+      hsRdDB[v]={rows:base.map(x=>({n:x[0],s:x[1],rn:{}}))};
+    }
+  });
+}
+function hsRdPersist(){ try{localStorage.setItem(HS_RD_KEY,JSON.stringify(hsRdDB));}catch(e){} }
+function hsRdDates(){ return hsOfficialExamRoutineTimeline.filter(x=>!/^\s*No Examination/i.test(x.sub||'')); }
+function hsRdShortDate(d){ return String(d).replace(/^(\d\d)\.(\d\d)\.\d\d(\d\d)$/,'$1-$2-$3'); }
+function hsRdCode(s){
+  const raw=String(s||'').trim(), up=raw.toUpperCase();
+  if(HS_SUBJECT_CODE_MAP[up]) return up;
+  return HS_SUBJECT_NAME_TO_CODE[up]||raw;
+}
+function hsRdCodes(venue,item){
+  let subs=[]; try{subs=hsGetAllocatedSubjects(venue,item.date)||[];}catch(e){}
+  if(!subs.length) subs=hsSubjectOptions(item);
+  return subs.map(hsRdCode).join(', ');
+}
+function hsRdNormRoom(x){
+  const s=String(x==null?'':x).trim().toUpperCase(); const m=s.match(/\d+/);
+  return {s, n:m?String(parseInt(m[0],10)):''};
+}
+/* Names of the invigilators whose R.N. for `date` matches `room` (chart order). */
+function hsRdInvigilators(venue,date,room){
+  hsRdLoad();
+  const R=hsRdNormRoom(room); if(!R.s) return [];
+  return (hsRdDB[venue]&&hsRdDB[venue].rows||[]).filter(r=>{
+    const v=r.rn&&r.rn[date]; if(!v||!r.n) return false;
+    const V=hsRdNormRoom(v); return V.s===R.s || (V.n && V.n===R.n);
+  }).map(r=>r.n);
+}
+function hsRdRender(){
+  const box=document.getElementById('hs_rdTable'); if(!box) return;
+  try{hsSyncVenueSelectors();}catch(e){}
+  hsRdLoad();
+  const venue=hsGetVenue(), dates=hsRdDates(), rows=hsRdDB[venue].rows, esc=hsRdEsc;
+  let h='<thead><tr><th style="width:38px">Sl</th><th style="min-width:200px">Invigilator Name</th><th style="min-width:200px">Invigilator School Name</th>';
+  dates.forEach(d=>{
+    const set=rows.filter(r=>r.rn&&r.rn[d.date]).length;
+    h+=`<th title="${esc(d.sub)}" style="min-width:96px"><div>${esc(hsRdShortDate(d.date))}</div><small>${esc(hsRdCodes(venue,d))}</small><small>R.N. set: ${set}</small></th>`;
+  });
+  h+='<th style="width:34px"></th></tr></thead><tbody>';
+  rows.forEach((r,i)=>{
+    h+=`<tr><td>${i+1}</td><td><input value="${esc(r.n)}" oninput="hsRdEdit(${i},'n',this.value)"></td><td><input value="${esc(r.s)}" oninput="hsRdEdit(${i},'s',this.value)"></td>`;
+    dates.forEach(d=>{ h+=`<td><input class="rd-rn" value="${esc((r.rn||{})[d.date]||'')}" oninput="hsRdEditRN(${i},'${d.date}',this.value)"></td>`; });
+    h+=`<td><button class="rd-del" title="Delete row" onclick="hsRdDelRow(${i})">&times;</button></td></tr>`;
+  });
+  box.innerHTML=h+'</tbody>';
+  const named=rows.filter(r=>r.n).length;
+  const st=document.getElementById('hs_rdStatus'); if(st) st.textContent=named+' invigilator name(s) in '+rows.length+' row(s) — saved automatically.';
+}
+function hsRdEdit(i,f,v){ hsRdLoad(); const r=hsRdDB[hsGetVenue()].rows[i]; if(!r) return; r[f]=v; hsRdPersist(); }
+function hsRdEditRN(i,date,v){
+  hsRdLoad(); const r=hsRdDB[hsGetVenue()].rows[i]; if(!r) return;
+  r.rn=r.rn||{}; v=String(v).trim(); if(v) r.rn[date]=v; else delete r.rn[date];
+  hsRdPersist();
+}
+function hsRdAddRow(){ hsRdLoad(); hsRdDB[hsGetVenue()].rows.push({n:'',s:'',rn:{}}); hsRdPersist(); hsRdRender(); }
+function hsRdDelRow(i){
+  hsRdLoad(); const rows=hsRdDB[hsGetVenue()].rows; const r=rows[i]; if(!r) return;
+  if(!confirm('Delete row '+(i+1)+(r.n?' ('+r.n+')':'')+'? Later Sl. numbers will shift up.')) return;
+  rows.splice(i,1); hsRdPersist(); hsRdRender();
+}
+function hsRdClearRN(){
+  if(!confirm('Clear ALL Room Nos. (R.N.) for every date at this venue? Names and schools are kept.')) return;
+  hsRdLoad(); hsRdDB[hsGetVenue()].rows.forEach(r=>{r.rn={};}); hsRdPersist(); hsRdRender();
+}
+function hsRdPrint(){
+  hsRdLoad();
+  const venue=hsGetVenue(), V=HS_VENUE_INFO[venue], esc=hsRdEsc;
+  const per=Math.max(1,Number(document.getElementById('hs_rdPer')?.value)||6);
+  const inclSpare=!!document.getElementById('hs_rdSpare')?.checked;
+  const dates=hsRdDates();
+  let rows=hsRdDB[venue].rows.map((r,i)=>({n:r.n||'',s:r.s||'',rn:r.rn||{},sl:i+1}));
+  if(!inclSpare){ let last=-1; rows.forEach((r,i)=>{ if(r.n||r.s) last=i; }); rows=rows.slice(0,last+1); }
+  const groups=[]; for(let i=0;i<dates.length;i+=per) groups.push(dates.slice(i,i+per));
+  const fixedW=7+40+42, dw=(285-fixedW)/per, rnW=Math.min(11,Math.max(6.5,dw*0.24)), sgW=dw-rnW;
+  const venueLine='Venue Name : '+V.name.replace('[H.S.]','(H.S.)')+'; Venue Code:'+V.code+':: Centre Name : TALDANGRA; Centre Code:2206';
+  const body=groups.map((g,gi)=>{
+    const n=3+g.length*2;
+    const cols='<colgroup><col style="width:7mm"><col style="width:40mm"><col style="width:42mm">'+g.map(()=>`<col style="width:${rnW.toFixed(2)}mm"><col style="width:${sgW.toFixed(2)}mm">`).join('')+'</colgroup>';
+    const head=`<thead><tr class="rd-ttl"><th colspan="${n}"><div class="t1" contenteditable="true">Room wise Allotment of Invigilator for H.S. EXAMINATION -2027 [Semester-III]</div><div class="t2" contenteditable="true">${esc(venueLine)}</div></th></tr>`+
+      `<tr><th rowspan="2">Sl</th><th rowspan="2">INVIGILATOR<br>NAME</th><th rowspan="2">INVIGILATOR<br>SCHOOL NAME</th>${g.map(d=>`<th colspan="2"><b>${esc(hsRdShortDate(d.date))}</b><br><span class="cd">${esc(hsRdCodes(venue,d))}</span></th>`).join('')}</tr>`+
+      `<tr>${g.map(()=>'<th>R.N.</th><th>'+(per>=9?'Sign.':'Signature')+'</th>').join('')}</tr></thead>`;
+    const trs=rows.map(r=>`<tr><td>${r.sl}</td><td class="l">${esc(r.n)}</td><td class="l">${esc(r.s)}</td>${g.map(d=>`<td class="rn">${esc(r.rn[d.date]||'')}</td><td></td>`).join('')}</tr>`).join('');
+    return `<div class="grp" style="${gi?'page-break-before:always;break-before:page;':''}"><table>${cols}${head}<tbody>${trs}</tbody></table><div class="sg">Signature of Venue Supervisor with Date &amp; Seal</div></div>`;
+  }).join('');
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Room-wise Allotment of Invigilator — ${esc(V.code)}</title><style>
+@page{size:A4 landscape;margin:6mm}*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff}
+.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
+.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
+.grp{width:285mm;margin:0 auto}
+table{width:100%;border-collapse:collapse;table-layout:fixed;margin:0}
+th,td{border:.25mm solid #222;padding:.4mm 1mm;text-align:center;vertical-align:middle;font-size:7.2pt;line-height:1.15}
+tbody tr{height:6.5mm;page-break-inside:avoid;break-inside:avoid}
+thead{display:table-header-group}
+th{font-weight:700;font-size:7pt}
+.rd-ttl th{border:0;padding:0 0 1.2mm}
+.t1{font-size:12.5pt;font-weight:700}.t2{font-size:8.5pt;font-weight:700;margin-top:.6mm}
+.cd{font-size:5.6pt;font-weight:600;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+td.l{text-align:left;font-weight:600}td.rn{font-weight:700;font-size:8pt}
+.sg{text-align:right;font-size:8pt;font-weight:700;margin:5mm 4mm 0}
+[contenteditable]{outline:none}
+@media screen{body{background:#e5e7eb}.grp{background:#fff;padding:6mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
+@media print{.no-print{display:none!important}}
+</style></head><body><div class="tb no-print"><span>Room-wise Allotment of Invigilator — A4 Landscape. Heading lines are editable; edit R.N. / names in the tool itself.</span><button onclick="window.print()">Print</button></div>${body}</body></html>`);
+  w.document.close();
+}
+
+/* ---------------- LANDSCAPE VENUE SUPERVISOR DATA SHEET ---------------- */
+const HS_VS_LAND_CSS=`
+@page vland{size:A4 landscape;margin:0}
+.vs-land{page:vland;width:297mm;height:209mm;padding:5mm 6mm 4mm;box-sizing:border-box;overflow:hidden;page-break-after:always;break-after:page;position:relative;min-height:0;display:flex;flex-direction:column;background:#fff}
+section.vs-land:last-of-type{page-break-after:auto;break-after:auto}
+.vs-head{display:flex;align-items:center;gap:4mm;height:14mm;flex:none}
+.vs-logo{width:13mm;height:13mm;object-fit:contain;flex:none}
+.vs-ttlbox{flex:1;text-align:center;margin-right:17mm}
+.vs-title{font-size:14pt;font-weight:700;text-decoration:underline;line-height:1.15}
+.vs-sub{font-size:7pt;font-weight:700;line-height:1.25;margin-top:.8mm}
+.vs-meta{display:flex;justify-content:space-between;gap:4mm;font-size:9pt;font-weight:700;margin:1.6mm 0 1.4mm;white-space:nowrap;flex:none}
+table.vs-tab{width:100%;margin:0;table-layout:fixed;border-collapse:collapse;font-size:7pt;flex:none}
+.vs-tab th,.vs-tab td{border:.3mm solid #222;padding:.4mm .8mm;text-align:center;vertical-align:middle;line-height:1.15;font-size:7pt}
+.vs-tab th{font-weight:700}
+.vs-tab th.sm{font-size:5.8pt}
+.vs-tab th.tn{font-size:6.2pt}
+.vs-tab tbody tr{height:var(--rh,8.6mm)}
+.vs-tab td.nm{font-size:7.4pt;font-weight:600;line-height:1.1}
+.vs-tab td.sub{font-size:7.4pt;font-weight:700;line-height:1.1}
+.vs-tab td.sl{font-family:'Courier New',Consolas,'Liberation Mono',monospace;font-size:8pt;font-weight:700;word-break:break-all;letter-spacing:0}
+.vs-tab td.tot{font-size:8.5pt;font-weight:700}
+.vs-tab td.hall{font-size:7.2pt;font-weight:700;white-space:nowrap}
+.vs-foot{display:flex;justify-content:space-between;gap:6mm;margin-top:1.8mm;flex:none}
+.vs-notes{flex:1.25;font-size:7.2pt;line-height:1.35}
+.vs-notes div{padding-left:9mm;text-indent:-9mm}
+.vs-sign{flex:1;font-size:7.5pt;line-height:1.5;text-align:right}
+.ed{outline:none}
+.hs-tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
+.hs-tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
+@media screen{body{background:#e5e7eb}.page{margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}.ed:hover{background:#fffbe6}.ed:focus{background:#eff6ff;box-shadow:inset 0 0 0 1.5px #2563eb}}
+@media print{.no-print{display:none!important}}
+`;
+function hsVsToolbar(){
+  return `<div class="hs-tb no-print"><span>Venue Supervisor Data Sheet — A4 Landscape, 16 rooms. Invigilator names come from the Room-wise Allotment chart. <u>Click any cell to edit</u> (names, serials, totals, officials), then</span><button onclick="window.print()">Print</button></div>`;
+}
+function hsVsBuildRows(c){
+  hsRoomLoad(); hsDailyOpsLoad();
+  const rec=hsDailyOpsGetRecord(c.venueKey,c.date)||{};
+  const fixed=(hsRoomDB[c.venueKey]||[]).map(r=>String(r.room));
+  const entries=[];
+  (c.subjects||[]).forEach(sub=>{
+    const d=(rec.subjects&&rec.subjects[sub])||{}; const serials=d.roomSerials||[];
+    if(serials.length) serials.forEach(z=>entries.push({room:String(z.room==null?'':z.room),sub,d,z}));
+    else if(d.total||d.qFrom||d.omrFrom) entries.push({room:String(d.hall==null?'':d.hall),sub,d,z:{room:d.hall||'',seats:d.total||0,qFrom:d.qFrom||'',qTo:d.qTo||'',omrFrom:d.omrFrom||'',omrTo:d.omrTo||''}});
+  });
+  const rows=[], taken=new Set();
+  fixed.forEach(k=>{
+    const es=entries.filter(e=>e.room===k);
+    if(es.length) es.forEach(e=>{rows.push(e);taken.add(e);}); else rows.push({room:k,sub:'',d:{},z:{}});
+  });
+  entries.forEach(e=>{ if(!taken.has(e)) rows.push(e); });
+  while(rows.length<16) rows.push({room:String(rows.length+1),sub:'',d:{},z:{}});
+  return rows;
+}
+function hsVsLandPages(c){
+  const esc=hsRdEsc;
+  const rows=hsVsBuildRows(c);
+  const rec=hsDailyOpsGetRecord(c.venueKey,c.date)||{};
+  const off=rec.officials||{};
+  const O=k=>esc(off[k]||HS_DEFAULT_EXAM_OFFICIALS[k]||'');
+  const ed=(cls,v)=>`<td class="ed ${cls}" contenteditable="true">${esc(v)}</td>`;
+  const pages=[]; const per=22;
+  for(let p=0;p<rows.length;p+=per){
+    const chunk=rows.slice(p,p+per);
+    const rh=Math.min(8.9,141/Math.max(16,chunk.length)).toFixed(2);
+    const trs=chunk.map(r=>{
+      const names=hsRdInvigilators(c.venueKey,c.date,r.room);
+      let i1=names[0]||'', i2=names.slice(1).join(' / ');
+      if(!i1&&!i2){ i1=r.d.inv1||''; i2=r.d.inv2||''; }
+      const sub=r.sub?hsRdCode(r.sub):'';
+      const z=r.z||{};
+      return `<tr>${ed('hall',r.room)}${ed('nm',i1)}${ed('nm',i2)}${ed('sub',sub)}${ed('sl',z.qFrom||'')}${ed('sl',z.qTo||'')}${ed('tot',z.seats||'')}${ed('sl','')}${ed('sl',z.omrFrom||'')}${ed('sl',z.omrTo||'')}${ed('tot',z.seats||'')}<td></td></tr>`;
+    }).join('');
+    pages.push(`<section class="page vs-land">
+  <div class="vs-head"><img src="${HS_WBCHSE_LOGO_URL}" class="vs-logo" alt="WBCHSE"><div class="vs-ttlbox"><div class="vs-title">VENUE SUPERVISOR FORMAT ( DATA SHEET )</div><div class="vs-sub">TO BE USED FOR SENDING DETAILED RECORDS OF QUESTION PAPER AND OMR ANSWER SHEET OF SEMESTER III OF HIGHER SECONDARY EXAMINATION, 2027<br>FROM THE DESK OF VENUE SUPERVISOR TO INVIGILATORS OF THE RESPECTIVE EXAMINATION HALLS / ROOMS</div></div></div>
+  <div class="vs-meta"><div>CENTRE CODE : <span class="ed" contenteditable="true">${esc(c.centreCode)}</span></div><div>VENUE CODE : <span class="ed" contenteditable="true">${esc(c.venueCode)}</span></div><div>EXAMINATION DATE : <span class="ed" contenteditable="true">${esc(c.date)}</span></div><div>VENUE NAME : <span class="ed" contenteditable="true">${esc(c.venue)}</span></div></div>
+  <table class="vs-tab" style="--rh:${rh}mm"><colgroup><col style="width:14mm"><col style="width:31mm"><col style="width:31mm"><col style="width:17mm"><col style="width:31.5mm"><col style="width:31.5mm"><col style="width:13mm"><col style="width:19mm"><col style="width:31.5mm"><col style="width:31.5mm"><col style="width:13mm"><col style="width:20mm"></colgroup>
+  <thead>
+    <tr><th rowspan="3">EXAM.<br>HALL<br>NO.</th><th rowspan="3">NAME OF THE<br>INVIGILATOR<br>1</th><th rowspan="3">NAME OF THE<br>INVIGILATOR<br>2</th><th colspan="5">DETAILS OF QUESTION PAPER</th><th colspan="3">DETAILS OF OMR ANSWER SHEET</th><th rowspan="3">SIGNATURE OF<br>INVIGILATORS</th></tr>
+    <tr><th rowspan="2">NAME OF<br>SUBJECT</th><th colspan="2">QUESTION PAPER<br>SERIAL NO.</th><th rowspan="2" class="tn">TOTAL<br>NUMBER</th><th rowspan="2" class="sm">NON<br>TRANSPARENT<br>POLY POUCH<br>SERIAL NO.</th><th colspan="2">SERIAL NO.</th><th rowspan="2" class="tn">TOTAL<br>NUMBER</th></tr>
+    <tr><th>FROM</th><th>TO</th><th>FROM</th><th>TO</th></tr>
+  </thead><tbody>${trs}</tbody></table>
+  <div class="vs-foot">
+    <div class="vs-notes">
+      <div><b>N.B. :</b>&nbsp; 1) &nbsp;Invigilators are instructed to open Non Transparent Poly Pouch containing Question Papers at 10:55 am in presence of examinees, signing by any TWO of them on it.</div>
+      <div>2) &nbsp;Distribute Question Papers and OMR Answer Sheets among examinees at 11:00 am.</div>
+      <div>3) &nbsp;The day-to-day records are to be preserved by the Venue Supervisor for future reference and requirement.</div></div>
+    <div class="vs-sign">Venue Supervisor: <b class="ed" contenteditable="true">${O('venueSupervisor')}</b> &nbsp;&nbsp; Centre Secretary: <b class="ed" contenteditable="true">${O('centreSecretary')}</b><br>Centre-in-Charge: <b class="ed" contenteditable="true">${O('centreInCharge')}</b> &nbsp;&nbsp; Council Nominee: <b class="ed" contenteditable="true">${O('councilNominee')}</b><br><br>............................................................<br><b>( Signature of Venue Supervisor with Date &amp; Seal )</b></div>
+  </div>
+</section>`);
+  }
+  return pages.join('');
+}
+const _hsVsPrevBuild=hsBuildDayFormPage;
+hsBuildDayFormPage=function(type,c){
+  if(type==='venue') return hsVsLandPages(c);
+  return _hsVsPrevBuild(type,c);
+};
+
+/* ---------------- INSURED SPEED POST COVER ---------------- */
+const HS_SPEEDPOST={
+  bnpl:'6000013163', contract:'40132987', insured:'Rs.200/-',
+  to:['The Deputy Secretary (MRO)','Sahid Matangini Bhavan Bidhannagar East','72, Station Road','P.O.- Midnapore &nbsp; Dist.- Paschim Medinipur','PIN- 721101']
+};
+function hsPrintSpeedPost(){
+  const venue=hsGetVenue(), V=HS_VENUE_INFO[venue], esc=hsRdEsc;
+  const date=document.getElementById('hs_formDay')?.value||hsOfficialExamRoutineTimeline[0].date;
+  let sup=HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor;
+  try{ hsDailyOpsLoad(); sup=hsDailyOpsDefaultOfficials(hsDailyOpsTemplates[venue]||{}).venueSupervisor||sup; }catch(e){}
+  const S=HS_SPEEDPOST;
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Insured Speed Post Cover</title><style>
+@page{size:A4 landscape;margin:0}*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff}
+.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
+.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
+.sheet{width:297mm;height:209mm;padding:10mm 12mm;display:flex;flex-direction:column;gap:6mm;overflow:hidden}
+.top{border:.8mm solid #000;text-align:center;padding:4mm 6mm}
+.top .a{font-size:30pt;font-weight:900;letter-spacing:1px}
+.top .b{font-size:20pt;font-weight:800;margin-top:1mm}
+.top .c{font-size:15pt;font-weight:700;margin-top:3mm}
+.dt{font-size:17pt;font-weight:800}
+.cols{display:flex;gap:8mm;flex:1}
+.box{flex:1;border:.4mm solid #000;padding:5mm 6mm}
+.box.to{flex:1.25}
+.lbl{font-size:16pt;font-weight:900;text-decoration:underline;margin-bottom:3mm}
+.ln{font-size:16pt;font-weight:700;line-height:1.5}
+.from .ln{font-size:13.5pt;font-weight:700;line-height:1.55}
+.seal{align-self:flex-end;width:80mm;height:32mm;border:.4mm dashed #000;display:flex;align-items:flex-end;justify-content:center;padding-bottom:2mm;font-size:12pt;font-weight:800;margin-top:6mm}
+[contenteditable]{outline:none}
+@media screen{body{background:#e5e7eb}.sheet{background:#fff;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
+@media print{.no-print{display:none!important}}
+</style></head><body><div class="tb no-print"><span>Insured Speed Post cover — A4 Landscape. <u>Click any line to edit</u> (date, PIN, sender), then</span><button onclick="window.print()">Print</button></div>
+<div class="sheet">
+  <div class="dt">DATE OF EXAMINATION : <span contenteditable="true">${esc(date)}</span></div>
+  <div class="top"><div class="a">INSURED SPEED POST</div><div class="b">INSURED FOR <span contenteditable="true">${esc(S.insured)}</span></div><div class="c">BNPL Customer ID: <span contenteditable="true">${esc(S.bnpl)}</span> &nbsp;&nbsp;&nbsp; CONTRACT ID: <span contenteditable="true">${esc(S.contract)}</span></div></div>
+  <div class="cols">
+    <div class="box to"><div class="lbl">To</div>${S.to.map(l=>`<div class="ln" contenteditable="true">${l}</div>`).join('')}</div>
+    <div class="box from"><div class="lbl">From:</div>
+      <div class="ln" contenteditable="true">The Venue Supervisor</div>
+      <div class="ln" contenteditable="true">${esc(V.name)}</div>
+      <div class="ln" contenteditable="true">Venue Code: ${esc(V.code)}</div>
+      <div class="ln" contenteditable="true">Centre: TALDANGRA (Centre Code: 2206)</div>
+      <div class="ln" contenteditable="true">Taldangra, Dist.- Bankura, West Bengal</div>
+      <div class="ln" contenteditable="true">PIN- ________</div>
+      <div class="ln" contenteditable="true">Venue Supervisor: ${esc(sup)}</div>
+      <div class="seal">With Official seal</div>
+    </div>
+  </div>
+</div></body></html>`);
+  w.document.close();
+}
+
+cloudRunWhenReady(()=>{ try{hsRdRender();}catch(e){} });
+
 </script>
 </body>
 </html>
