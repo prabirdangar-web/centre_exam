@@ -752,6 +752,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       </div>
       <div style="margin:-4px 0 12px;">
         <button type="button" class="btn btn-primary no-print" onclick="hsEntrySheetApplyDefaultAll()">Auto-Fill Default Feeder Split (All Dates)</button>
+        <button type="button" class="btn btn-success no-print" onclick="hsEntryFillTeachersAll(false)" title="Fills only the EMPTY teacher-name boxes, school-wise, from the Room-wise Invigilator Allotment roster">Add Teacher Names from Roster (All Dates)</button>
       </div>
       <div id="hs_entrySheetContainer"></div>
     </div>
@@ -867,7 +868,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <div class="receipt-footer"><div><br><br>______________________________<br>Depositor Signature</div><div style="text-align:right;"><br><br>______________________________<br><strong>Officer-In-Charge / Centre Secretary</strong></div></div>
       </div>
     </div>
-    <button class="btn btn-success no-print" style="margin:16px auto; display:block;" onclick="window.print()">Print Complete Single-Page Layout</button>
+    <button class="btn btn-success no-print" style="margin:16px auto; display:block;" onclick="hsPrintReceiptLandscape('hs')">Print Receipt &mdash; A4 Landscape (Full Page)</button>
   </div>
 </div>
 
@@ -1095,7 +1096,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <div class="receipt-footer"><div><br><br>______________________________<br>Depositor Signature</div><div style="text-align:right;"><br><br>______________________________<br><strong>Officer-In-Charge / Centre Secretary</strong></div></div>
       </div>
     </div>
-    <button class="btn btn-success no-print" style="margin:16px auto; display:block;" onclick="window.print()">Print Complete Single-Page Layout</button>
+    <button class="btn btn-success no-print" style="margin:16px auto; display:block;" onclick="hsPrintReceiptLandscape('mp')">Print Receipt &mdash; A4 Landscape (Full Page)</button>
   </div>
 </div>
 
@@ -1382,6 +1383,25 @@ function hsSubjectWithCode(name){
    (e.g. a Progress Ledger day's "sub" field: "Bengali (A), English (A), ..."). */
 function hsSubjectListWithCodes(list){
   return String(list||"").split(",").map(s=>s.trim()).filter(Boolean).map(hsSubjectWithCode).join(", ");
+}
+/* ---- 4-letter subject codes only (used by every generated form / label) ---- */
+const HS_SUBJECT_CODE_ALIASES={
+  'HINDI (A)':'HNDA','HINDI (B)':'HNDB','NEPALI (A)':'NEPA','NEPALI (B)':'NEPB','URDU':'URDU','ODIA':'ODIA','TELUGU':'TELU','PUNJABI':'PUNJ',
+  'ALTERNATIVE ENGLISH':'ALTE','BUSINESS MATHEMATICS AND BUSINESS STATISTICS':'BMBS','ARTIFICIAL INTELLIGENCE':'ARTI','DATA SCIENCE':'DATS',
+  'BANKING FINANCIAL SERVICE AND INSURANCE':'BFIV','BANKING FINANCIAL SERVICES AND INSURANCE':'BFIV'
+};
+function hsSubjectCode4(name){
+  const raw=String(name||"").trim(); if(!raw) return raw;
+  const norm=x=>String(x).toUpperCase().replace(/&/g,' AND ').replace(/\s+/g,' ').trim();
+  const up=norm(raw);
+  if(HS_SUBJECT_CODE_MAP[up]) return up;
+  const paren=up.match(/\(([A-Z]{4})\)\s*$/); if(paren && HS_SUBJECT_CODE_MAP[paren[1]]) return paren[1];
+  if(HS_SUBJECT_CODE_ALIASES[up]) return HS_SUBJECT_CODE_ALIASES[up];
+  for(const c of Object.keys(HS_SUBJECT_CODE_MAP)){ if(norm(HS_SUBJECT_CODE_MAP[c])===up) return c; }
+  return up.replace(/[^A-Z]/g,'').slice(0,4);
+}
+function hsSubjectListCodes(list){
+  return String(list||"").split(",").map(x=>x.trim()).filter(Boolean).map(hsSubjectCode4).join(", ");
 }
 /* Short WBCHSE code ONLY (e.g. "PHYS") — never the full subject name and
    never "Name (CODE)". Used for the Invigilator Requisition "Subject Scope"
@@ -1876,7 +1896,7 @@ function hsGetCentreFormContext(venueOverride,dateOverride){
   const date=dateOverride || document.getElementById('hs_formDay')?.value || document.getElementById('hs_activeDayFocus')?.value || hsOfficialExamRoutineTimeline[0].date;
   const item=hsOfficialExamRoutineTimeline.find(x=>x.date===date)||hsOfficialExamRoutineTimeline[0];
   const subjects=hsGetAllocatedSubjects(venueKey,item.date);
-  return {venueKey,centre:'TALDANGRA',centreCode:'2206',venue,venueCode:code,year:'2027',date:item.date,day:item.day,subject:subjects.length?subjects.map(hsSubjectWithCode).join(', '):'NOT ALLOTTED / NOT SELECTED',subjects};
+  return {venueKey,centre:'TALDANGRA',centreCode:'2206',venue,venueCode:code,year:'2027',date:item.date,day:item.day,subject:subjects.length?subjects.map(hsSubjectCode4).join(', '):'NOT ALLOTTED / NOT SELECTED',subjects};
 }
 function hsFormHeaderHtml(c){
   return `<div class="official-form-head">
@@ -2023,7 +2043,7 @@ function hsPrintTeacherDutyDeclaration(){
   if(!rec || !rec.days.length) return alert('No duty days found for this teacher.');
   const esc=hsEscapeFormText;
   const days=rec.days.slice().sort((a,b)=>hsParseDMYToSortable(a.date)-hsParseDMYToSortable(b.date));
-  const rows=days.map((d,i)=>`<tr><td>${i+1}</td><td>${esc(d.date)}</td><td>${esc(d.day)}</td><td>${esc(d.venueLabel)}</td><td>${esc(hsSubjectWithCode(d.subject))}</td></tr>`).join('');
+  const rows=days.map((d,i)=>`<tr><td>${i+1}</td><td>${esc(d.date)}</td><td>${esc(d.day)}</td><td>${esc(d.venueLabel)}</td><td>${esc(hsSubjectCode4(d.subject))}</td></tr>`).join('');
   const c={venue:'TALDANGRA Examination Centre',venueCode:'2206',date:'',day:''};
   const body=`<h3>ON DUTY DECLARATION</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><p>I, Sri / Smt. <b>${esc(rec.name)}</b> of <b>${esc(school)}</b> was engaged with examination duty related to Semester-III of H.S. Examination, 2027 on the following date(s):</p><table><tr><th>Sl.</th><th>Date</th><th>Day</th><th>Venue</th><th>Subject(s)</th></tr>${rows}</table><p>Signature of the applicant with date: __________________________________</p><p>Mobile No.: ______________________________</p><p>The above mentioned day(s) may be treated as &ldquo;ON DUTY&rdquo; in respect of Sri/Smt. <b>${esc(rec.name)}</b> of <b>${esc(school)}</b>.</p><p>Signature of Convenor / DI of Schools (SE) with date: ______________________________</p>`;
   const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
@@ -2993,7 +3013,7 @@ const hsReceiptPresets = [
      "Centre-wise, Examination Venue-wise Institution List — Higher Secondary Examination 2027,
      Semester III (Supplementary/Regular) — APPROVED-ENROLLED DATA", printed 09.09.2026.
      Old Sem IV / Old Syllabus carry-over figures removed — not present in that report. */
-  { name: "SIMLAPAL MADAN MOHAN HIGH SCHOOL", m1: 225, f1: 133 },
+  { name: "SIMLAPAL MADAN MOHAN HIGH SCHOOL", m1: 226, f1: 133 },
   { name: "CHHAGULIA SAMMILANI NEHRU HIGH SCHOOL", m1: 28, f1: 39 },
   { name: "PANCHMURA HIGH SCHOOL (H.S.)", m1: 57, f1: 96 },
   { name: "BIBARDA SATCHIDANANDA VIDYAPITH", m1: 114, f1: 96 },
@@ -3245,7 +3265,7 @@ function mpReqSyncDisplayOutputs(){
       <td><input type="text" value="${item.sub}" style="text-align:left;" oninput="mpReqUpdateRowVariable(${index}, 'sub', this.value)"></td>`;
     matrixBody.appendChild(trMatrix);
     const trLetter = document.createElement("tr");
-    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${item.count}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${hsSubjectListWithCodes(item.sub)}</td>`;
+    trLetter.innerHTML = `<td style="font-weight:500; text-align:left; padding-left:15px;">${fullComputedDateStr}</td><td style="font-weight:bold;">${item.count}</td><td style="text-align:left; padding-left:15px; font-weight:500;">${hsSubjectListCodes(item.sub)}</td>`;
     letterBody.appendChild(trLetter);
   });
 }
@@ -3257,7 +3277,7 @@ function mpReqUpdateRowVariable(index, key, value){
     const row = mpReqLiveSystemState.schedule[index];
     if(key==='day' || key==='fullDate'){ letterRows[index].children[0].textContent = `${row.day}, ${row.fullDate||""}`; }
     if(key==='count') letterRows[index].children[1].textContent = value;
-    if(key==='sub') letterRows[index].children[2].textContent = hsSubjectListWithCodes(value);
+    if(key==='sub') letterRows[index].children[2].textContent = hsSubjectListCodes(value);
   }
 }
 function mpReqUpdateRecipientSchoolName(val){
@@ -4441,22 +4461,21 @@ cloudRunWhenReady(()=>{ try{hsRdRender();}catch(e){} });
    INSURED SPEED POST ADDRESS COVER — DAY-WISE, FULL A4 COLOUR
    hsPrintSpeedPost('day')  -> cover for the Examination Day selected in Forms
    hsPrintSpeedPost('all')  -> one cover (page) per ticked day (or every day with subjects)
-   Date, day and the FULL subject names come from the day's subject selection.
-   Format follows the Council's specimen label for confidential parcels.
+   Date, day and the 4-letter SUBJECT CODES come from the day's subject selection.
    ================================================================ */
 const HS_SPEEDPOST_DW={
   bnpl:'6000013163', contract:'40132987', insured:'Rs.200/-',
   to:['The Deputy Secretary (MRO)','Sahid Matangini Bhavan','Bidhannagar East','72, Station Road','P.O.- Midnapore','Dist.- Paschim Medinipur'],
   pin:'721101',
   fromPO:'P.O. TALDANGRA, DIST- BANKURA, PIN-722152',
-  centre:'TALDANGRA', centreCode:'2206'
+  centre:'TALDANGRA', centreCode:'2206', mobile:'9933035811'
 };
 function hsSpeedPostSubjectSize(txt){
   const n=String(txt||'').length;
-  return n<=40?26:n<=80?22:n<=140?18:n<=220?15:12;
+  return n<=30?34:n<=60?28:n<=110?22:n<=180?17:13;
 }
 function hsPrintSpeedPost(mode){
-  const venue=hsGetVenue(), V=HS_VENUE_INFO[venue], esc=hsRdEsc, S=HS_SPEEDPOST_DW, T=hsOfficialExamRoutineTimeline;
+  const venue=hsGetVenue(), esc=hsRdEsc, S=HS_SPEEDPOST_DW, T=hsOfficialExamRoutineTimeline;
   const isExam=d=>{const it=T.find(x=>x.date===d); return !!it && !/^\s*No Examination/i.test(it.sub||'');};
   try{ hsSaveCurrentDaySubjects(); }catch(e){}
   let dates=[];
@@ -4470,11 +4489,14 @@ function hsPrintSpeedPost(mode){
     dates=[isExam(d)?d:(T.find(x=>!/^\s*No Examination/i.test(x.sub||''))||T[0]).date];
   }
   dates.sort((a,b)=>T.findIndex(x=>x.date===a)-T.findIndex(x=>x.date===b));
+  const off=HS_DEFAULT_EXAM_OFFICIALS||{};
+  const oic=String(off.centreInCharge||'DIPANKAR DAS').toUpperCase(), sec=String(off.centreSecretary||'PRABIR KUMAR DANGAR').toUpperCase();
+  const v1=HS_VENUE_INFO.TFHS, v2=HS_VENUE_INFO.TGHS;
   const pages=dates.map(date=>{
     const item=T.find(x=>x.date===date)||{date,day:''};
     let subs=[]; try{subs=hsGetAllocatedSubjects(venue,date)||[];}catch(e){}
     if(!subs.length){ try{subs=hsSubjectOptions(item);}catch(e){} }
-    const subTxt=subs.join(', ');
+    const subTxt=subs.map(hsSubjectCode4).join(', ');
     return `<section class="sheet">
   <div class="band"><div class="a">INSURED SPEED POST</div><div class="b">INSURED FOR <span contenteditable="true">${esc(S.insured)}</span></div></div>
   <div class="ids"><div>BNPL Customer ID<br><b contenteditable="true">${esc(S.bnpl)}</b></div><div>CONTRACT ID<br><b contenteditable="true">${esc(S.contract)}</b></div></div>
@@ -4487,11 +4509,13 @@ function hsPrintSpeedPost(mode){
     <div class="pin">PIN- <span contenteditable="true">${esc(S.pin)}</span></div>
   </div>
   <div class="lower">
-    <div class="from"><div class="tag2">FROM :</div>
-      <div class="fl f1" contenteditable="true">${esc(S.centre)} H.S. CENTRE</div>
-      <div class="fl" contenteditable="true">${esc(V.name)} (${esc(V.code)})</div>
-      <div class="fl" contenteditable="true">${esc(S.fromPO)}</div>
-      <div class="fl" contenteditable="true">CENTRE NAME: ${esc(S.centre)} &amp; CENTRE CODE: ${esc(S.centreCode)}</div>
+    <div class="from">
+      <div class="fs" contenteditable="true"><b>FROM :</b> ${esc(oic)}, OFFICER-IN-CHARGE &amp; ${esc(sec)}, CENTRE SECRETARY [MOB NO-${esc(S.mobile)}]</div>
+      <div class="fbig" contenteditable="true">${esc(S.centre)} H.S. CENTRE [${esc(S.centreCode)}]</div>
+      <div class="fbig2" contenteditable="true">CENTRE NAME: ${esc(S.centre)} &amp;<br>CENTRE CODE: ${esc(S.centreCode)}</div>
+      <div class="fv" contenteditable="true"><i>VENUE-1</i> ${esc(v1.name)} (${esc(v1.code)})</div>
+      <div class="fv" contenteditable="true"><i>VENUE-2</i> ${esc(v2.name)} (${esc(v2.code)})</div>
+      <div class="fs po" contenteditable="true">${esc(S.fromPO)}</div>
     </div>
     <div class="seal"><span>With Official seal</span></div>
   </div>
@@ -4499,45 +4523,144 @@ function hsPrintSpeedPost(mode){
 </section>`;
   }).join('');
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Insured Speed Post Cover — ${esc(V.code)}</title><style>
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Insured Speed Post Cover — TALDANGRA 2206</title><style>
 @page{size:A4 portrait;margin:0}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff}
 .tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
 .tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
-.sheet{width:210mm;height:296mm;padding:7mm;display:flex;flex-direction:column;gap:3.2mm;overflow:hidden;page-break-after:always;break-after:page;background:#fff}
+.sheet{width:210mm;height:296mm;padding:7mm;display:flex;flex-direction:column;gap:3mm;overflow:hidden;page-break-after:always;break-after:page;background:#fff}
 .sheet:last-of-type{page-break-after:auto;break-after:auto}
-.band{background:linear-gradient(135deg,#1e3a8a,#0f172a);color:#fff;text-align:center;border-radius:4mm;padding:4mm 3mm;border-bottom:1.6mm solid #facc15}
-.band .a{font-size:38pt;font-weight:900;letter-spacing:1.5px;line-height:1.05}
-.band .b{font-size:22pt;font-weight:800;color:#facc15;margin-top:1.5mm}
+.band{background:linear-gradient(135deg,#1e3a8a,#0f172a);color:#fff;text-align:center;border-radius:4mm;padding:3.5mm 3mm;border-bottom:1.6mm solid #facc15}
+.band .a{font-size:36pt;font-weight:900;letter-spacing:1.5px;line-height:1.05}
+.band .b{font-size:21pt;font-weight:800;color:#facc15;margin-top:1.2mm}
 .ids{display:flex;gap:3mm}
-.ids div{flex:1;background:#b91c1c;color:#fff;border-radius:3mm;text-align:center;padding:2.2mm 2mm;font-size:12pt;font-weight:700;line-height:1.2}
-.ids b{font-size:23pt;letter-spacing:1px}
+.ids div{flex:1;background:#b91c1c;color:#fff;border-radius:3mm;text-align:center;padding:2mm;font-size:12pt;font-weight:700;line-height:1.2}
+.ids b{font-size:22pt;letter-spacing:1px}
 .exam{display:flex;gap:3mm}
 .dtbox{width:64mm;background:#047857;color:#fff;border-radius:3mm;text-align:center;padding:3mm 2mm;display:flex;flex-direction:column;justify-content:center}
 .dtbox small{font-size:10.5pt;font-weight:700;letter-spacing:.5px}
 .dtbox b{font-size:29pt;line-height:1.15}
 .dtbox em{font-style:normal;font-size:13pt;font-weight:800;color:#fde68a}
-.sbbox{flex:1;background:#ecfdf5;border:.9mm solid #047857;border-radius:3mm;padding:2.5mm 4mm;min-height:36mm}
+.sbbox{flex:1;background:#ecfdf5;border:.9mm solid #047857;border-radius:3mm;padding:2.5mm 4mm;min-height:34mm;display:flex;flex-direction:column}
 .sbbox small{font-size:11pt;font-weight:800;color:#047857}
-.stxt{font-weight:800;line-height:1.25;color:#052e16;margin-top:1mm}
-.to{flex:1;background:#fffbe6;border:1.6mm solid #1e3a8a;border-radius:4mm;padding:4mm 6mm 3mm 24mm;position:relative;display:flex;flex-direction:column;justify-content:center}
+.stxt{font-weight:900;line-height:1.2;color:#052e16;margin-top:1mm;letter-spacing:.5px;flex:1;display:flex;align-items:center}
+.to{flex:1;background:#fffbe6;border:1.6mm solid #1e3a8a;border-radius:4mm;padding:3mm 6mm 3mm 24mm;position:relative;display:flex;flex-direction:column;justify-content:center;min-height:0}
 .tag{position:absolute;left:0;top:0;bottom:0;width:18mm;background:#1e3a8a;color:#fff;border-radius:2mm 0 0 2mm;display:flex;align-items:center;justify-content:center;font-size:34pt;font-weight:900;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:4px}
-.tl{font-size:28pt;font-weight:800;line-height:1.28}
-.tl.first{font-size:31pt;font-weight:900;color:#7f1d1d}
-.pin{margin-top:2mm;align-self:flex-start;background:#1e3a8a;color:#fff;border-radius:2.5mm;padding:1mm 6mm;font-size:38pt;font-weight:900;letter-spacing:3px}
+.tl{font-size:27pt;font-weight:800;line-height:1.26}
+.tl.first{font-size:30pt;font-weight:900;color:#7f1d1d}
+.pin{margin-top:2mm;align-self:flex-start;background:#1e3a8a;color:#fff;border-radius:2.5mm;padding:1mm 6mm;font-size:36pt;font-weight:900;letter-spacing:3px}
 .lower{display:flex;gap:3mm}
-.from{flex:1.7;background:#eff6ff;border:.9mm solid #1e3a8a;border-radius:3mm;padding:2.5mm 4mm}
-.tag2{font-size:12pt;font-weight:900;color:#1e3a8a}
-.fl{font-size:13.5pt;font-weight:800;line-height:1.3}
-.fl.f1{font-size:16pt;color:#7f1d1d}
-.seal{flex:1;border:.9mm dashed #b91c1c;border-radius:3mm;display:flex;align-items:flex-end;justify-content:center;padding:0 2mm 2mm;min-height:36mm}
-.seal span{font-size:13pt;font-weight:900;color:#b91c1c}
-.foot{font-size:10.5pt;font-weight:800;text-align:right;color:#475569}
+.from{flex:1;background:#eff6ff;border:.9mm solid #1e3a8a;border-radius:3mm;padding:2.2mm 4mm;min-width:0}
+.fs{font-size:9.6pt;font-weight:700;line-height:1.3;color:#334155}
+.fs.po{font-size:11pt;color:#0f172a;margin-top:1mm}
+.fbig{font-size:20pt;white-space:nowrap;font-weight:900;color:#7f1d1d;line-height:1.15;margin-top:1.2mm}
+.fbig2{font-size:17.5pt;font-weight:900;color:#1e3a8a;line-height:1.2;margin:.8mm 0 1.4mm}
+.fv{font-size:10.4pt;font-weight:700;line-height:1.3;white-space:nowrap}
+.fv i{font-style:normal;background:#1e3a8a;color:#fff;border-radius:1.2mm;padding:0 1.6mm;margin-right:1.6mm;font-size:8.6pt;font-weight:900;letter-spacing:.4px}
+.seal{width:38mm;border:.9mm dashed #b91c1c;border-radius:3mm;display:flex;align-items:flex-end;justify-content:center;padding:0 2mm 2mm}
+.seal span{font-size:12pt;font-weight:900;color:#b91c1c;text-align:center}
+.foot{font-size:10pt;font-weight:800;text-align:right;color:#475569}
 [contenteditable]{outline:none}
 @media screen{body{background:#cbd5e1}.sheet{margin:10px auto;box-shadow:0 2px 10px rgba(0,0,0,.3)}[contenteditable]:hover{background:#fef9c3}[contenteditable]:focus{background:#dbeafe}}
 @media print{.no-print{display:none!important}}
 </style></head><body><div class="tb no-print"><span>Insured Speed Post covers — ${dates.length} page(s), A4 colour. <u>Click any line to edit</u>. Parcel limit 10 kg (8–10 kg): print one copy per parcel and fill PARCEL NO. Then</span><button onclick="window.print()">Print</button></div>${pages}</body></html>`);
+  w.document.close();
+}
+
+</script>
+<script id="extraPatch">
+/* ================================================================
+   (1) 4-letter subject codes in every generated form  -> hsSubjectCode4 (defined early)
+   (2) DEFAULT OUT-SCHOOL INVIGILATOR TEACHERS
+       Teacher names come from the Room-wise Invigilator Allotment roster
+       (school-wise, roster order). "Default split" now fills the teacher
+       names too, so the requisition sheet, On Duty Declarations and the
+       day-wise forms all pick them up. Typed names are never overwritten
+       except by "Use Default Split" / "Auto-Fill Default Feeder Split".
+   (3) FEE RECEIPT -> A4 LANDSCAPE, FULL PAGE, CLEAR CUT LINE
+   ================================================================ */
+function hsRdCode(s){ return hsSubjectCode4(s); }
+function hsRdSchoolKey(s){ return String(s||'').replace(/\s+/g,' ').trim().toUpperCase(); }
+function hsEntryRosterTeachers(school){
+  hsRdLoad(); const key=hsRdSchoolKey(school); if(!key) return [];
+  const seen=new Set(), out=[];
+  Object.values(hsRdDB).forEach(v=>(v.rows||[]).forEach(r=>{
+    if(r.n && hsRdSchoolKey(r.s)===key && !seen.has(r.n)){ seen.add(r.n); out.push(r.n); }
+  }));
+  return out;
+}
+function hsEntryFillTeachersRow(index,overwrite){
+  const rows=(hsReqLiveSystemState.entrySheet||{})[index]; if(!rows) return 0;
+  const used=new Set(); let n=0;
+  rows.forEach(row=>{
+    if(!row.school) return;
+    if(row.teachers && !overwrite){ String(row.teachers).split(/[,\n]/).forEach(x=>used.add(x.trim())); return; }
+    const cnt=parseInt(row.count,10)||0;
+    const names=hsEntryRosterTeachers(row.school).filter(x=>!used.has(x));
+    const pick=cnt?names.slice(0,cnt):names;
+    if(pick.length){ row.teachers=pick.join(', '); pick.forEach(x=>used.add(x)); n++; }
+  });
+  return n;
+}
+function hsEntryFillTeachersAll(overwrite,silent){
+  let n=0;
+  hsOfficialExamRoutineTimeline.forEach((x,i)=>{ n+=hsEntryFillTeachersRow(i,!!overwrite); });
+  hsReqLiveSystemState.teachersDefaulted2027=true;
+  localStorage.setItem("ExamRequisitionSystemDataCache_HS", JSON.stringify(hsReqLiveSystemState));
+  try{ hsEntrySheetRender(); hsReqSyncDisplayOutputs(); hsDutyPopulateTeacherSelect(); }catch(e){}
+  if(!silent) alert(n?('Teacher names added for '+n+' school row(s) from the Room-wise roster (existing typed names kept).'):'Nothing to add — every school row already has teacher names, or the roster has no names for those schools.');
+}
+const _hsEntryDefaultRowPrev=hsEntrySheetApplyDefaultForRow;
+hsEntrySheetApplyDefaultForRow=function(index){
+  _hsEntryDefaultRowPrev(index);
+  try{ hsEntryFillTeachersRow(index,true); }catch(e){}
+};
+cloudRunWhenReady(()=>{
+  try{
+    if(hsReqLiveSystemState && hsReqLiveSystemState.entrySheet && !hsReqLiveSystemState.teachersDefaulted2027){
+      const any=Object.values(hsReqLiveSystemState.entrySheet).some(rows=>(rows||[]).some(r=>r.school));
+      if(any) hsEntryFillTeachersAll(false,true);
+    }
+  }catch(e){}
+});
+
+/* ---------------- FEE RECEIPT: A4 LANDSCAPE, FULL PAGE ---------------- */
+function hsPrintReceiptLandscape(pfx){
+  const el=document.getElementById(pfx+'_printSheet'); if(!el) return window.print();
+  const acc=pfx==='mp'?['#7c2d12','#431407']:['#1e3a8a','#0f172a'];
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Fee Receipt — A4 Landscape</title><style>
+@page{size:A4 landscape;margin:0}
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+:root{--accent:${acc[0]};--accent-dark:${acc[1]}}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff}
+.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
+.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
+.page{width:297mm;height:209mm;padding:7mm}
+.print-sheet{display:grid;grid-template-columns:30% 14mm 1fr;height:100%;border:.7mm solid var(--accent);border-radius:3mm;background:#fff;overflow:hidden}
+.document-pane{padding:6mm 6mm;display:flex;flex-direction:column;min-width:0}
+.counterfoil-pane{zoom:1.28;padding:3mm 3mm}
+.main-pane{zoom:1.46;padding:3mm 3mm}
+.perforation-line{position:relative;border-left:.8mm dashed #0f172a;width:0;height:100%;margin:0 auto}
+.perforation-line::after{content:"\\2702  CUT HERE — DETACH COUNTERFOIL";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);white-space:nowrap;background:#fff;padding:0 5mm;font-size:8.5pt;font-weight:800;color:#334155;letter-spacing:1px}
+.doc-badge{font-size:7.3pt;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #cbd5e1;padding-bottom:3px}
+.center-title{font-weight:900;letter-spacing:.4px;text-transform:uppercase;margin:0;color:var(--accent)}
+.main-pane .center-title{font-size:16pt;text-align:center}
+.counterfoil-pane .center-title{font-size:12.5pt;text-align:left}
+.center-subtitle{color:#475569;margin:4px 0;font-weight:600}
+.main-pane .center-subtitle{font-size:8.3pt;text-align:center}
+.counterfoil-pane .center-subtitle{font-size:7.3pt;text-align:left}
+.receipt-meta{display:flex;justify-content:space-between;margin:12px 0;font-size:8.8pt;border-bottom:1px solid #cbd5e1;padding-bottom:5px}
+.receipt-title-badge{text-align:center;margin:12px 0}
+.receipt-title-badge>span{background:var(--accent);color:#fff;padding:4px 14px;font-weight:700;font-size:8.8pt;border-radius:3px}
+.receipt-body{font-size:9.3pt;line-height:1.6;text-align:justify;flex:1}
+.highlight-box{background:#f1f5f9;border:1px solid #cbd5e1;padding:10px;margin:12px 0;font-size:8.8pt;border-radius:4px}
+.breakup-line{margin:3px 0}
+.receipt-footer{display:flex;justify-content:space-between;margin-top:auto;font-size:8.8pt;padding-top:14px}
+@media screen{body{background:#cbd5e1}.page{margin:10px auto;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.3)}}
+@media print{.no-print{display:none!important}}
+</style></head><body><div class="tb no-print"><span>Fee Receipt — A4 Landscape, full page. Counterfoil (left) and receipt (right) are separated by the cut line.</span><button onclick="window.print()">Print</button></div><div class="page">${el.outerHTML.replace(/\sid="[^"]*"/g,'').replace('print-target','')}</div></body></html>`);
   w.document.close();
 }
 
