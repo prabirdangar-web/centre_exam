@@ -580,7 +580,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <div class="form-group"><label>Venue</label><select id="hs_rdVenue" onchange="hsSetVenue(this.value);hsRdRender()"><option value="TFHS">VENUE-1 [114071] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] — TALDANGRA GIRLS' HIGH SCHOOL [H.S.]</option></select></div>
         <div class="form-group"><label>Dates per printed sheet</label><select id="hs_rdPer"><option value="6" selected>6 dates (wide signature boxes)</option><option value="4">4 dates</option><option value="3">3 dates</option><option value="1">1 date</option><option value="11">All dates on one sheet (compact)</option></select></div>
         <div class="form-group"><label>Spare blank rows</label><label style="text-transform:none;font-weight:600;display:flex;gap:6px;align-items:center;height:31px;"><input type="checkbox" id="hs_rdSpare" style="width:auto;"> Print trailing blank rows too</label></div>
-        <div class="form-group"><label>School order (print)</label><label style="text-transform:none;font-weight:600;display:flex;gap:6px;align-items:center;height:31px;"><input type="checkbox" id="hs_rdSchoolOrder" style="width:auto;" checked> Schools: max &rarr; min invigilators</label></div>
+        <div class="form-group"><label>School order (print)</label><label style="text-transform:none;font-weight:600;display:flex;gap:6px;align-items:center;height:31px;"><input type="checkbox" id="hs_rdSchoolOrder" style="width:auto;" checked> School-wise (max &rarr; min), names A&rarr;Z</label></div>
         <div class="form-group"><label>Status</label><div id="hs_rdStatus" style="height:31px;display:flex;align-items:center;font-weight:600;padding:0 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f8fafc;font-size:9pt;">—</div></div>
       </div>
     </div>
@@ -2036,12 +2036,12 @@ function hsDutyOptionValue(school,name){ return school+'||'+name; }
 function hsDutyPopulateTeacherSelect(){
   const dd=document.getElementById('hs_dutyTeacherSelect'); if(!dd) return;
   const bySchool=hsCollectFeederSchoolDutyDays();
-  const schools=Object.keys(bySchool).sort();
+  const schools=Object.keys(bySchool).sort(hsDictCmp);
   const old=dd.value;
   let html='<option value="">Select Teacher</option>';
   schools.forEach(school=>{
     const teachers=bySchool[school];
-    const keys=Object.keys(teachers).sort((a,b)=>teachers[a].name.localeCompare(teachers[b].name));
+    const keys=Object.keys(teachers).sort((a,b)=>hsDictCmp(teachers[a].name,teachers[b].name));
     if(!keys.length) return;
     html+=`<optgroup label="${hsEscapeFormText(school)}">`;
     keys.forEach(k=>{
@@ -4160,6 +4160,37 @@ function hsRdLoad(){
   });
 }
 function hsRdPersist(){ try{localStorage.setItem(HS_RD_KEY,JSON.stringify(hsRdDB));}catch(e){} }
+/* ---------------- SCHOOL-WISE + DICTIONARY (A-Z) ORDER RULE ----------------
+   ONE rule for every generated invigilator / staff list (Room-wise Allotment print, Declaration,
+   Specimen Signature List, V.S. Data Sheet Invigilator 1 / 2, teacher names auto-filled into the
+   Invigilator Entry Sheet, teacher pick-lists):
+     1. SCHOOL-WISE  - schools from MOST to FEWEST named invigilators (equal counts keep roster
+                       order); staff with no school come after the schools.
+     2. DICTIONARY   - inside each school, teacher names A -> Z (case-blind, dots / extra spaces
+                       ignored, numbers in natural order). Blank names always come last.
+   Only the GENERATED output is ordered; the roster rows on screen and every typed R.N. stay as
+   entered. Rows are objects with n = teacher name, s = school name. */
+function hsDictKey(v){ return String(v==null?'':v).replace(/[.\s]+/g,' ').trim().toUpperCase(); }
+function hsDictCmp(a,b){
+  const A=hsDictKey(a), B=hsDictKey(b);
+  if(!A!==!B) return A?-1:1;
+  return A.localeCompare(B,'en',{sensitivity:'base',numeric:true}) || String(a==null?'':a).localeCompare(String(b==null?'':b));
+}
+function hsSchoolWiseSort(rows){
+  const sk=x=>String(x||'').trim().replace(/\s+/g,' ').toUpperCase();
+  const groups={}, order=[];
+  (rows||[]).forEach(r=>{
+    const k=sk(r.s);
+    if(!groups[k]){ groups[k]={k,count:0,first:order.length,rows:[]}; order.push(k); }
+    groups[k].rows.push(r); if(r.n) groups[k].count++;
+  });
+  const list=order.map(k=>groups[k]).sort((a,b)=>{
+    if(!a.k!==!b.k) return a.k?-1:1;            /* schoolless group always after real schools */
+    return (b.count-a.count)||(a.first-b.first);
+  });
+  list.forEach(g=>g.rows.sort((x,y)=>hsDictCmp(x.n,y.n)));
+  return [].concat(...list.map(g=>g.rows));
+}
 /* ---------------- OFF-DAY RULE ----------------
    A day on which NO student is allotted at a venue is an OFF DAY and is
    dropped from the Room-wise Invigilator Allotment chart (screen + print).
@@ -4210,11 +4241,12 @@ function hsRdNormRoom(x){
   const s=String(x==null?'':x).trim().toUpperCase(); const m=s.match(/\d+/);
   return {s, n:m?String(parseInt(m[0],10)):''};
 }
-/* Names of the invigilators whose R.N. for `date` matches `room` (chart order). */
+/* Names of the invigilators whose R.N. for `date` matches `room` (school-wise, then A-Z). */
 function hsRdInvigilators(venue,date,room){
   hsRdLoad();
   const R=hsRdNormRoom(room); if(!R.s) return [];
-  return (hsRdDB[venue]&&hsRdDB[venue].rows||[]).filter(r=>{
+  /* school-wise + A-Z order (same ranking as the printed chart), then keep the ones in this room */
+  return hsSchoolWiseSort((hsRdDB[venue]&&hsRdDB[venue].rows||[]).filter(r=>r.n||r.s)).filter(r=>{
     const v=r.rn&&r.rn[date]; if(!v||!r.n) return false;
     const V=hsRdNormRoom(v); return V.s===R.s || (V.n && V.n===R.n);
   }).map(r=>r.n);
@@ -4274,18 +4306,11 @@ function hsRdPrint(){
   const per=(perSel>=11)?Math.max(1,dates.length):Math.min(perSel,dates.length);
   let rows=hsRdDB[venue].rows.map((r,i)=>({n:r.n||'',s:r.s||'',rn:r.rn||{},sl:i+1}));
   if(orderBySchool){
-    /* Schools ordered from MOST to FEWEST participating invigilators; chart order is kept
-       inside each school and between schools with equal counts. Named invigilators without a
-       school follow the schools; empty spare rows (only if ticked) come last. Sl is re-numbered. */
-    const sk=x=>String(x||'').trim().replace(/\s+/g,' ').toUpperCase();
+    /* School-wise + dictionary rule (hsSchoolWiseSort): schools from MOST to FEWEST participating
+       invigilators, teacher names A-Z inside each school. Named invigilators without a school
+       follow the schools; empty spare rows (only if ticked) come last. Sl is re-numbered. */
     const used=rows.filter(r=>r.n||r.s), spare=rows.filter(r=>!(r.n||r.s));
-    const groups={}, order=[];
-    used.forEach(r=>{ const k=sk(r.s); if(!groups[k]){ groups[k]={k,count:0,first:order.length,rows:[]}; order.push(k); } groups[k].rows.push(r); if(r.n) groups[k].count++; });
-    const list=order.map(k=>groups[k]).sort((a,b)=>{
-      if(!a.k!==!b.k) return a.k?-1:1;            /* schoolless group always after real schools */
-      return (b.count-a.count)||(a.first-b.first);
-    });
-    rows=[].concat(...list.map(g=>g.rows), inclSpare?spare:[]);
+    rows=[].concat(hsSchoolWiseSort(used), inclSpare?spare:[]);
     rows.forEach((r,i)=>{ r.sl=i+1; });
   } else if(!inclSpare){ let last=-1; rows.forEach((r,i)=>{ if(r.n||r.s) last=i; }); rows=rows.slice(0,last+1); }
   const groups=[]; for(let i=0;i<dates.length;i+=per) groups.push(dates.slice(i,i+per));
@@ -4334,12 +4359,13 @@ const HS_DECL_SEL_KEY='hsDeclNames2027';
 let hsDeclSelDB={};
 function hsDeclSelLoad(){ try{hsDeclSelDB=JSON.parse(localStorage.getItem(HS_DECL_SEL_KEY)||'{}')||{};}catch(e){hsDeclSelDB={};} }
 function hsDeclSelPersist(){ try{localStorage.setItem(HS_DECL_SEL_KEY,JSON.stringify(hsDeclSelDB));}catch(e){} }
-function hsDeclAllNames(venue){
+function hsDeclAllRows(venue){
   hsRdLoad();
   const seen=new Set(), out=[];
-  (hsRdDB[venue]&&hsRdDB[venue].rows||[]).forEach(r=>{ if(r.n && !seen.has(r.n)){ seen.add(r.n); out.push(r.n); } });
-  return out;
+  (hsRdDB[venue]&&hsRdDB[venue].rows||[]).forEach(r=>{ if(r.n && !seen.has(r.n)){ seen.add(r.n); out.push(r); } });
+  return hsSchoolWiseSort(out);                /* school-wise, names A-Z */
 }
+function hsDeclAllNames(venue){ return hsDeclAllRows(venue).map(r=>r.n); }
 /* Rebuilds the Date dropdown + multiple-choice Names list to match the current venue/roster,
    keeping whichever date was already picked (defaulting to the first live date). */
 function hsDeclSelRenderPicker(){
@@ -4380,9 +4406,16 @@ function hsDeclSelOnDateChange(){
   hsDeclSelLoad();
   const dateSel=document.getElementById('hs_declDate'), namesSel=document.getElementById('hs_declNames'), status=document.getElementById('hs_declStatus');
   if(!dateSel || !namesSel) return;
-  const venue=hsGetVenue(), date=dateSel.value, esc=hsRdEsc, all=hsDeclAllNames(venue);
+  const venue=hsGetVenue(), date=dateSel.value, esc=hsRdEsc, allRows=hsDeclAllRows(venue), all=allRows.map(r=>r.n);
   const saved=(hsDeclSelDB[venue]||{})[date];
-  namesSel.innerHTML=all.map(n=>`<option value="${esc(n)}"${(!saved||saved.includes(n))?' selected':''}>${esc(n)}</option>`).join('');
+  let optHtml='', curKey=null;
+  allRows.forEach(r=>{
+    const key=String(r.s||'').replace(/\s+/g,' ').trim().toUpperCase();
+    if(key!==curKey){ if(curKey!==null) optHtml+='</optgroup>'; optHtml+=`<optgroup label="${esc(String(r.s||'').trim()||'(No school)')}">`; curKey=key; }
+    optHtml+=`<option value="${esc(r.n)}"${(!saved||saved.includes(r.n))?' selected':''}>${esc(r.n)}</option>`;
+  });
+  if(curKey!==null) optHtml+='</optgroup>';
+  namesSel.innerHTML=optHtml;                  /* school-wise groups, teacher names A-Z */
   if(status) status.textContent = saved ? (saved.length+' of '+all.length+' teacher(s) chosen for this date.') : ('Using all '+all.length+' teacher(s) (default) for this date.');
 }
 /* Saves the ticked names as this date's override. Selecting everything (or saving with nothing
@@ -4429,7 +4462,7 @@ function hsRdPrintDeclaration(){
   if(!dates.length) return alert('The selected date is not a live examination date at this venue.');
   const blanks=Math.max(0,Math.min(30,parseInt((document.getElementById('hs_declBlank')||{}).value,10)||0));
   const fitEl=document.getElementById('hs_declFit'); const fit=fitEl?fitEl.checked:true;
-  const rows=hsRdDB[venue].rows.filter(r=>r.n);
+  const rows=hsSchoolWiseSort(hsRdDB[venue].rows.filter(r=>r.n));   /* school-wise, names A-Z */
   const venueLine='VENUE NAME &amp; CODE: '+esc(V.name.replace('[H.S.]','(H.S.)'))+' ['+esc(V.code)+'] &nbsp;;&nbsp; CENTRE NAME &amp; CODE: TALDANGRA [2206]';
   /* Two A4 portrait sheets (10 mm margins): table body room ~ 436 mm after heading, header rows,
      signature line and a safety allowance for page-bottom gaps. */
@@ -4498,11 +4531,7 @@ function hsRdPrintSpecimenSignature(){
   hsRdLoad();
   const venue=hsGetVenue(), V=HS_VENUE_INFO[venue], esc=hsRdEsc;
   let rows=hsRdDB[venue].rows.filter(r=>r.n||r.s).map(r=>({n:r.n||'',s:r.s||''}));
-  const sk=x=>String(x||'').trim().replace(/\s+/g,' ').toUpperCase();
-  const groups={}, order=[];
-  rows.forEach(r=>{ const k=sk(r.s); if(!groups[k]){ groups[k]={k,count:0,first:order.length,rows:[]}; order.push(k); } groups[k].rows.push(r); if(r.n) groups[k].count++; });
-  const list=order.map(k=>groups[k]).sort((a,b)=>(!a.k!==!b.k)?(a.k?-1:1):((b.count-a.count)||(a.first-b.first)));
-  rows=[].concat(...list.map(g=>g.rows));
+  rows=hsSchoolWiseSort(rows);                 /* school-wise, teacher names A-Z inside each school */
   if(!rows.length) return alert('No invigilator name/school in the Room-wise Invigilator Allotment roster for this venue.');
   const extra=Math.max(0,Math.min(60,parseInt((document.getElementById('hs_spBlank')||{}).value,10)||0));
   const venueLine='CENTRE :- TALDANGRA &nbsp;;&nbsp; CENTRE CODE -2206 &nbsp;&nbsp;::&nbsp;&nbsp; VENUE: '+esc(V.name.replace('[H.S.]','(H.S.)'))+' &nbsp;::&nbsp; VENUE CODE: '+esc(V.code);
@@ -4810,7 +4839,7 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
    (1) 4-letter subject codes in every generated form  -> hsSubjectCode4 (defined early)
    (2) DEFAULT OUT-SCHOOL INVIGILATOR TEACHERS
        Teacher names come from the Room-wise Invigilator Allotment roster
-       (school-wise, roster order). "Default split" now fills the teacher
+       (school-wise; each school's names written in dictionary A-Z order). "Default split" now fills the teacher
        names too, so the requisition sheet, On Duty Declarations and the
        day-wise forms all pick them up. Typed names are never overwritten
        except by "Use Default Split" / "Auto-Fill Default Feeder Split".
@@ -4835,7 +4864,7 @@ function hsEntryFillTeachersRow(index,overwrite){
     const cnt=parseInt(row.count,10)||0;
     const names=hsEntryRosterTeachers(row.school).filter(x=>!used.has(x));
     const pick=cnt?names.slice(0,cnt):names;
-    if(pick.length){ row.teachers=pick.join(', '); pick.forEach(x=>used.add(x)); n++; }
+    if(pick.length){ row.teachers=pick.slice().sort(hsDictCmp).join(', '); pick.forEach(x=>used.add(x)); n++; }   /* dictionary A-Z */
   });
   return n;
 }
