@@ -569,6 +569,8 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       <div><h2>Room-wise Allotment of Invigilator — H.S. Examination, 2027 [Semester-III]</h2><p>Type each invigilator's Room No. (R.N.) against the examination date. The Venue Supervisor Data Sheet picks Invigilator 1 / 2 for every room from this chart automatically (still editable on the sheet).</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-success" onclick="hsRdPrint()">Print Allotment Chart (A4 Landscape)</button>
+        <button class="btn btn-success" onclick="hsRdPrintDeclaration()">Declaration (Compact A4 — one page/date)</button>
+        <button class="btn btn-success" onclick="hsRdPrintSpecimenSignature()">Specimen Signature List (Compact A4)</button>
         <button class="btn btn-primary" onclick="hsRdAddRow()">+ Add Row</button>
         <button class="btn btn-danger" onclick="hsRdClearRN()">Clear All R.N.</button>
       </div>
@@ -4297,6 +4299,112 @@ td.l{text-align:left;font-weight:600}td.rn{font-weight:700;font-size:8pt}
 @media screen{body{background:#e5e7eb}.grp{background:#fff;padding:6mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
 @media print{.no-print{display:none!important}}
 </style></head><body><div class="tb no-print"><span>Room-wise Allotment of Invigilator — A4 Landscape. Heading lines are editable; edit R.N. / names in the tool itself.</span><button onclick="window.print()">Print</button></div>${body}</body></html>`);
+  w.document.close();
+}
+
+/* ---------------- HS :: DECLARATION OF INVIGILATORS (compact A4, one page per date) ----------------
+   Sub-Invigilators of every feeder school, pooled together ("Sub Inv — All School, All dates").
+   One page is generated automatically for EACH live examination date at the venue (off days are
+   already dropped by hsRdDates) — the person does not pick dates one at a time. Every page repeats
+   its own full heading (council block + venue line + subject/date), and the invigilator table's own
+   header row repeats on every printed sheet if a date's roster overflows one page. Subject is shown
+   in 4-letter WBCHSE code form (hsRdCodes -> hsRdCode -> hsSubjectCode4), matching every other
+   generated form in this tool. */
+function hsRdPrintDeclaration(){
+  hsRdLoad();
+  const venue=hsGetVenue(), V=HS_VENUE_INFO[venue], esc=hsRdEsc;
+  const dates=hsRdDates(venue);
+  if(!dates.length) return alert('No examination date to print for this venue.');
+  const rows=hsRdDB[venue].rows;
+  const venueLine='VENUE NAME &amp; CODE: '+esc(V.name.replace('[H.S.]','(H.S.)'))+' ['+esc(V.code)+'] &nbsp;;&nbsp; CENTRE NAME &amp; CODE: TALDANGRA [2206]';
+  const body=dates.map((d,di)=>{
+    const onDuty=rows.filter(r=>r.n && r.rn && r.rn[d.date]);
+    const trs=onDuty.map((r,i)=>`<tr><td>${i+1}</td><td class="l">${esc(r.n)}</td><td>Invigilator</td><td class="l">${esc(r.s)}</td><td></td></tr>`).join('');
+    return `<div class="pg" style="${di?'page-break-before:always;break-before:page;':''}">
+      <div class="hd">
+        <img src="${HS_WBCHSE_LOGO_URL}" class="logo" alt="WBCHSE">
+        <div class="council">WEST BENGAL COUNCIL OF HIGHER SECONDARY EDUCATION</div>
+        <div class="addr">Vidyasagar Bhavan, 9/2 Block DJ, Sector-II, Salt Lake, Kolkata – 700 091</div>
+        <div class="ttl" contenteditable="true">DECLARATION OF THE INVIGILATORS OF H.S. EXAMINATION, 2027 [SEMESTER-III]</div>
+      </div>
+      <div class="vl" contenteditable="true">${venueLine}</div>
+      <p class="dtxt">It is hereby declared that mobile or such electronic devices are not with me in this H.S.-2027 [Semester-III] Examination Centre in compliance with the existing rules of W.B.C.H.S.E.</p>
+      <div class="meta"><span>SUBJECT: <b>${esc(hsRdCodes(venue,d))}</b></span><span>Date: <b>${esc(hsRdShortDate(d.date))} — ${esc(d.day)}</b></span></div>
+      <table><thead><tr><th style="width:8%">Sl</th><th style="width:26%">Name of the Invigilator</th><th style="width:16%">Designation</th><th style="width:26%">Name of the School</th><th>Signature of the Invigilator with date</th></tr></thead>
+      <tbody>${trs || '<tr><td colspan="5">No invigilator R.N. set for this date yet.</td></tr>'}</tbody></table>
+      <div class="sg">Signature of Venue Supervisor with Date &amp; Seal</div>
+    </div>`;
+  }).join('');
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Declaration of Invigilators — ${esc(V.code)}</title><style>
+@page{size:A4;margin:10mm}*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff}
+.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
+.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
+.pg{width:100%}
+.hd{text-align:center;border-bottom:2px solid #111;padding-bottom:5px;margin-bottom:7px}
+.logo{width:56px;height:56px;object-fit:contain;display:block;margin:0 auto 3px}
+.council{font-weight:700;font-size:13.5pt;line-height:1.2}
+.addr{font-size:8.5pt;line-height:1.25}
+.ttl{font-weight:700;font-size:10.5pt;margin-top:3px;text-decoration:underline}
+.vl{font-size:9pt;font-weight:700;text-align:center;margin-bottom:6px}
+.dtxt{font-size:8.7pt;text-align:justify;margin:0 0 7px}
+.meta{display:flex;justify-content:space-between;font-size:9pt;font-weight:700;margin-bottom:6px}
+table{width:100%;border-collapse:collapse}
+th,td{border:.25mm solid #333;padding:1mm 1.5mm;font-size:7.8pt;text-align:center;vertical-align:middle;line-height:1.15}
+th{font-weight:700;background:#f1f5f9}
+td.l{text-align:left}
+thead{display:table-header-group}
+tbody tr{height:6.4mm;page-break-inside:avoid;break-inside:avoid}
+.sg{text-align:right;font-size:8pt;font-weight:700;margin:4mm 2mm 0}
+[contenteditable]{outline:none}
+@media screen{body{background:#e5e7eb}.pg{background:#fff;padding:10mm;margin:10px auto;max-width:210mm;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
+@media print{.no-print{display:none!important}}
+</style></head><body><div class="tb no-print"><span>Declaration of Invigilators — Compact A4. One page per examination date, generated automatically; subject shown as code.</span><button onclick="window.print()">Print</button></div>${body}</body></html>`);
+  w.document.close();
+}
+
+/* ---------------- HS :: SPECIMEN SIGNATURE LIST OF INVIGILATORS (compact A4) ----------------
+   Single pooled roster of every sub-invigilator from every feeder school at the venue ("Sub Inv —
+   All School, All") — not date-specific, so it is generated once. The table header row repeats
+   automatically on every printed page (thead:table-header-group) if the roster overflows one sheet,
+   so the heading is never missing on later pages either. */
+function hsRdPrintSpecimenSignature(){
+  hsRdLoad();
+  const venue=hsGetVenue(), V=HS_VENUE_INFO[venue], esc=hsRdEsc;
+  let rows=hsRdDB[venue].rows.filter(r=>r.n||r.s).map(r=>({n:r.n||'',s:r.s||''}));
+  const sk=x=>String(x||'').trim().replace(/\s+/g,' ').toUpperCase();
+  const groups={}, order=[];
+  rows.forEach(r=>{ const k=sk(r.s); if(!groups[k]){ groups[k]={k,count:0,first:order.length,rows:[]}; order.push(k); } groups[k].rows.push(r); if(r.n) groups[k].count++; });
+  const list=order.map(k=>groups[k]).sort((a,b)=>(!a.k!==!b.k)?(a.k?-1:1):((b.count-a.count)||(a.first-b.first)));
+  rows=[].concat(...list.map(g=>g.rows));
+  if(!rows.length) return alert('No invigilator name/school in the Room-wise Invigilator Allotment roster for this venue.');
+  const venueLine='CENTRE :- TALDANGRA &nbsp;;&nbsp; CENTRE CODE -2206 &nbsp;&nbsp;::&nbsp;&nbsp; VENUE: '+esc(V.name.replace('[H.S.]','(H.S.)'))+' &nbsp;::&nbsp; VENUE CODE: '+esc(V.code);
+  const trs=rows.map((r,i)=>`<tr><td>${i+1}</td><td class="l">${esc(r.n)}</td><td class="l">${esc(r.s)}</td><td></td></tr>`).join('');
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Specimen Signature List — ${esc(V.code)}</title><style>
+@page{size:A4;margin:10mm}*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff}
+.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
+.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
+.pg{width:100%}
+.hd{text-align:center;border-bottom:2px solid #111;padding-bottom:5px;margin-bottom:7px}
+.ttl{font-weight:700;font-size:11.5pt;text-decoration:underline}
+.vl{font-size:9pt;font-weight:700;text-align:center;margin:4px 0 8px}
+table{width:100%;border-collapse:collapse}
+th,td{border:.25mm solid #333;padding:.9mm 1.5mm;font-size:7.8pt;text-align:center;vertical-align:middle;line-height:1.15}
+th{font-weight:700;background:#f1f5f9}
+td.l{text-align:left}
+thead{display:table-header-group}
+tbody tr{height:6mm;page-break-inside:avoid;break-inside:avoid}
+[contenteditable]{outline:none}
+@media screen{body{background:#e5e7eb}.pg{background:#fff;padding:10mm;margin:10px auto;max-width:210mm;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
+@media print{.no-print{display:none!important}}
+</style></head><body><div class="tb no-print"><span>Specimen Signature List of Invigilators — Compact A4. Column headings repeat on every printed page.</span><button onclick="window.print()">Print</button></div>
+<div class="pg"><div class="hd"><div class="ttl" contenteditable="true">INVIGILATOR'S LIST — H.S. EXAMINATION, 2027 [SEMESTER-III]</div></div>
+<div class="vl" contenteditable="true">${venueLine}</div>
+<table><thead><tr><th style="width:8%">Sl.No</th><th style="width:32%">Name of the Invigilator(s)</th><th style="width:36%">Invigilator's School Name</th><th>Specimen Signature</th></tr></thead>
+<tbody>${trs}</tbody></table></div></body></html>`);
   w.document.close();
 }
 
