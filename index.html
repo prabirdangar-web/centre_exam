@@ -307,6 +307,48 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
   table.schedule-table, .letter-footer{ page-break-inside:avoid; }
 }
 </style>
+<style id="dualMemoA4Patch">
+/* ======= DUAL A4 MEMO (Council/Board copy + Office copy) — ALWAYS ONE A4 PAGE, NEVER TWO =======
+   Applies only while a dual memo is being printed (body.print-dual is switched on by the
+   beforeprint handler at the end of this file when a Progress Ledger panel is on screen).
+   Printable area = A4 minus the 10 mm @page margin = 190 x 277 mm. The memo page is fixed at
+   270 mm tall (7 mm safety) and split into two equal halves; the whole set can never spill over. */
+@media print{
+  body.print-dual{ background:#fff !important; margin:0 !important; padding:0 !important; }
+  body.print-dual .board-pane{ padding:0 !important; margin:0 !important; max-width:none !important; }
+  body.print-dual .a4-dual-page{
+    display:flex !important; flex-direction:column;
+    width:100% !important; max-width:none !important;
+    height:270mm !important; min-height:0 !important; max-height:270mm !important;
+    margin:0 !important; padding:0 !important; border:0 !important; box-shadow:none !important;
+    box-sizing:border-box; overflow:hidden;
+    break-before:avoid; break-after:avoid; break-inside:avoid;
+    page-break-before:avoid; page-break-after:avoid; page-break-inside:avoid;
+  }
+  body.print-dual .a4-dual-page .print-memo-block{
+    flex:1 1 0; height:auto !important; min-height:0 !important; overflow:hidden; padding:0;
+  }
+  body.print-dual .a4-dual-page .cut-divider{
+    flex:none; height:auto !important; margin:0 !important; padding:1.5mm 0 !important;
+    line-height:1.2; font-size:8pt; letter-spacing:1.5px;
+  }
+  /* compact memo so each copy sits comfortably inside its half-page */
+  body.print-dual .a4-dual-page .memo-header{ padding-bottom:4px !important; margin-bottom:6px !important; background:none !important; }
+  body.print-dual .a4-dual-page .memo-header h2{
+    font-size:16pt !important; line-height:1.15; white-space:nowrap; letter-spacing:.2px;
+    background:none !important; -webkit-text-fill-color:#000 !important; color:#000 !important; text-shadow:none !important;
+  }
+  body.print-dual .a4-dual-page .memo-header h3{ font-size:11pt; margin-top:2px; }
+  body.print-dual .a4-dual-page .memo-header p{ font-size:8.6pt; margin-top:2px; }
+  body.print-dual .a4-dual-page table.memo-data-table{ font-size:9.3pt; margin-top:6px; }
+  body.print-dual .a4-dual-page table.memo-data-table th,
+  body.print-dual .a4-dual-page table.memo-data-table td{ padding:4px 4px; }
+  body.print-dual .a4-dual-page .memo-summary-box{ margin-top:6px; padding:5px; font-size:9pt; }
+  body.print-dual .a4-dual-page .memo-footer{ margin-top:11mm; font-size:9.5pt; }
+  /* copy label sits on its own line above the heading instead of floating over it */
+  body.print-dual .a4-dual-page .badge-type{ float:none !important; display:block; width:max-content; margin:0 0 3px auto; font-size:7.5pt; }
+}
+</style>
 <style id="rdVsPatchCss">
 /* Room-wise Invigilator Allotment panel */
 .rd-scroll{overflow:auto;max-height:70vh;border:1px solid #cbd5e1;border-radius:8px}
@@ -1124,6 +1166,38 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
 </div>
 
 <script>
+/* ---------------- SCHOOL-WISE + DICTIONARY (A-Z) ORDER RULE ----------------
+   ONE rule for every generated invigilator / staff list (Room-wise Allotment print, Declaration,
+   Specimen Signature List, V.S. Data Sheet Invigilator 1 / 2, teacher names auto-filled into the
+   Invigilator Entry Sheet, teacher pick-lists):
+     1. SCHOOL-WISE  - schools from MOST to FEWEST named invigilators (equal counts keep roster
+                       order); staff with no school come after the schools.
+     2. DICTIONARY   - inside each school, teacher names A -> Z (case-blind, dots / extra spaces
+                       ignored, numbers in natural order). Blank names always come last.
+   Only the GENERATED output is ordered; the roster rows on screen and every typed R.N. stay as
+   entered. Rows are objects with n = teacher name, s = school name. */
+function hsDictKey(v){ return String(v==null?'':v).replace(/[.\s]+/g,' ').trim().toUpperCase(); }
+function hsDictCmp(a,b){
+  const A=hsDictKey(a), B=hsDictKey(b);
+  if(!A!==!B) return A?-1:1;
+  return A.localeCompare(B,'en',{sensitivity:'base',numeric:true}) || String(a==null?'':a).localeCompare(String(b==null?'':b));
+}
+function hsSchoolWiseSort(rows){
+  const sk=x=>String(x||'').trim().replace(/\s+/g,' ').toUpperCase();
+  const groups={}, order=[];
+  (rows||[]).forEach(r=>{
+    const k=sk(r.s);
+    if(!groups[k]){ groups[k]={k,count:0,first:order.length,rows:[]}; order.push(k); }
+    groups[k].rows.push(r); if(r.n) groups[k].count++;
+  });
+  const list=order.map(k=>groups[k]).sort((a,b)=>{
+    if(!a.k!==!b.k) return a.k?-1:1;            /* schoolless group always after real schools */
+    return (b.count-a.count)||(a.first-b.first);
+  });
+  list.forEach(g=>g.rows.sort((x,y)=>hsDictCmp(x.n,y.n)));
+  return [].concat(...list.map(g=>g.rows));
+}
+
 
 /* ================================================================
    CLOUD SYNC ENGINE — Firebase Firestore backup + multi-device sync
@@ -4160,37 +4234,6 @@ function hsRdLoad(){
   });
 }
 function hsRdPersist(){ try{localStorage.setItem(HS_RD_KEY,JSON.stringify(hsRdDB));}catch(e){} }
-/* ---------------- SCHOOL-WISE + DICTIONARY (A-Z) ORDER RULE ----------------
-   ONE rule for every generated invigilator / staff list (Room-wise Allotment print, Declaration,
-   Specimen Signature List, V.S. Data Sheet Invigilator 1 / 2, teacher names auto-filled into the
-   Invigilator Entry Sheet, teacher pick-lists):
-     1. SCHOOL-WISE  - schools from MOST to FEWEST named invigilators (equal counts keep roster
-                       order); staff with no school come after the schools.
-     2. DICTIONARY   - inside each school, teacher names A -> Z (case-blind, dots / extra spaces
-                       ignored, numbers in natural order). Blank names always come last.
-   Only the GENERATED output is ordered; the roster rows on screen and every typed R.N. stay as
-   entered. Rows are objects with n = teacher name, s = school name. */
-function hsDictKey(v){ return String(v==null?'':v).replace(/[.\s]+/g,' ').trim().toUpperCase(); }
-function hsDictCmp(a,b){
-  const A=hsDictKey(a), B=hsDictKey(b);
-  if(!A!==!B) return A?-1:1;
-  return A.localeCompare(B,'en',{sensitivity:'base',numeric:true}) || String(a==null?'':a).localeCompare(String(b==null?'':b));
-}
-function hsSchoolWiseSort(rows){
-  const sk=x=>String(x||'').trim().replace(/\s+/g,' ').toUpperCase();
-  const groups={}, order=[];
-  (rows||[]).forEach(r=>{
-    const k=sk(r.s);
-    if(!groups[k]){ groups[k]={k,count:0,first:order.length,rows:[]}; order.push(k); }
-    groups[k].rows.push(r); if(r.n) groups[k].count++;
-  });
-  const list=order.map(k=>groups[k]).sort((a,b)=>{
-    if(!a.k!==!b.k) return a.k?-1:1;            /* schoolless group always after real schools */
-    return (b.count-a.count)||(a.first-b.first);
-  });
-  list.forEach(g=>g.rows.sort((x,y)=>hsDictCmp(x.n,y.n)));
-  return [].concat(...list.map(g=>g.rows));
-}
 /* ---------------- OFF-DAY RULE ----------------
    A day on which NO student is allotted at a venue is an OFF DAY and is
    dropped from the Room-wise Invigilator Allotment chart (screen + print).
@@ -4929,6 +4972,20 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
   w.document.close();
 }
 
+</script>
+<script id="dualMemoPrintGuard">
+/* Dual A4 memo: switch the one-page print layout (dualMemoA4Patch) on only while a Progress Ledger
+   panel is on screen, so every other print (requisition letter, fee receipt ...) is untouched. */
+(function(){
+  function ledgerOnScreen(){
+    return Array.from(document.querySelectorAll('.a4-dual-page')).some(function(e){
+      var p=e.closest('.tool-panel');
+      return p && p.classList.contains('active') && p.offsetParent!==null;
+    });
+  }
+  window.addEventListener('beforeprint',function(){ if(ledgerOnScreen()) document.body.classList.add('print-dual'); });
+  window.addEventListener('afterprint',function(){ document.body.classList.remove('print-dual'); });
+})();
 </script>
 </body>
 </html>
