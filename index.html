@@ -834,13 +834,28 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
     <div class="table-container no-print">
       <div class="section-title">Invigilator Entry Sheet — Actual Allocation from Feeder Schools</div>
       <div style="margin:-4px 0 12px;font-size:8.5pt;color:#475569;">
-        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above. Once saved here, each school's requisition letter shows only that school's own count for each date. Optionally, type the actual teacher name(s) sent by that school (comma-separated) in the field below the count — this is extra detail only, it does not change the Count or the allocation totals, but it does drive the School-wise / Teacher-wise On Duty Declaration further down this tool.
+        For each date that requires invigilators from other schools, pick the feeder schools sending teachers and enter how many each is sending. Use "+ Add School" to bring in as many feeder schools as needed for that date. The total is checked against the required count from the schedule grid above. Once saved here, each school's requisition letter shows only that school's own count for each date. Under each school, <b>tick the teachers who are serving on that date</b> (the school's roster teachers are listed as checkboxes; you can also type names comma-separated in the field below the count). Ticking is extra detail only — it does not change the Count or the allocation totals — but it drives the <b>Participation Certificates</b> (school-wise and teacher-wise) just below the sheet and the School-wise / Teacher-wise On Duty Declaration further down this tool.
       </div>
       <div style="margin:-4px 0 12px;">
         <button type="button" class="btn btn-primary no-print" onclick="hsEntrySheetApplyDefaultAll()">Auto-Fill Default Feeder Split (All Dates)</button>
         <button type="button" class="btn btn-success no-print" onclick="hsEntryFillTeachersAll(false)" title="Fills only the EMPTY teacher-name boxes, school-wise, from the Room-wise Invigilator Allotment roster">Add Teacher Names from Roster (All Dates)</button>
       </div>
       <div id="hs_entrySheetContainer"></div>
+      <div class="no-print" style="margin-top:14px;padding:12px 14px;border:1px solid var(--border-color);border-radius:8px;background:#f8fafc;">
+        <div style="font-weight:700;margin-bottom:4px;">Participation Certificates — generated from the ticked teachers above</div>
+        <div style="font-size:8.5pt;color:#475569;margin-bottom:10px;">Only teachers whose box is ticked are counted, across every date. <b>School-wise:</b> one certificate per feeder school, addressed to its Head of Institution, listing each ticked teacher with the dates served. <b>Teacher-wise:</b> one personal certificate per teacher listing the dates, days and subjects served. Each can be printed singly or as a batch (one A4 page per certificate). The lists below refresh as you tick.</div>
+        <div class="control-deck" style="margin:0 0 10px;grid-template-columns:3fr 1.3fr 1.3fr;">
+          <div class="form-group"><label>School-wise certificate</label><select id="hs_entCertSchool"><option value="">Select School</option></select></div>
+          <div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-success" style="width:100%;" onclick="hsEntryPrintSchoolCert(false)">Generate for This School</button></div>
+          <div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-primary" style="width:100%;" onclick="hsEntryPrintSchoolCert(true)">All Schools (1 page each)</button></div>
+        </div>
+        <div class="control-deck" style="margin:0 0 8px;grid-template-columns:3fr 1.3fr 1.3fr;">
+          <div class="form-group"><label>Teacher-wise certificate</label><select id="hs_entCertTeacher"><option value="">Select Teacher</option></select></div>
+          <div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-success" style="width:100%;" onclick="hsEntryPrintTeacherCert(false)">Generate for This Teacher</button></div>
+          <div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-primary" style="width:100%;" onclick="hsEntryPrintTeacherCert(true)">All Teachers (1 page each)</button></div>
+        </div>
+        <div id="hs_entCertInfo" style="font-size:8.5pt;color:#475569;"></div>
+      </div>
     </div>
 
     <div id="requisitionLetterA4_hs" class="print-target">
@@ -2149,6 +2164,7 @@ function hsDutyPopulateTeacherSelect(){
   dd.innerHTML=html;
   const match=Array.from(dd.options).some(o=>o.value===old);
   if(old && match) dd.value=old;
+  try{ hsEntryCertRefresh(); }catch(e){} // keep the Entry Sheet's Participation Certificate pickers in sync
 }
 function hsPrintTeacherDutyDeclaration(){
   const dd=document.getElementById('hs_dutyTeacherSelect');
@@ -3239,11 +3255,11 @@ function hsEntrySheetRender(){
       rowsHtml += `<div style="border:1px dashed #cbd5e1;border-radius:6px;padding:6px;margin-bottom:6px;">
         <div style="display:flex;gap:8px;align-items:center;">
           <select style="flex:1;" onchange="hsEntrySheetUpdateRow(${i},${r},'school',this.value)">${hsEntrySheetSchoolOptionsHtml(row.school)}</select>
-          <input type="number" min="0" placeholder="Count" value="${row.count}" style="width:90px;" oninput="hsEntrySheetUpdateRow(${i},${r},'count',this.value)">
+          <input type="number" min="0" placeholder="Count" id="hs_entCnt_${i}_${r}" value="${row.count}" style="width:90px;" oninput="hsEntrySheetUpdateRow(${i},${r},'count',this.value)">
           <button type="button" class="btn btn-danger no-print" style="padding:4px 9px;font-size:9pt;${canRemove?'':'visibility:hidden;'}" onclick="hsEntrySheetRemoveRow(${i},${r})" title="Remove this school">&times;</button>
         </div>
-        <input type="text" placeholder="Teacher name(s) sent by this school — comma-separated (optional detail; does not affect the Count above)" value="${row.teachers?row.teachers.replace(/"/g,'&quot;'):''}" style="width:100%;margin-top:5px;font-size:9pt;" oninput="hsEntrySheetUpdateRow(${i},${r},'teachers',this.value)">
-        ${names.length?`<div style="font-size:8pt;color:#475569;margin-top:3px;">${names.length} name${names.length===1?'':'s'} entered: ${names.map(n=>hsEscapeFormText(n)).join(', ')}</div>`:''}
+        <input type="text" id="hs_entTxt_${i}_${r}" placeholder="Teacher name(s) sent by this school — tick below or type comma-separated (does not affect the Count above)" value="${row.teachers?row.teachers.replace(/"/g,'&quot;'):''}" style="width:100%;margin-top:5px;font-size:9pt;" oninput="hsEntrySheetUpdateRow(${i},${r},'teachers',this.value)">
+        <div id="hs_entTick_${i}_${r}">${hsEntryTickHtml(i,r)}</div>
       </div>`;
     });
     const total = hsEntrySheetRowTotal(i);
@@ -3276,6 +3292,7 @@ function hsEntrySheetUpdateRow(index, rowIdx, field, value){
   }
   hsReqSyncDisplayOutputs(); // keep the printable letter's per-school count in sync as data is saved
   try{ hsDutyPopulateTeacherSelect(); }catch(e){} // keep On Duty Declaration's school/teacher list in sync
+  try{ hsEntryTickRefreshDate(index); }catch(e){} // redraw this date's teacher tick-boxes (school change, count change, ticks)
 }
 function hsEntrySheetAddRow(index){
   if(!hsReqLiveSystemState.entrySheet[index]) hsReqLiveSystemState.entrySheet[index] = [];
@@ -3293,6 +3310,191 @@ function hsEntrySheetRemoveRow(index, rowIdx){
   hsEntrySheetRender();
   hsReqSyncDisplayOutputs();
   try{ hsDutyPopulateTeacherSelect(); }catch(e){}
+}
+
+/* ----------------------------------------------------------------
+   HS :: TEACHER TICK-BOXES (Invigilator Entry Sheet)
+   Under every school row, the school's teachers (from the Room-wise
+   Invigilator Allotment roster) are listed with a checkbox. A ticked box
+   means "this teacher is serving on this date". Ticking writes the name
+   into the same comma-separated "Teacher name(s)" field, so everything
+   that already reads that field (requisition letters, On Duty Declaration,
+   Participation Certificates) stays in sync with no separate data store.
+   The Count field is never changed automatically — a mismatch is only
+   flagged, with a one-click "Set Count" button.
+   ---------------------------------------------------------------- */
+function hsEntryAttr(v){
+  return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function hsEntryTickOptions(i,r){
+  const rows=(hsReqLiveSystemState.entrySheet||{})[i]||[];
+  const row=rows[r]||{};
+  let roster=[];
+  try{ if(row.school && typeof hsEntryRosterTeachers==='function') roster=hsEntryRosterTeachers(row.school); }catch(e){}
+  // a teacher already ticked under another school row of the same date is not offered again
+  const usedElsewhere=new Set();
+  rows.forEach((x,k)=>{ if(k!==r) hsEntrySheetTeacherNames(x).forEach(n=>usedElsewhere.add(hsDictKey(n))); });
+  const map=new Map();
+  roster.forEach(n=>{ const k=hsDictKey(n); if(k && !usedElsewhere.has(k) && !map.has(k)) map.set(k,{name:n,ticked:false}); });
+  // typed names that are not in the roster stay visible (and ticked) so nothing typed is ever lost
+  hsEntrySheetTeacherNames(row).forEach(n=>{
+    const k=hsDictKey(n); if(!k) return;
+    if(map.has(k)) map.get(k).ticked=true; else map.set(k,{name:n,ticked:true});
+  });
+  return Array.from(map.values()).sort((a,b)=>hsDictCmp(a.name,b.name));
+}
+function hsEntryTickHtml(i,r){
+  const row=((hsReqLiveSystemState.entrySheet||{})[i]||[])[r]||{};
+  if(!row.school) return `<div style="font-size:8pt;color:#64748b;margin-top:5px;">Select a school to tick the teachers serving on this date.</div>`;
+  const opts=hsEntryTickOptions(i,r);
+  const ticked=opts.filter(o=>o.ticked).length;
+  const cnt=parseInt(row.count,10)||0;
+  let note='';
+  if(ticked && ticked===cnt) note=`<span style="color:var(--success);font-weight:600;">&#10003; matches Count</span>`;
+  else if(ticked!==cnt) note=`<span style="color:#b45309;font-weight:600;">Count is ${cnt}</span>`
+    + (ticked?` <button type="button" class="btn btn-primary no-print" style="padding:1px 8px;font-size:8pt;" onclick="hsEntryTickSetCount(${i},${r})">Set Count = ${ticked}</button>`:'');
+  const clearBtn=ticked?` <button type="button" class="btn btn-danger no-print" style="padding:1px 8px;font-size:8pt;" onclick="hsEntryTickClear(${i},${r})">Clear ticks</button>`:'';
+  const head=`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:8.5pt;margin:6px 0 4px;"><b>Teachers serving on this date</b><span style="color:#475569;">${ticked} ticked</span>${note}${clearBtn}</div>`;
+  if(!opts.length) return head+`<div style="font-size:8pt;color:#64748b;">No roster teachers found for this school &mdash; type names in the box above.</div>`;
+  const cells=opts.map(o=>`<label style="display:flex;align-items:center;gap:6px;font-size:9pt;padding:2px 4px;border-radius:4px;cursor:pointer;${o.ticked?'background:#dcfce7;font-weight:600;':''}"><input type="checkbox" style="width:auto;margin:0;" data-name="${hsEntryAttr(o.name)}" ${o.ticked?'checked':''} onchange="hsEntryTickToggle(this,${i},${r})"><span>${hsEscapeFormText(o.name)}</span></label>`).join('');
+  return head+`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1px 10px;">${cells}</div>`;
+}
+function hsEntryTickRefreshDate(i){
+  const rows=(hsReqLiveSystemState.entrySheet||{})[i]||[];
+  rows.forEach((_,r)=>{ const el=document.getElementById(`hs_entTick_${i}_${r}`); if(el) el.innerHTML=hsEntryTickHtml(i,r); });
+}
+function hsEntryTickCommit(i,r,names){
+  const joined=names.slice().sort(hsDictCmp).join(', ');
+  const inp=document.getElementById(`hs_entTxt_${i}_${r}`); if(inp) inp.value=joined;
+  hsEntrySheetUpdateRow(i,r,'teachers',joined); // saves, syncs letters/declarations, redraws the tick lists
+}
+function hsEntryTickToggle(cb,i,r){
+  const name=cb.dataset.name, key=hsDictKey(name);
+  const row=hsReqLiveSystemState.entrySheet[i][r];
+  const names=hsEntrySheetTeacherNames(row).filter(n=>hsDictKey(n)!==key);
+  if(cb.checked) names.push(name);
+  hsEntryTickCommit(i,r,names);
+}
+function hsEntryTickClear(i,r){ hsEntryTickCommit(i,r,[]); }
+function hsEntryTickSetCount(i,r){
+  const n=hsEntrySheetTeacherNames(hsReqLiveSystemState.entrySheet[i][r]).length; if(!n) return;
+  const inp=document.getElementById(`hs_entCnt_${i}_${r}`); if(inp) inp.value=String(n);
+  hsEntrySheetUpdateRow(i,r,'count',String(n)); // also refreshes the allocation total
+}
+
+/* ----------------------------------------------------------------
+   HS :: PARTICIPATION CERTIFICATES FROM THE TICKED TEACHERS
+   School-wise  -> one certificate per feeder school, addressed to its
+                   Head of Institution, every ticked teacher + dates served.
+   Teacher-wise -> one personal certificate per teacher, dates served.
+   Both can be printed singly or as a batch (one page per certificate).
+   Data comes from hsCollectFeederSchoolDutyDays(), i.e. the ticked names.
+   ---------------------------------------------------------------- */
+function hsEntryCertRefresh(){
+  const sSel=document.getElementById('hs_entCertSchool'), tSel=document.getElementById('hs_entCertTeacher'), info=document.getElementById('hs_entCertInfo');
+  if(!sSel || !tSel) return;
+  const esc=hsEscapeFormText;
+  const by=hsCollectFeederSchoolDutyDays();
+  const schools=Object.keys(by).filter(s=>Object.keys(by[s]).length).sort(hsDictCmp);
+  const oldS=sSel.value, oldT=tSel.value;
+  let sh='<option value="">Select School</option>', th='<option value="">Select Teacher</option>', total=0;
+  schools.forEach(s=>{
+    const keys=Object.keys(by[s]).sort((a,b)=>hsDictCmp(by[s][a].name,by[s][b].name));
+    total+=keys.length;
+    sh+=`<option value="${hsEntryAttr(s)}">${esc(s)} (${keys.length} teacher${keys.length===1?'':'s'})</option>`;
+    th+=`<optgroup label="${hsEntryAttr(s)}">`+keys.map(k=>{
+      const t=by[s][k];
+      return `<option value="${hsEntryAttr(hsDutyOptionValue(s,t.name))}">${esc(t.name)} &mdash; ${t.days.length} day${t.days.length===1?'':'s'}</option>`;
+    }).join('')+'</optgroup>';
+  });
+  sSel.innerHTML=sh; tSel.innerHTML=th;
+  if(oldS && Array.from(sSel.options).some(o=>o.value===oldS)) sSel.value=oldS;
+  if(oldT && Array.from(tSel.options).some(o=>o.value===oldT)) tSel.value=oldT;
+  if(info) info.textContent = total
+    ? `${total} ticked teacher${total===1?'':'s'} across ${schools.length} school${schools.length===1?'':'s'} — ready to generate.`
+    : 'No teachers are ticked yet. Tick teachers under the dates above, then choose a school or teacher here.';
+}
+function hsCertFooterHtml(){
+  const year=hsReqLiveSystemState.year||'2027';
+  return `<div class="letter-footer"><div class="sig-block">
+      <div class="thanks">With Thanks</div>
+      <div>______________________________</div>
+      <div class="role">Centre Secretary / Centre-in-Charge</div>
+      <div class="addr">Taldangra Higher Secondary Centre- ${year} [SEM-III]<br>Centre Code: 2206 &amp; Venue Code: ${hsCertVenueInfo().code}</div>
+    </div></div>`;
+}
+function hsCertSchoolBodyHtml(school,rec){
+  const esc=hsEscapeFormText;
+  const year=hsReqLiveSystemState.year||'2027';
+  const teachers=Object.keys(rec).sort((a,b)=>hsDictCmp(rec[a].name,rec[b].name)).map(k=>rec[k]);
+  const rows=teachers.map((t,i)=>{
+    const days=t.days.slice().sort((a,b)=>hsParseDMYToSortable(a.date)-hsParseDMYToSortable(b.date));
+    return `<tr><td>${i+1}.</td><td class="nm">${esc(t.name)}</td><td>${days.map(d=>esc(d.date)).join(', ')}</td><td>${days.length} [${hsCertNumWord(days.length)}]</td></tr>`;
+  }).join('');
+  return `${hsCertLetterHeadHtml()}${hsCertMetaTableHtml()}
+    <div class="cert-to">TO<br>The Headmaster / Headmistress / Teacher-in-Charge<br><strong>${esc(school)}</strong></div>
+    <div class="cert-title">Participation Certificate</div>
+    <div class="cert-body">Certified that the following ${teachers.length} Assistant Teacher(s) of <b>${esc(school)}</b> whose name(s) are given below have / has performed the duty of invigilator(s) in Higher Secondary Examination-${year} [SEM-III] at this Venue, on the dates as noted in the following table. The committee also likes to extend their thanks to the concerned Headmaster / Headmistress / T.I.C. of the above mentioned school for their co-operation.</div>
+    <table class="cert-table"><tr><th style="width:8%;">Sl.</th><th style="width:30%;">Name(s)</th><th style="width:40%;">Date(s)</th><th style="width:22%;">Total Day(s)</th></tr>${rows}</table>
+    ${hsCertFooterHtml()}`;
+}
+function hsCertTeacherBodyHtml(school,rec){
+  const esc=hsEscapeFormText;
+  const year=hsReqLiveSystemState.year||'2027';
+  const V=hsCertVenueInfo();
+  const days=rec.days.slice().sort((a,b)=>hsParseDMYToSortable(a.date)-hsParseDMYToSortable(b.date));
+  const rows=days.map((d,i)=>`<tr><td>${i+1}.</td><td>${esc(d.date)}</td><td>${esc(d.day)}</td><td>${esc(hsSubjectCode4(d.subject))}</td></tr>`).join('');
+  return `${hsCertLetterHeadHtml()}${hsCertMetaTableHtml()}
+    <div class="cert-to">TO<br>Sri / Smt. <strong>${esc(rec.name)}</strong><br>Assistant Teacher, <strong>${esc(school)}</strong></div>
+    <div class="cert-title">Participation Certificate</div>
+    <div class="cert-body">Certified that Sri / Smt. <b>${esc(rec.name)}</b>, Assistant Teacher of <b>${esc(school)}</b>, has performed the duty of invigilator in Higher Secondary Examination-${year} [SEM-III] at this Venue (<b>${esc(V.name)}</b>; Venue Code-${V.code}; Centre Code-2206) on the date(s) noted in the following table, being <b>${days.length} [${hsCertNumWord(days.length)}]</b> day(s) in total. The committee also likes to extend its thanks to the concerned Headmaster / Headmistress / T.I.C. of the above mentioned school for the co-operation.</div>
+    <table class="cert-table"><tr><th style="width:8%;">Sl.</th><th style="width:34%;">Date</th><th style="width:26%;">Day</th><th style="width:32%;">Subject(s)</th></tr>${rows}</table>
+    ${hsCertFooterHtml()}`;
+}
+// One or many certificates in a single print window, one A4 page each.
+function hsCertOpenMulti(title,bodies){
+  if(!bodies.length) return;
+  const esc=hsEscapeFormText;
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for form printing.');
+  const pages=bodies.map(b=>`<div class="cert-wrap">${b}</div>`).join('');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${hsCertLetterCss()}
+@media print{.cert-wrap{margin:0!important;min-height:274mm!important;page-break-after:always}.cert-wrap:last-child{page-break-after:auto}}</style></head><body>${pages}<script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.close();
+}
+function hsEntryPrintSchoolCert(all){
+  const by=hsCollectFeederSchoolDutyDays();
+  const withNames=s=>by[s] && Object.keys(by[s]).length;
+  let schools;
+  if(all){
+    schools=Object.keys(by).filter(withNames).sort(hsDictCmp);
+    if(!schools.length) return alert('No teachers are ticked yet in the Invigilator Entry Sheet.');
+  }else{
+    const sel=document.getElementById('hs_entCertSchool'); const s=sel?sel.value:'';
+    if(!s) return alert('Select a school first.');
+    if(!withNames(s)) return alert('No teachers are ticked for this school yet.');
+    schools=[s];
+  }
+  hsCertOpenMulti(all?'Participation Certificates — All Schools':'Participation Certificate — '+schools[0], schools.map(s=>hsCertSchoolBodyHtml(s,by[s])));
+}
+function hsEntryPrintTeacherCert(all){
+  const by=hsCollectFeederSchoolDutyDays();
+  const bodies=[]; let title;
+  if(all){
+    Object.keys(by).sort(hsDictCmp).forEach(s=>{
+      Object.keys(by[s]).sort((a,b)=>hsDictCmp(by[s][a].name,by[s][b].name)).forEach(k=>bodies.push(hsCertTeacherBodyHtml(s,by[s][k])));
+    });
+    if(!bodies.length) return alert('No teachers are ticked yet in the Invigilator Entry Sheet.');
+    title='Participation Certificates — All Teachers';
+  }else{
+    const sel=document.getElementById('hs_entCertTeacher'); const val=sel?sel.value:'';
+    if(!val) return alert('Select a teacher first.');
+    const sep=val.indexOf('||'); const school=val.slice(0,sep), name=val.slice(sep+2);
+    const rec=(by[school]||{})[name.toUpperCase()];
+    if(!rec || !rec.days.length) return alert('No duty days found for this teacher.');
+    bodies.push(hsCertTeacherBodyHtml(school,rec));
+    title='Participation Certificate — '+rec.name;
+  }
+  hsCertOpenMulti(title,bodies);
 }
 
 /* ================================================================
@@ -5125,6 +5327,17 @@ cloudRunWhenReady(()=>{
     }
   }catch(e){}
 });
+
+/* ---------------- ENTRY SHEET TICK-BOXES: keep roster-driven lists fresh ----------------
+   The roster helpers above load after the first entry-sheet render, so redraw once the
+   page has fully loaded, and again each time the Requisition tab is opened (picks up any
+   roster edits made in Room-wise Invigilator Allotment). */
+window.addEventListener('load',()=>{ try{ hsEntrySheetRender(); hsEntryCertRefresh(); }catch(e){} });
+const _hsSwitchToolPrev=switchTool;
+switchTool=function(tool){
+  _hsSwitchToolPrev(tool);
+  if(tool==='requisition'){ try{ hsEntrySheetRender(); hsEntryCertRefresh(); }catch(e){} }
+};
 
 /* ---------------- FEE RECEIPT: A4 LANDSCAPE, FULL PAGE ---------------- */
 function hsPrintReceiptLandscape(pfx){
