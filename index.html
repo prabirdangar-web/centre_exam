@@ -5898,10 +5898,11 @@ function hsConfCell(venue,code,med,kind,S){
 }
 function hsConfEsc(x){ return hsRdEsc(x); }
 function hsConfMl(x){ return hsConfEsc(x).replace(/\n/g,'<br>'); }
-function hsConfVenueTable(venue,S){
+function hsConfVenueTable(venue,S,singleTable){
   const V=HS_VENUE_INFO[venue], chunk=20, codes=S.order, parts=[];
   const list=codes.length?codes:[''];
-  for(let i=0;i<list.length;i+=chunk){
+  const lastI=singleTable?0:(list.length-1);
+  for(let i=0;i<list.length && i<=lastI;i+=chunk){
     const cs=list.slice(i,i+chunk), n=cs.length;
     const head='<tr><th class="med">Medium</th><th class="lbl">Subject</th>'+cs.map(c=>'<th>'+hsConfEsc(c)+'</th>').join('')+'</tr>';
     const rowFor=(med,label,kind)=>'<tr>'+(kind==='app'?'<th class="med" rowspan="2">'+label+'</th>':'')+'<th class="lbl">'+(kind==='app'?'Appeared':'Absent')+'</th>'+cs.map(c=>{ if(!c) return '<td></td>'; const r=hsConfCell(venue,c,med,kind,S); return '<td contenteditable="true" data-k="'+hsConfEsc(r.key)+'">'+hsConfEsc(r.val)+'</td>'; }).join('')+'</tr>';
@@ -5928,7 +5929,7 @@ function hsConfLetterHtml(){
   '<p>1. '+hsConfEsc(hsConfF('p1'))+'</p>'+
   '<p>2. The total allotted candidates in this venue ['+VT.code+'] are='+c1.ben+' (Bengali Medium) &amp; '+c1.san+' (Santali Medium) ='+c1.total+' [ '+w(c1.total)+' ]. The total allotted candidates in this venue ['+VG.code+'] are='+c2.ben+' (Bengali Medium) &amp; '+c2.san+' (Santali Medium) ='+c2.total+' [ '+w(c2.total)+' ] i.e. Total allotted '+(c1.total+c2.total)+' nos candidates in TALDANGRA(2206) Centre.</p>'+
   '<p>3. Subject and Medium wise Total no of absentee candidates are noted as follows</p>'+
-  hsConfVenueTable('TFHS',S1)+hsConfVenueTable('TGHS',S2)+
+  hsConfVenueTable('TFHS',S1)+hsConfVenueTable('TGHS',S2,true)+
   '<p>4. '+hsConfEsc(hsConfF('p4'))+'</p><p>5. '+hsConfEsc(hsConfF('p5'))+'</p><p>6. '+hsConfEsc(hsConfF('p6'))+'</p><p>7. '+hsConfEsc(hsConfF('p7'))+'</p>'+
   '<div class="cr-end"><span style="margin-left:8mm">Thanking you.</span><span>Yours faithfully.</span></div>'+
   '<div class="cr-sig"><span class="doc-seal" data-seal="hs" data-mm="24" style="left:-27mm;top:-6mm"></span><div class="ln">Centre-In-Charge</div><div class="b">Taldangra H.S.Examination Centre-'+year+' [SEM-III]</div><div>CENTRE NAME:TALDANGRA &amp; CENTRE CODE:2206</div></div>'+
