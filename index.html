@@ -407,6 +407,8 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <button class="btn btn-primary" onclick="hsPrintCentreForm('seal')">Seal Opening Format</button>
         <button class="btn btn-primary" onclick="hsPrintCentreForm('duty')">On Duty Declaration</button>
         <button class="btn btn-primary" onclick="hsPrintCentreForm('confidential')">Confidential Format</button>
+        <button class="btn btn-success" onclick="hsPrintCovers('day','both')" title="Envelope cover + Insured Speed Post cover for the selected day, with the violet Centre seal">Envelope + Speed Post — This Day</button>
+        <button class="btn btn-success" onclick="hsPrintCovers('all','both')" title="Envelope cover + Insured Speed Post cover for every ticked day">Envelope + Speed Post — All Days</button>
         <button class="btn btn-primary" onclick="hsPrintSpeedPost('day')">Speed Post Cover — This Day</button>
         <button class="btn btn-primary" onclick="hsPrintSpeedPost('all')">Speed Post Covers — All Days</button>
       </div>
@@ -2358,12 +2360,13 @@ cloudRunWhenReady(()=>{ try{ hsCertPopulateSchools(); }catch(e){} });
 
 function hsOpenMultiFormWindow(venue,dates,types){
   const pages=[];
-  dates.forEach(date=>{ const c=hsGetCentreFormContext(venue,date); (types||['venue','ra','seal']).forEach(type=>pages.push(hsBuildDayFormPage(type,c))); });
+  dates.forEach(date=>{ const c=hsGetCentreFormContext(venue,date); (types||['seal','venue','ra']).forEach(type=>pages.push(hsBuildDayFormPage(type,c))); });
   const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
   w.document.write(`<!doctype html><html><head><title>WBCHSE Day-wise Centre Forms</title><style>
 @page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#222;background:#fff}.page{page-break-after:always;min-height:100vh;position:relative}.venue-official-page{width:100%;padding:15mm 11mm 10mm}.venue-logo-wrap{text-align:center;margin:0 0 4mm}.venue-logo{width:25mm;height:25mm;object-fit:contain}.venue-main-title{text-align:center;font-size:16pt;font-weight:700;text-decoration:underline;margin:0 0 4mm}.venue-subtitle{text-align:center;font-size:9pt;font-weight:700;line-height:1.3;margin-bottom:5mm}.venue-meta{display:flex;justify-content:space-between;font-size:10.5pt;font-weight:600;margin:0 0 3mm}.venue-meta>div{width:48%;white-space:nowrap}.venue-data-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.2pt}.venue-data-table th,.venue-data-table td{border:1px solid #555;padding:1.5mm 1mm;text-align:center;vertical-align:middle}.venue-data-table th{font-weight:700}.venue-data-table .hall-col{width:5%}.venue-data-table .inv-col{width:13%}.venue-data-table .sig-col{width:11%}.venue-data-table tbody td{height:10mm}.venue-notes{font-size:8pt;line-height:1.45;margin-top:2.5mm}.venue-signature{text-align:right;margin-top:7mm;margin-right:4mm;font-size:8.5pt;line-height:1.4}.seal-official-page{width:100%;padding:15mm 20mm 12mm}.seal-logo-wrap{text-align:center;margin-bottom:2mm}.seal-logo{width:22mm;height:22mm;object-fit:contain}.seal-title{text-align:center;font-size:15pt;font-weight:700;margin-bottom:5mm}.seal-subtitle{text-align:center;font-size:11pt;font-weight:700;margin-bottom:4mm}.seal-box{border:1px solid #555;padding:4mm 5mm 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;line-height:1.65}.seal-box p{margin:0 0 5mm}.write-line{display:inline-block;min-width:105mm;border-bottom:1px solid #777;vertical-align:bottom}.short-line{display:inline-block;min-width:32mm;border-bottom:1px solid #777;text-align:center}.seal-person-table{width:100%;border-collapse:collapse;margin-top:2mm;font-size:10pt;line-height:1.1}.seal-person-table th,.seal-person-table td{border:1px solid #555;padding:1.7mm;text-align:left;height:11mm}.seal-person-table th{text-align:center;font-weight:700}.seal-person-table th:first-child,.seal-person-table td:first-child{width:8%}.seal-person-table th:nth-child(2){width:43%}.seal-person-table th:nth-child(3){width:18%}.seal-person-table th:nth-child(4){width:31%}.seal-meta{display:flex;justify-content:space-between;margin:8mm 0 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt}.seal-meta.single{display:block;margin-top:6mm}.seal-signature{text-align:center;margin-top:20mm;font-family:Georgia,'Times New Roman',serif;font-size:10pt}.generic-page{padding:12mm}.generic-page .official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.generic-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #555;padding:6px;vertical-align:top}th{font-weight:700}.sig{margin-top:35px;display:flex;justify-content:space-between}
 ${HS_VS_LAND_CSS}
-</style></head><body>${hsVsToolbar()}${pages.join('')}</body></html>`); w.document.close();
+${typeof HS_OFFICIAL_CSS==='string'?HS_OFFICIAL_CSS:''}
+</style></head><body>${typeof hsFormsToolbar==='function'?hsFormsToolbar(types):hsVsToolbar()}${pages.join('')}</body></html>`); w.document.close();
 }
 
 
@@ -5392,6 +5395,323 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
   window.addEventListener('beforeprint',function(){ if(ledgerOnScreen()) document.body.classList.add('print-dual'); });
   window.addEventListener('afterprint',function(){ document.body.classList.remove('print-dual'); });
 })();
+</script>
+<script id="officialPrintPatch">
+/* ================================================================
+   OFFICIAL, PRINTER-FRIENDLY DAY FORMS  +  ENVELOPE / SPEED POST COVERS
+   (loaded last so it overrides the earlier plain layouts)
+   ----------------------------------------------------------------
+   1. Seal Opening / R.A. / Confidential / On Duty Declaration
+      -> one official black-and-white A4 style (serif, thin rules, no fills,
+         safe margins), one form per page, opened from every button.
+      -> fetched names print SMALL, with the designation in (brackets).
+   2. Envelope cover (standard sizes) + Insured Speed Post cover, day-wise,
+      generated together, each carrying a violet circular Centre seal.
+   ================================================================ */
+const HS_OFFICIAL_CSS=`
+@page ofp{size:A4 portrait;margin:0}
+.of-page{page:ofp;width:210mm;height:296mm;padding:13mm 16mm 12mm;box-sizing:border-box;position:relative;overflow:hidden;background:#fff;color:#000;
+  font-family:"Times New Roman",Times,serif;font-size:11pt;line-height:1.35;display:flex;flex-direction:column;break-before:page;page-break-before:always;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.of-page:first-of-type{break-before:auto;page-break-before:auto}
+@media screen{.of-page{margin:10px auto;outline:1px solid #94a3b8}}
+.of-head{text-align:center;border-bottom:.7mm double #000;padding-bottom:2.5mm;margin-bottom:3mm;flex:none}
+.of-logo{width:16mm;height:16mm;object-fit:contain;display:block;margin:0 auto 1mm}
+.of-cn{font-weight:700;font-size:14pt;letter-spacing:.2px;line-height:1.2}
+.of-ad{font-size:9.5pt;line-height:1.25}
+.of-ex{font-size:10.5pt;font-weight:700;margin-top:.8mm}
+.of-title{text-align:center;font-weight:700;font-size:14.5pt;text-decoration:underline;text-underline-offset:1.2mm;margin:2mm 0 .5mm;flex:none}
+.of-sub{text-align:center;font-size:10pt;font-style:italic;margin-bottom:3mm;flex:none}
+.of-page table.of-t{width:100%;border-collapse:collapse;table-layout:fixed;margin:2mm 0;flex:none}
+.of-page table.of-t th,.of-page table.of-t td{border:.3mm solid #000;padding:1.5mm 2mm;text-align:left;vertical-align:middle;font-size:10.5pt;background:none;color:#000}
+.of-page table.of-t th{font-weight:700;text-align:center}
+.of-page table.of-t td.c{text-align:center}
+.of-page table.of-t.kv th{text-align:left;width:26%}
+.of-page table.of-t.sg td{height:10.5mm}
+.of-nm{font-size:8.5pt;letter-spacing:.2px;text-transform:uppercase}
+.of-des{font-size:9.5pt}
+.of-box{border:.3mm solid #000;padding:4mm 5mm 3mm;line-height:1.75;flex:none}
+.of-box p{margin:0 0 3mm}
+.of-fill{display:inline-block;min-width:34mm;border-bottom:.3mm solid #000;text-align:center;font-weight:700;padding:0 2mm;line-height:1.3}
+.of-fill.wide{min-width:88mm}
+.of-meta{display:flex;justify-content:space-between;gap:6mm;margin-top:4mm;font-size:10.5pt;flex:none}
+.of-line{border-bottom:.3mm dotted #000;height:8mm;flex:none}
+.of-p{margin:0 0 2.5mm;text-align:left;flex:none}
+.of-p.c{text-align:center}
+.of-note{font-size:8.5pt;margin-top:2mm;flex:none}
+.of-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:10mm;padding-top:6mm;flex:none}
+.of-foot.near{margin-top:14mm}
+.of-page table.of-t.sg.tall td{height:13.5mm}
+.of-sig{text-align:center;min-width:62mm;font-size:10pt;line-height:1.3}
+.of-sig .ln{border-top:.3mm solid #000;padding-top:1mm;font-weight:700}
+.of-sig .nm{font-size:8.5pt;text-transform:uppercase}
+.of-page [contenteditable]{outline:none}
+@media screen{.of-page [contenteditable]:hover{background:#fef9c3}.of-page [contenteditable]:focus{background:#dbeafe}}
+`;
+function hsFormsToolbar(types){
+  if(types && types.length===1 && types[0]==='venue') return hsVsToolbar();
+  return `<div class="hs-tb no-print"><span>Official day-wise forms — A4 portrait, black &amp; white, printer-friendly. Forms follow the order of the day: Seal Opening → Venue Supervisor Data Sheet → R.A. <u>Click any text to edit</u>, then</span><button onclick="window.print()">Print</button></div>`;
+}
+/* ---------- fetched names (small) ---------- */
+function hsOfOfficials(c){
+  let rec={}; try{ rec=hsDailyOpsGetRecord(c.venueKey,c.date)||{}; }catch(e){}
+  const off=rec.officials||{}, D=HS_DEFAULT_EXAM_OFFICIALS||{};
+  const g=k=>String(off[k]||D[k]||'').trim();
+  return {venueSupervisor:g('venueSupervisor'),centreSecretary:g('centreSecretary'),centreInCharge:g('centreInCharge'),councilNominee:g('councilNominee'),rec};
+}
+// two invigilators present at seal opening: first teachers placed in a room on that date (school-wise A-Z, as in the printed chart)
+function hsOfInvigilatorPair(c){
+  let out=[];
+  try{
+    hsRdLoad();
+    const rows=(hsRdDB[c.venueKey]&&hsRdDB[c.venueKey].rows)||[];
+    out=hsSchoolWiseSort(rows.filter(r=>r.n && r.rn && r.rn[c.date])).map(r=>r.n);
+  }catch(e){}
+  if(out.length<2){
+    try{
+      const rec=hsDailyOpsGetRecord(c.venueKey,c.date)||{};
+      (c.subjects||[]).forEach(s=>{ const d=(rec.subjects&&rec.subjects[s])||{}; [d.inv1,d.inv2].forEach(n=>{ if(n&&!out.includes(n)) out.push(n); }); });
+    }catch(e){}
+  }
+  return out.slice(0,2);
+}
+function hsOfHead(){
+  return `<header class="of-head"><img class="of-logo" src="${HS_WBCHSE_LOGO_URL}" alt="WBCHSE"><div class="of-cn">WEST BENGAL COUNCIL OF HIGHER SECONDARY EDUCATION</div><div class="of-ad">Vidyasagar Bhavan, 9/2 Block DJ, Sector-II, Salt Lake, Kolkata – 700 091</div><div class="of-ex">Semester-III of Higher Secondary Examination, 2027</div></header>`;
+}
+function hsOfSigBlock(label,name){
+  const esc=hsRdEsc;
+  return `<div class="of-sig"><div class="ln">${esc(label)}</div>${name?`<div class="nm" contenteditable="true">(${esc(name)})</div>`:''}</div>`;
+}
+function hsOfBuildPage(type,c){
+  const esc=hsRdEsc, O=hsOfOfficials(c), dd=`${esc(c.date)} (${esc(c.day)})`;
+  const info=`<table class="of-t kv"><tr><th>Centre Name / Code</th><td>${esc(c.centre)} / ${esc(c.centreCode)}</td><th style="width:20%">Venue Code</th><td style="width:22%">${esc(c.venueCode)}</td></tr><tr><th>Venue</th><td colspan="3">${esc(c.venue)}</td></tr><tr><th>Date / Day</th><td>${esc(c.date)} / ${esc(c.day)}</td><th>Subject(s)</th><td>${esc(c.subject)}</td></tr></table>`;
+  if(type==='seal'){
+    const inv=hsOfInvigilatorPair(c);
+    const person=(n,d)=>`<td class="c"><span class="of-nm" contenteditable="true">${esc(n||'')}</span></td><td class="c"><span class="of-des">(${esc(d)})</span></td>`;
+    const rows=[[O.venueSupervisor,'Venue Supervisor'],[O.councilNominee,'Council Nominee'],[inv[0]||'','Invigilator'],[inv[1]||'','Invigilator'],['',''],['','']]
+      .map((r,i)=>`<tr><td class="c">${i+1}.</td>${r[1]?person(r[0],r[1]):`<td></td><td class="c"><span class="of-des">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span></td>`}<td></td></tr>`).join('');
+    return `<section class="of-page">${hsOfHead()}
+<div class="of-title">SEAL OPENING FORMAT</div><div class="of-sub">For Question Paper Cloth Bags in Venue Supervisor’s Confidential Room</div>
+<div class="of-box"><p>Question Papers of Semester-III of Higher Secondary Examination, 2027 of the subject(s) <span class="of-fill wide" contenteditable="true">${esc(c.subject)}</span> contained in sealed Cloth Bag(s) bearing No(s). <span class="of-fill wide" contenteditable="true">&nbsp;</span> are being opened on <span class="of-fill" contenteditable="true">${dd}</span> at <b>10:15 am</b> in presence of the following Examination Personnel.</p>
+<table class="of-t sg tall"><thead><tr><th style="width:8%">Sl.</th><th style="width:38%">Name</th><th style="width:24%">Designation</th><th>Signature and Date</th></tr></thead><tbody>${rows}</tbody></table></div>
+<div class="of-meta"><div><b>Venue Code :</b> ${esc(c.venueCode)}</div><div><b>Centre Code :</b> ${esc(c.centreCode)}</div></div>
+<div class="of-meta" style="margin-top:2mm"><div><b>Name of the Venue :</b> ${esc(c.venue)}</div></div>
+<div class="of-foot near"><div></div>${hsOfSigBlock('Signature of the Venue Supervisor with Date & Seal',O.venueSupervisor)}</div></section>`;
+  }
+  if(type==='ra'){
+    const body=Array.from({length:12},(_,i)=>`<tr><td class="c">${i+1}</td><td></td><td></td><td></td><td></td></tr>`).join('');
+    return `<section class="of-page">${hsOfHead()}
+<div class="of-title">R. A. FORMAT</div><div class="of-sub">(In connection with Semester-III of H. S. Examination, 2027)</div>${info}
+<table class="of-t sg"><thead><tr><th style="width:7%">Sl.</th><th style="width:33%">Candidate / Roll / Registration</th><th style="width:28%">Reason / R.A. Details</th><th style="width:16%">Action Taken</th><th>Signature</th></tr></thead><tbody>${body}</tbody></table>
+<div class="of-foot">${hsOfSigBlock('Venue Supervisor',O.venueSupervisor)}${hsOfSigBlock('Centre Secretary / Centre-in-Charge',O.centreSecretary)}</div></section>`;
+  }
+  if(type==='confidential'){
+    return `<section class="of-page">${hsOfHead()}
+<div class="of-title">CONFIDENTIAL FORMAT</div><div class="of-sub">(In connection with Semester-III of H. S. Examination, 2027)</div>
+<p class="of-p"><b>Examination Date / Day:</b> ${esc(c.date)} / ${esc(c.day)} &nbsp;&nbsp;&nbsp; <b>Subject(s):</b> ${esc(c.subject)}</p>
+<p class="of-p"><b>a)</b> It has been noted that the following person(s), has/have been using the cell phones inside the Examination Venue during examination hours despite of repeated warnings.</p>
+<p class="of-p"><b>Person(s) / Designation</b> &nbsp;(name, then designation in brackets)</p>
+<div class="of-line"></div><div class="of-line"></div><div class="of-line"></div>
+<p class="of-p" style="margin-top:4mm"><b>b)</b> An untoward incident which has taken place in the school premises/examination hall, is being reported for necessary action. Nature of incident is stated below:</p>
+<div class="of-line"></div><div class="of-line"></div><div class="of-line"></div><div class="of-line"></div>
+<table class="of-t sg" style="margin-top:5mm"><tr><th style="width:24%">Date &amp; Time</th><td></td><th style="width:24%">Venue Supervisor Signature</th><td></td></tr><tr><th>Name of Venue Supervisor</th><td><span class="of-nm" contenteditable="true">${esc(O.venueSupervisor)}</span></td><th>Mob. No.</th><td></td></tr><tr><th>School Name with Code</th><td colspan="3">${esc(c.venue)} — ${esc(c.venueCode)}</td></tr></table>
+<div class="of-note">Note: This format is used by the venue supervisor for examination-day rule violations / untoward incidents. Detailed report may be sent to dsexamination@wbchse.org.</div>
+<div class="of-foot"><div></div>${hsOfSigBlock('Centre Secretary / Centre-in-Charge',O.centreSecretary)}</div></section>`;
+  }
+  /* duty */
+  return `<section class="of-page">${hsOfHead()}
+<div class="of-title">ON DUTY DECLARATION</div><div class="of-sub">(In connection with Semester-III of H. S. Examination, 2027)</div>
+<p class="of-p" style="line-height:2.3">I, Sri / Smt. <span class="of-fill wide" contenteditable="true">&nbsp;</span> ( Designation : <span class="of-fill" contenteditable="true">&nbsp;</span> ) was engaged with examination duty related to Semester-III of H.S. Examination, 2027 on / from <span class="of-fill" contenteditable="true">&nbsp;</span> to <span class="of-fill" contenteditable="true">&nbsp;</span>.</p>
+<table class="of-t kv"><tr><th>School / Venue</th><td>${esc(c.venue)} (${esc(c.venueCode)})</td></tr><tr><th>Relevant examination date</th><td>${esc(c.date)} — ${esc(c.day)}</td></tr><tr><th>Subject(s), if applicable</th><td>${esc(c.subject)}</td></tr></table>
+<p class="of-p" style="line-height:2.3;margin-top:6mm">Signature of the applicant with date: <span class="of-fill wide">&nbsp;</span></p>
+<p class="of-p" style="line-height:2.3">Mobile No.: <span class="of-fill wide">&nbsp;</span></p>
+<p class="of-p" style="line-height:2.3;margin-top:6mm">The above mentioned day/days may be treated as “ON DUTY” in respect of Sri/Smt. <span class="of-fill wide" contenteditable="true">&nbsp;</span> ( Designation : <span class="of-fill" contenteditable="true">&nbsp;</span> ).</p>
+<div class="of-foot near"><div></div>${hsOfSigBlock('Signature of Convenor / DI of Schools (SE) with date','')}</div></section>`;
+}
+const _hsOfPrevBuild=hsBuildDayFormPage;
+hsBuildDayFormPage=function(type,c){
+  if(['seal','ra','duty','confidential'].includes(type)) return hsOfBuildPage(type,c);
+  return _hsOfPrevBuild(type,c);
+};
+// every button (Seal Opening, R.A., On Duty Declaration, Confidential) now opens the same official layout
+const _hsOfPrevPrint=hsPrintCentreForm;
+hsPrintCentreForm=function(type,venueOverride,dateOverride){
+  if(['seal','ra','duty','confidential'].includes(type)){
+    const c=hsGetCentreFormContext(venueOverride,dateOverride);
+    if(!c.subjects.length && ['ra','seal'].includes(type)) return alert(`No subject selected for ${c.date} at ${c.venue}. Select the allotted subject(s) first.`);
+    return hsOpenMultiFormWindow(c.venueKey,[c.date],[type]);
+  }
+  return _hsOfPrevPrint(type,venueOverride,dateOverride);
+};
+
+/* ================================================================
+   CENTRE SEAL (violet, circular) + ENVELOPE COVER + INSURED SPEED POST COVER
+   ================================================================ */
+let _hsSealN=0;
+function hsCentreSealSvg(mm){
+  const id='cs'+(++_hsSealN), col='#5b2c9e';
+  return `<svg class="cseal-svg" width="${mm}mm" height="${mm}mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<defs><path id="${id}t" d="M 18.5,50 A 31.5,31.5 0 0 1 81.5,50"/><path id="${id}b" d="M 12,50 A 38,38 0 0 0 88,50"/></defs>
+<g fill="none" stroke="${col}"><circle cx="50" cy="50" r="47.5" stroke-width="2.4"/><circle cx="50" cy="50" r="44" stroke-width=".8"/><circle cx="50" cy="50" r="27.5" stroke-width=".9"/></g>
+<g fill="${col}" font-family="Arial,Helvetica,sans-serif" font-weight="700">
+<text font-size="6.4"><textPath href="#${id}t" startOffset="50%" text-anchor="middle" textLength="90" lengthAdjust="spacing">TALDANGRA H.S. CENTRE</textPath></text>
+<text font-size="6.6"><textPath href="#${id}b" startOffset="50%" text-anchor="middle" textLength="100" lengthAdjust="spacing">H.S. EXAMINATION 2027</textPath></text>
+<text x="12.6" y="52.8" font-size="7" text-anchor="middle">&#9733;</text><text x="87.4" y="52.8" font-size="7" text-anchor="middle">&#9733;</text>
+<text x="50" y="42.3" font-size="6.2" text-anchor="middle" letter-spacing=".7">CENTRE</text>
+<text x="50" y="57.2" font-size="15" text-anchor="middle" letter-spacing=".8">2206</text>
+<text x="50" y="65.6" font-size="5.6" text-anchor="middle" letter-spacing=".6">BANKURA</text></g></svg>`;
+}
+const HS_ENV_SIZES={dl:{w:220,h:110,label:'DL — 220 × 110 mm (standard letter cover)'},in9:{w:229,h:102,label:'9 × 4 inch — 229 × 102 mm'},c5:{w:229,h:162,label:'C5 — 229 × 162 mm'},c4:{w:324,h:229,label:'C4 — 324 × 229 mm (unfolded A4)'}};
+function hsCoverPin(pin){ return String(pin||'').split('').map(d=>`<span class="pinb">${hsRdEsc(d)}</span>`).join(''); }
+function hsCoverDates(mode){
+  const venue=hsGetVenue(), T=hsOfficialExamRoutineTimeline;
+  const isExam=d=>{const it=T.find(x=>x.date===d); return !!it && !/^\s*No Examination/i.test(it.sub||'');};
+  try{ hsSaveCurrentDaySubjects(); }catch(e){}
+  let dates=[];
+  if(mode==='all'){
+    try{ hsSaveSelectedFormDates(); }catch(e){}
+    const ticked=hsGetSelectedFormDates(venue);
+    dates=(ticked.length?ticked:T.map(x=>x.date).filter(d=>hsGetAllocatedSubjects(venue,d).length)).filter(isExam);
+    if(!dates.length){ alert('Tick at least one examination date (and select its subjects) first.'); return null; }
+  }else{
+    const d=document.getElementById('hs_formDay')?.value||'';
+    dates=[isExam(d)?d:(T.find(x=>!/^\s*No Examination/i.test(x.sub||''))||T[0]).date];
+  }
+  dates.sort((a,b)=>T.findIndex(x=>x.date===a)-T.findIndex(x=>x.date===b));
+  return dates;
+}
+function hsCoverEnvelopeHtml(item,subTxt,S,off){
+  const esc=hsRdEsc, v1=HS_VENUE_INFO.TFHS, v2=HS_VENUE_INFO.TGHS;
+  return `<section class="pg env">
+<div class="e-top">CONFIDENTIAL &nbsp;·&nbsp; ON WBCHSE SEMESTER-III H.S. EXAMINATION SERVICE, 2027</div>
+<div class="e-body">
+ <div class="e-left">
+  <div class="e-from"><div class="lbl">FROM :</div>
+   <div class="e-cn" contenteditable="true">${esc(S.centre)} H.S. CENTRE [${esc(S.centreCode)}]</div>
+   <div class="sm" contenteditable="true">Officer-in-Charge: <b>${esc(off.oic)}</b><br>Centre Secretary: <b>${esc(off.sec)}</b> [Mob-${esc(S.mobile)}]</div>
+   <div class="sm" contenteditable="true">Venue-1: ${esc(v1.name)} (${esc(v1.code)})<br>Venue-2: ${esc(v2.name)} (${esc(v2.code)})</div>
+   <div class="sm" contenteditable="true">${esc(S.fromPO)}</div></div>
+  <div class="cseal">${hsCentreSealSvg(30)}</div>
+ </div>
+ <div class="e-right">
+  <div class="e-to"><div class="lbl">TO :</div>
+   ${S.to.map((l,i)=>`<div class="tl${i===0?' first':''}" contenteditable="true">${esc(l)}</div>`).join('')}
+   <div class="pinrow">PIN- ${hsCoverPin(S.pin)}</div></div>
+  <div class="e-exam"><span>Semester-III H.S. Examination, 2027</span><span>Date : <b contenteditable="true">${esc(item.date)}</b> (<b contenteditable="true">${esc(String(item.day||'').toUpperCase())}</b>)</span><span>Subject(s) : <b contenteditable="true">${esc(subTxt)}</b></span></div>
+ </div>
+</div></section>`;
+}
+function hsCoverSpeedPostHtml(item,subTxt,S,off){
+  const esc=hsRdEsc, v1=HS_VENUE_INFO.TFHS, v2=HS_VENUE_INFO.TGHS;
+  return `<section class="pg sp"><div class="s-frame">
+<div class="s-head"><div class="s-a">INSURED SPEED POST</div><div class="s-b">INSURED FOR <span contenteditable="true">${esc(S.insured)}</span></div></div>
+<div class="s-ids"><div><small>BNPL Customer ID</small><b contenteditable="true">${esc(S.bnpl)}</b></div><div><small>CONTRACT ID</small><b contenteditable="true">${esc(S.contract)}</b></div></div>
+<div class="s-exam"><div class="s-date"><small>DATE OF EXAMINATION</small><b contenteditable="true">${esc(item.date)}</b><em contenteditable="true">${esc(String(item.day||'').toUpperCase())}</em></div>
+ <div class="s-sub"><small>SUBJECTS :</small><div class="stxt" style="font-size:${hsSpeedPostSubjectSize(subTxt)}pt" contenteditable="true">${esc(subTxt)}</div></div></div>
+<div class="s-to"><div class="tag">TO</div>${S.to.map((l,i)=>`<div class="tl${i===0?' first':''}" contenteditable="true">${esc(l)}</div>`).join('')}<div class="pinrow">PIN- ${hsCoverPin(S.pin)}</div></div>
+<div class="s-lower"><div class="s-from">
+  <div class="fs" contenteditable="true"><b>FROM :</b> ${esc(off.oic)}, OFFICER-IN-CHARGE &amp; ${esc(off.sec)}, CENTRE SECRETARY [MOB NO-${esc(S.mobile)}]</div>
+  <div class="fbig" contenteditable="true">${esc(S.centre)} H.S. CENTRE [${esc(S.centreCode)}]</div>
+  <div class="fbig2" contenteditable="true">CENTRE NAME: ${esc(S.centre)} &amp; CENTRE CODE: ${esc(S.centreCode)}</div>
+  <div class="fv" contenteditable="true"><i>VENUE-1</i> ${esc(v1.name)} (${esc(v1.code)})</div>
+  <div class="fv" contenteditable="true"><i>VENUE-2</i> ${esc(v2.name)} (${esc(v2.code)})</div>
+  <div class="fs po" contenteditable="true">${esc(S.fromPO)}</div></div>
+ <div class="s-seal cseal">${hsCentreSealSvg(44)}</div></div>
+<div class="s-foot">PARCEL NO. <span contenteditable="true">____</span> OF <span contenteditable="true">____</span> &nbsp;&nbsp;·&nbsp;&nbsp; Parcel limit 10 kg</div>
+</div></section>`;
+}
+const HS_COVER_CSS=`
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+:root{--ew:220mm;--eh:110mm;--u:1}
+@page spc{size:A4 portrait;margin:0}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff}
+.tb{position:sticky;top:0;z-index:10;background:#111827;color:#fff;padding:8px 14px;font:600 12.5px Arial;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.tb select{font:600 12px Arial;padding:3px 5px}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 18px;font-weight:700;cursor:pointer}
+.tb .hint{font-weight:400;font-size:11px;color:#cbd5e1;flex-basis:100%}
+section.pg{break-before:page;page-break-before:always;background:#fff;position:relative;overflow:hidden;color:#000}
+section.pg:first-of-type{break-before:auto;page-break-before:auto}
+section.env{page:env;width:var(--ew);height:var(--eh);padding:calc(8mm*var(--u)) calc(10mm*var(--u));display:flex;flex-direction:column;font-size:calc(8pt*var(--u))}
+section.sp{page:spc;width:210mm;height:296mm;padding:9mm}
+body.only-env section.sp,body.only-sp section.env{display:none}
+body.no-seal .cseal{display:none}
+.cseal{transform:rotate(-9deg);opacity:.92;mix-blend-mode:multiply;line-height:0}
+.cseal-svg{display:block}
+.pinb{display:inline-block;width:1.7em;height:2em;line-height:2em;border:.3mm solid #000;text-align:center;margin-right:1mm;font-weight:700}
+.tl{font-weight:700}
+/* envelope */
+.e-top{flex:none;text-align:center;font-weight:700;letter-spacing:.14em;font-size:calc(6.8pt*var(--u));border-bottom:.3mm solid #000;padding-bottom:calc(1.6mm*var(--u))}
+.e-body{flex:1;display:flex;gap:calc(8mm*var(--u));padding-top:calc(3mm*var(--u));min-height:0}
+.e-left{flex:0 0 44%;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+.e-right{flex:1;display:flex;flex-direction:column;justify-content:center;gap:calc(4mm*var(--u));min-width:0}
+.lbl{font-weight:700;font-size:calc(7.5pt*var(--u));letter-spacing:.08em;margin-bottom:calc(.8mm*var(--u))}
+.e-cn{font-weight:700;font-size:calc(10.5pt*var(--u));margin-bottom:calc(1mm*var(--u))}
+.sm{font-size:calc(7pt*var(--u));line-height:1.35;margin-bottom:calc(1mm*var(--u))}
+.e-to{border:.35mm solid #000;padding:calc(3mm*var(--u)) calc(4mm*var(--u))}
+.e-to .tl{font-size:calc(11.5pt*var(--u));line-height:1.3}.e-to .tl.first{font-size:calc(13.5pt*var(--u))}
+.e-to .pinrow{margin-top:calc(2mm*var(--u));font-weight:700;font-size:calc(11pt*var(--u));display:flex;align-items:center;gap:1mm}
+.e-exam{display:flex;flex-direction:column;gap:.6mm;font-size:calc(7.6pt*var(--u));border-top:.3mm solid #000;padding-top:calc(1.6mm*var(--u))}
+/* speed post */
+.s-frame{border:.6mm solid #000;height:100%;padding:5mm;display:flex;flex-direction:column;gap:3mm}
+.s-head{display:flex;align-items:center;justify-content:space-between;border-top:.5mm solid #000;border-bottom:.5mm solid #000;padding:2.5mm 2mm}
+.s-a{font-size:28pt;font-weight:900;letter-spacing:1.2px;line-height:1.05;white-space:nowrap}.s-b{font-size:15pt;font-weight:800;text-align:right}
+.s-ids{display:flex;gap:3mm}.s-ids>div{flex:1;border:.4mm solid #000;text-align:center;padding:1.8mm;font-weight:700;font-size:11pt;line-height:1.25}
+.s-ids b{display:block;font-size:20pt;letter-spacing:1px}.s-ids small,.s-date small,.s-sub small{font-size:9.5pt;font-weight:700;letter-spacing:.4px}
+.s-exam{display:flex;gap:3mm}
+.s-date{width:66mm;border:.4mm solid #000;text-align:center;padding:2.5mm;display:flex;flex-direction:column;justify-content:center}
+.s-date b{font-size:26pt;line-height:1.15}.s-date em{font-style:normal;font-size:13pt;font-weight:800}
+.s-sub{flex:1;border:.4mm solid #000;padding:2.5mm 4mm;min-height:32mm;display:flex;flex-direction:column}
+.stxt{font-weight:900;line-height:1.2;margin-top:1mm;letter-spacing:.5px;flex:1;display:flex;align-items:center}
+.s-to{flex:1;border:.8mm solid #000;padding:3mm 6mm 3mm 24mm;position:relative;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.s-to .tag{position:absolute;left:0;top:0;bottom:0;width:18mm;border-right:.6mm solid #000;display:flex;align-items:center;justify-content:center;font-size:32pt;font-weight:900;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:4px}
+.s-to .tl{font-size:25pt;line-height:1.26}.s-to .tl.first{font-size:29pt;font-weight:900}
+.s-to .pinrow{margin-top:2.5mm;font-size:28pt;font-weight:900;display:flex;align-items:center;letter-spacing:1px}.s-to .pinb{width:1.5em;height:1.7em;line-height:1.7em;border-width:.5mm;margin-right:1.6mm}
+.s-lower{display:flex;gap:3mm;align-items:stretch}
+.s-from{flex:1;border:.4mm solid #000;padding:2.4mm 4mm;min-width:0}
+.fs{font-size:9.6pt;font-weight:700;line-height:1.3}.fs.po{font-size:11pt;margin-top:1mm}
+.fbig{font-size:19pt;font-weight:900;line-height:1.15;margin-top:1.2mm;white-space:nowrap}
+.fbig2{font-size:13pt;font-weight:800;line-height:1.2;margin:.8mm 0 1.4mm}
+.fv{font-size:10pt;font-weight:700;line-height:1.3;white-space:nowrap}.fv i{font-style:normal;border:.3mm solid #000;border-radius:1mm;padding:0 1.5mm;margin-right:1.6mm;font-size:8.4pt;font-weight:900}
+.s-seal{flex:none;width:46mm;display:flex;align-items:center;justify-content:center}
+.s-foot{font-size:10pt;font-weight:800;text-align:right}
+[contenteditable]{outline:none}
+@media screen{body{background:#cbd5e1}section.pg{margin:10px auto;box-shadow:0 2px 10px rgba(0,0,0,.3)}[contenteditable]:hover{background:#fef9c3}[contenteditable]:focus{background:#dbeafe}}
+@media print{.no-print{display:none!important}}
+`;
+function hsPrintCovers(mode,which){
+  const dates=hsCoverDates(mode); if(!dates) return;
+  const venue=hsGetVenue(), S=HS_SPEEDPOST_DW, T=hsOfficialExamRoutineTimeline, off0=HS_DEFAULT_EXAM_OFFICIALS||{};
+  const off={oic:String(off0.centreInCharge||'DIPANKAR DAS').toUpperCase(), sec:String(off0.centreSecretary||'PRABIR KUMAR DANGAR').toUpperCase()};
+  const pages=dates.map(date=>{
+    const item=T.find(x=>x.date===date)||{date,day:''};
+    let subs=[]; try{subs=hsGetAllocatedSubjects(venue,date)||[];}catch(e){}
+    if(!subs.length){ try{subs=hsSubjectOptions(item);}catch(e){} }
+    const subTxt=subs.map(hsSubjectCode4).join(', ');
+    return hsCoverEnvelopeHtml(item,subTxt,S,off)+hsCoverSpeedPostHtml(item,subTxt,S,off);
+  }).join('');
+  const sizeOpts=Object.keys(HS_ENV_SIZES).map(k=>`<option value="${k}">${HS_ENV_SIZES[k].label}</option>`).join('');
+  const sizesJson=JSON.stringify(HS_ENV_SIZES);
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Envelope &amp; Speed Post Covers — TALDANGRA 2206</title>
+<style id="envPage">@page env{size:220mm 110mm;margin:0}</style><style>${HS_COVER_CSS}</style></head>
+<body class="${which==='env'?'only-env':which==='sp'?'only-sp':''}">
+<div class="tb no-print"><b>Envelope + Speed Post covers — ${dates.length} day(s)</b>
+ <label>Show <select id="showSel" onchange="setShow(this.value)"><option value="both">Envelope + Speed Post</option><option value="env">Envelope only</option><option value="sp">Speed Post only</option></select></label>
+ <label>Envelope size <select id="szSel" onchange="setSize(this.value)">${sizeOpts}</select></label>
+ <label><input type="checkbox" id="sealCb" checked onchange="document.body.classList.toggle('no-seal',!this.checked)"> Violet Centre seal</label>
+ <button onclick="window.print()">Print</button>
+ <span class="hint">Click any line to edit. Envelope and Speed Post pages use different paper: print "Envelope only" on the envelope, then "Speed Post only" on A4. Set the printer paper size to match the envelope chosen.</span></div>
+${pages}
+<script>
+var SZ=${sizesJson};
+function setShow(v){var b=document.body;b.classList.remove('only-env','only-sp');if(v==='env')b.classList.add('only-env');if(v==='sp')b.classList.add('only-sp');}
+function setSize(k){var s=SZ[k];document.getElementById('envPage').textContent='@page env{size:'+s.w+'mm '+s.h+'mm;margin:0}';var r=document.documentElement.style;r.setProperty('--ew',s.w+'mm');r.setProperty('--eh',s.h+'mm');r.setProperty('--u',(s.w/220).toFixed(3));}
+document.getElementById('showSel').value='${which==='env'?'env':which==='sp'?'sp':'both'}';
+<\/script></body></html>`);
+  w.document.close();
+}
+hsPrintSpeedPost=function(mode){ hsPrintCovers(mode,'sp'); };
+function hsPrintEnvelope(mode){ hsPrintCovers(mode,'env'); }
+
 </script>
 </body>
 </html>
