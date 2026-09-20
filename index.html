@@ -392,6 +392,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
   <button class="tool-btn" data-tool="forms" onclick="switchTool('forms')"><span class="dot"></span>WBCHSE Centre Forms</button>
   <button class="tool-btn" data-tool="dailyops" onclick="switchTool('dailyops')"><span class="dot"></span>Daily Subject &amp; Duty Entry</button>
   <button class="tool-btn" data-tool="roomduty" onclick="switchTool('roomduty');hsRdRender()"><span class="dot"></span>Room-wise Invigilator Allotment</button>
+  <button class="tool-btn" data-tool="confreport" onclick="switchTool('confreport');hsConfRender()"><span class="dot"></span>Confidential Report</button>
 </div>
 
 <!-- ============================================================ HS BOARD PANE ============================================================ -->
@@ -904,6 +905,21 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
     </div>
   </div>
 
+  <!-- ---------- HS: CONFIDENTIAL REPORT (to Regional Office) ---------- -->
+  <div class="tool-panel app-shell" data-tool="confreport" id="hs-confreport">
+    <div class="control-panel no-print">
+      <div class="panel-title">Confidential Report to the Deputy Secretary, W.B.C.H.S.E. Regional Office &mdash; H.S. 2027 [SEM-III]</div>
+      <div class="form-grid" id="hs_confForm"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <button class="btn btn-success" onclick="hsConfPrint()">Print / Save PDF (A4)</button>
+        <button class="btn btn-primary" onclick="hsConfReset()">Re-read Ledger (clear manual edits)</button>
+        <button class="btn btn-primary" onclick="cloudForceSaveAll()">Save to Cloud Now</button>
+      </div>
+      <div id="hs_confStatus" style="font-size:9pt;color:#475569;margin-top:8px;"></div>
+    </div>
+    <div id="hs_confPreview" class="cr-preview"></div>
+  </div>
+
   <!-- ---------- HS: FEE RECEIPT ---------- -->
   <div class="tool-panel app-shell" data-tool="receipt" id="hs-receipt">
     <div class="control-panel no-print">
@@ -1250,7 +1266,8 @@ const CLOUD_SYNC_KEYS = [
   'hsDailyOpsDB2027','hsDailyOpsOfficialsTemplates2027',
   'hsCentreSubjectAllocation2027','hsCentreSelectedDates2027','hsRoomDuty2027',
   'ExamReportingLedgerCache_HS','ExamReportingLedgerCache_MP',
-  'ExamRequisitionSystemDataCache_HS','ExamRequisitionSystemDataCache_MP'
+  'ExamRequisitionSystemDataCache_HS','ExamRequisitionSystemDataCache_MP',
+  'hsConfReport2027'
 ];
 const CLOUD_COLLECTION = 'examCommandCenter2027';
 let cloudSyncReady = false;
@@ -5773,6 +5790,196 @@ function tfDocSealFill(){ try{ document.querySelectorAll('.doc-seal[data-seal]')
 tfDocSealFill(); tfSignRefresh(); try{ const cb=document.getElementById('tfSignToggle'); if(cb) cb.checked=tfSignOn(); }catch(e){}
 try{ new MutationObserver(function(){ tfDocSealFill(); tfSignRefresh(); }).observe(document.body,{childList:true,subtree:true}); }catch(e){}
 window.addEventListener('beforeprint',function(){ tfDocSealFill(); tfSignRefresh(); });
+</script>
+<style id="confReportCss">
+.cr-preview{overflow-x:auto;padding:6px 0 20px}
+.cr-page{background:#fff;color:#000;width:194mm;max-width:100%;margin:0 auto;padding:8mm 8mm 10mm;box-sizing:border-box;font-family:"Times New Roman",Times,serif;font-size:10.5pt;line-height:1.35;box-shadow:0 2px 10px rgba(15,23,42,.18);border:1px solid #cbd5e1;position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cr-page .cr-mail{text-align:center;text-decoration:underline;font-size:11pt}
+.cr-page .cr-mob{text-align:center;font-size:10pt}
+.cr-page .cr-ttl{text-align:center;font-weight:700;font-size:15pt;line-height:1.15;margin-top:1mm;letter-spacing:.1px}
+.cr-page .cr-cn{text-align:center;font-size:12.5pt;margin-top:.5mm}
+.cr-page .cr-ad{text-align:center;font-weight:700;font-size:10.3pt;margin-top:1.2mm;font-family:Arial,Helvetica,sans-serif}
+.cr-page .cr-from{font-style:italic;font-family:"Courier New",monospace;font-size:10pt;margin-top:1.5mm}
+.cr-page .cr-rule{border-top:.7mm double #000;margin:1mm 0 2mm}
+.cr-page .cr-memo{display:flex;justify-content:space-between;font-style:italic;font-size:11pt;margin-bottom:2mm}
+.cr-page .cr-to{margin-bottom:2mm}
+.cr-page .cr-sub{text-decoration:underline;margin-bottom:2mm}
+.cr-page p{margin:0 0 1.6mm;text-align:justify}
+.cr-page .cr-vt{text-align:center;font-weight:700;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;margin:2mm 0 .8mm}
+.cr-page table.cr-t{width:100%;border-collapse:collapse;table-layout:fixed;margin:0 0 1.5mm;font-size:7.6pt}
+.cr-page table.cr-t th,.cr-page table.cr-t td{border:.25mm dotted #222;padding:.7mm .5mm;text-align:center;vertical-align:middle;overflow:hidden;background:none;color:#000}
+.cr-page table.cr-t th{font-weight:400;font-size:6.6pt}
+.cr-page table.cr-t th.med{width:11mm}.cr-page table.cr-t th.lbl{width:14mm;font-size:7.4pt}
+.cr-page table.cr-t td{height:5.2mm;font-weight:700;font-size:8pt;font-family:Arial,Helvetica,sans-serif}
+.cr-page table.cr-t [contenteditable]{outline:none}
+.cr-page .cr-end{display:flex;justify-content:space-between;margin-top:2mm}
+.cr-page .cr-sig{position:relative;width:88mm;margin:8mm 0 0 auto;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:9pt}
+.cr-page .cr-sig .ln{border-top:.3mm dotted #000;padding-top:1mm;font-size:9pt}
+.cr-page .cr-sig .b{font-weight:700;font-size:9.5pt}
+@media screen{.cr-page table.cr-t [contenteditable]:hover{background:#fef9c3}.cr-page table.cr-t [contenteditable]:focus{background:#dbeafe}}
+</style>
+<script id="confReportJs">
+/* ================================================================
+   HS :: CONFIDENTIAL REPORT to Deputy Secretary, WBCHSE Regional Office
+   Auto-filled from the Progress Ledger (subjects with enrolled students only), editable, stored + cloud-synced.
+   ================================================================ */
+const HS_CONF_KEY='hsConfReport2027';
+let hsConfDB={fields:{},ov:{}};
+const HS_CONF_DEF={
+  email:'highschooltaldangrafulmati@gmail.com',
+  mob:'Mob No.-9434654678 [Center Secretary]/8250953306 (Centre-In-Charge)',
+  memo:'',
+  to:'The Deputy Secretary\nBurdwan Regional Office, W.B.C.H.S.E.\nNazrul Bhaban, (Behind LIC Office)\n5, Ichhlabad,(Jalkalmath),\nP.O.:-Sri Pally Dist:-Burdwan, PIN:-713101',
+  p1:'No unfair incidents occurred during the examination in this venue/centre.',
+  p4:'All answer scripts were duly transported in proper time through BQA Railway station.',
+  p5:'All post examination papers are sent in proper time to the office of Burdwan Regional Office, W.B.C.H.S.E. and all dispatch report has been duly sent through speed post to the same office.',
+  p6:'All unused Answer Scripts were duly transported through BQA Railway.',
+  p7:'The examination conducted as per rule of W.B.C.H.S.E. and the examination completed smoothly and peacefully.'
+};
+function hsConfLoad(){ try{ hsConfDB=JSON.parse(localStorage.getItem(HS_CONF_KEY)||'{}')||{}; }catch(e){ hsConfDB={}; } hsConfDB.fields=hsConfDB.fields||{}; hsConfDB.ov=hsConfDB.ov||{}; }
+function hsConfSave(){ try{ localStorage.setItem(HS_CONF_KEY,JSON.stringify(hsConfDB)); }catch(e){} }
+function hsConfF(k){ const v=hsConfDB.fields[k]; return (v===undefined||v===null||v==='')?(HS_CONF_DEF[k]!==undefined?HS_CONF_DEF[k]:''):v; }
+function hsConfCic(){ const v=hsConfDB.fields.cic; if(v) return v; const n=String((HS_DEFAULT_EXAM_OFFICIALS||{}).centreInCharge||'DIPANKAR DAS').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()); return n; }
+function hsConfToday(){ const d=new Date(); return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear(); }
+function hsConfDate(){ return hsConfDB.fields.date||hsConfToday(); }
+function hsConfExamDates(){ return hsOfficialExamRoutineTimeline.filter(x=>!/^\s*No Examination/i.test(x.sub||'')); }
+function hsConfSum(a,f,t){ let x=0; for(let i=f;i<t;i++) x+=Number((a||[])[i])||0; return x; }
+function hsConfRows(venue){ try{ return hsTrackingStateDatabase[venue]||[]; }catch(e){ return []; } }
+/* subject-wise enrolled / appeared for one venue: ONLY subjects that have enrolled students */
+function hsConfStats(venue){
+  const rows=hsConfRows(venue), stats={}, order=[]; let known=false;
+  hsConfExamDates().forEach(item=>{
+    const row=rows.find(r=>r.date===item.date); if(!row) return;
+    const opts=hsSubjectOptions(item);
+    opts.forEach(sub=>{
+      let arr=null;
+      if(row.subWise&&row.subVals) arr=row.subVals[sub]||[];
+      else if(opts.length===1) arr=row.vals||[];
+      if(!arr) return;
+      const enr=hsConfSum(arr,0,6), app=hsConfSum(arr,6,12);
+      if(enr<=0) return;
+      const code=hsSubjectCode4(sub);
+      if(!stats[code]){ stats[code]={code,name:sub,enr:0,app:0}; order.push(code); }
+      stats[code].enr+=enr; stats[code].app+=app; known=true;
+    });
+  });
+  if(!known){   /* nothing subject-wise in the ledger yet: skeleton from allotted / day subjects */
+    hsConfExamDates().forEach(item=>{
+      let subs=[]; try{ subs=hsSubjectsForDisplay(venue,item.date,item)||[]; }catch(e){ subs=hsSubjectOptions(item); }
+      subs.forEach(sub=>{ const c=hsSubjectCode4(sub); if(!order.includes(c)) order.push(c); });
+    });
+  }
+  return {stats,order,known};
+}
+function hsConfAutoCands(venue){
+  const rows=hsConfRows(venue), item=hsConfExamDates()[0]; let total=0, san=0;
+  const row=item?rows.find(r=>r.date===item.date):null;
+  if(row){
+    if(row.subWise&&row.subVals){ hsSubjectOptions(item).forEach(sub=>{ const e=hsConfSum(row.subVals[sub]||[],0,6); total+=e; if(hsSubjectCode4(sub)==='SANT') san+=e; }); }
+    else total=hsConfSum(row.vals,0,6);
+  }
+  return {ben:Math.max(0,total-san), san};
+}
+function hsConfCands(venue){
+  const a=hsConfAutoCands(venue), f=hsConfDB.fields;
+  const pick=(k,d)=>{ const v=f[k]; return (v===undefined||v===null||v==='')?d:(parseInt(v,10)||0); };
+  const ben=pick('cand_'+venue+'_ben',a.ben), san=pick('cand_'+venue+'_san',a.san);
+  return {ben,san,total:ben+san};
+}
+function hsConfCell(venue,code,med,kind,S){
+  const key='t|'+venue+'|'+code+'|'+med+'|'+kind;
+  if(Object.prototype.hasOwnProperty.call(hsConfDB.ov,key)) return {key,val:hsConfDB.ov[key]};
+  const st=S.stats[code]; let v='';
+  if(st && ((med==='san')===(code==='SANT'))){
+    if(kind==='app') v=st.app>0?String(st.app):'';
+    else v=(st.app>0&&st.enr-st.app>0)?String(st.enr-st.app):'';
+  }
+  return {key,val:v};
+}
+function hsConfEsc(x){ return hsRdEsc(x); }
+function hsConfMl(x){ return hsConfEsc(x).replace(/\n/g,'<br>'); }
+function hsConfVenueTable(venue,S){
+  const V=HS_VENUE_INFO[venue], chunk=20, codes=S.order, parts=[];
+  const list=codes.length?codes:[''];
+  for(let i=0;i<list.length;i+=chunk){
+    const cs=list.slice(i,i+chunk), n=cs.length;
+    const head='<tr><th class="med">Medium</th><th class="lbl">Subject</th>'+cs.map(c=>'<th>'+hsConfEsc(c)+'</th>').join('')+'</tr>';
+    const rowFor=(med,label,kind)=>'<tr>'+(kind==='app'?'<th class="med" rowspan="2">'+label+'</th>':'')+'<th class="lbl">'+(kind==='app'?'Appeared':'Absent')+'</th>'+cs.map(c=>{ if(!c) return '<td></td>'; const r=hsConfCell(venue,c,med,kind,S); return '<td contenteditable="true" data-k="'+hsConfEsc(r.key)+'">'+hsConfEsc(r.val)+'</td>'; }).join('')+'</tr>';
+    parts.push('<table class="cr-t"><thead>'+head+'</thead><tbody>'+rowFor('ben','Bengali','app')+rowFor('ben','Bengali','abs')+rowFor('san','Santali','app')+rowFor('san','Santali','abs')+'</tbody></table>');
+  }
+  return '<div class="cr-vt">Venue '+hsConfEsc(V.name)+' ['+hsConfEsc(V.code)+']</div>'+parts.join('');
+}
+function hsConfLetterHtml(){
+  const year='2027', VT=HS_VENUE_INFO.TFHS, VG=HS_VENUE_INFO.TGHS;
+  const c1=hsConfCands('TFHS'), c2=hsConfCands('TGHS'), w=n=>amountToWordsShared(n);
+  const S1=hsConfStats('TFHS'), S2=hsConfStats('TGHS');
+  return '<div class="cr-page" id="hs_confPage">'+
+  '<div class="cr-mail">E-mail: '+hsConfEsc(hsConfF('email'))+'</div>'+
+  '<div class="cr-mob">'+hsConfEsc(hsConfF('mob'))+'</div>'+
+  '<div class="cr-ttl">TALDANGRA H.S.-'+year+' [SEM-III] EXAMINATION CENTRE COMMITTEE</div>'+
+  '<div class="cr-cn">CENTRE NAME: TALDANGRA &amp; CENTRE CODE: 2206</div>'+
+  '<div class="cr-ad">P.O. &amp; BLOCK:TALDANGRA* SUB.DIV: KHATRA* DIST:BANKURA *PIN-722152</div>'+
+  '<div class="cr-from">From: Center Secretary/ Centre-In-Charge</div><div class="cr-rule"></div>'+
+  '<div class="cr-memo"><span>Memo No: '+(hsConfEsc(hsConfF('memo'))||'_ _ _ _ _ _ _')+'</span><span>Date: '+hsConfEsc(hsConfDate())+'</span></div>'+
+  '<div class="cr-to">To<br>'+hsConfMl(hsConfF('to'))+'</div>'+
+  '<div class="cr-sub">Sub: - Confidential Report on H.S. Examination relating to H.S.-'+year+' [SEM-III] EXAMINATION at CENTRE TALDANGRA [2206]</div>'+
+  '<p>Sir,</p>'+
+  '<p style="text-indent:8mm">I, Sri '+hsConfEsc(hsConfCic())+', Centre-in-Charge of the centre [Centre Name &amp; Code: TALDANGRA (2206)] for the Venues '+hsConfEsc(VT.name)+' ('+VT.code+') &amp; '+hsConfEsc(VG.name)+' ['+VG.code+'] beg to submit the report about the H.S.-'+year+' [SEM-III] EXAMINATION duly held in this centre / venue as follows.</p>'+
+  '<p>1. '+hsConfEsc(hsConfF('p1'))+'</p>'+
+  '<p>2. The total allotted candidates in this venue ['+VT.code+'] are='+c1.ben+' (Bengali Medium) &amp; '+c1.san+' (Santali Medium) ='+c1.total+' [ '+w(c1.total)+' ]. The total allotted candidates in this venue ['+VG.code+'] are='+c2.ben+' (Bengali Medium) &amp; '+c2.san+' (Santali Medium) ='+c2.total+' [ '+w(c2.total)+' ] i.e. Total allotted '+(c1.total+c2.total)+' nos candidates in TALDANGRA(2206) Centre.</p>'+
+  '<p>3. Subject and Medium wise Total no of absentee candidates are noted as follows</p>'+
+  hsConfVenueTable('TFHS',S1)+hsConfVenueTable('TGHS',S2)+
+  '<p>4. '+hsConfEsc(hsConfF('p4'))+'</p><p>5. '+hsConfEsc(hsConfF('p5'))+'</p><p>6. '+hsConfEsc(hsConfF('p6'))+'</p><p>7. '+hsConfEsc(hsConfF('p7'))+'</p>'+
+  '<div class="cr-end"><span style="margin-left:8mm">Thanking you.</span><span>Yours faithfully.</span></div>'+
+  '<div class="cr-sig"><span class="doc-seal" data-seal="hs" data-mm="24" style="left:-27mm;top:-6mm"></span><div class="ln">Centre-In-Charge</div><div class="b">Taldangra H.S.Examination Centre-'+year+' [SEM-III]</div><div>CENTRE NAME:TALDANGRA &amp; CENTRE CODE:2206</div></div>'+
+  '</div>';
+}
+const HS_CONF_FORM=[
+ ['memo','Memo No.','text'],['date','Date (blank = today)','text'],['email','E-mail (header)','text'],['cic','Centre-in-Charge name','text'],
+ ['mob','Mobile line (header)','text',1],['to','To (address block)','area',1],
+ ['cand_TFHS_ben','TFHS candidates — Bengali (blank = ledger)','number'],['cand_TFHS_san','TFHS candidates — Santali (blank = ledger)','number'],
+ ['cand_TGHS_ben','TGHS candidates — Bengali (blank = ledger)','number'],['cand_TGHS_san','TGHS candidates — Santali (blank = ledger)','number'],
+ ['p1','Para 1','area',1],['p4','Para 4','area',1],['p5','Para 5','area',1],['p6','Para 6','area',1],['p7','Para 7','area',1]
+];
+function hsConfBuildForm(){
+  const box=document.getElementById('hs_confForm'); if(!box||box.dataset.built) return; box.dataset.built='1';
+  box.innerHTML=HS_CONF_FORM.map(f=>{
+    const id='hs_conf_'+f[0], span=f[3]?' span-2':'';
+    const el=f[2]==='area'?'<textarea id="'+id+'" rows="2" style="width:100%" oninput="hsConfSetField(\''+f[0]+'\',this.value)"></textarea>':'<input type="'+(f[2]==='number'?'number':'text')+'" id="'+id+'" oninput="hsConfSetField(\''+f[0]+'\',this.value)">';
+    return '<div class="form-group'+span+'"><label>'+f[1]+'</label>'+el+'</div>';
+  }).join('');
+}
+function hsConfFillForm(){
+  HS_CONF_FORM.forEach(f=>{ const el=document.getElementById('hs_conf_'+f[0]); if(!el) return;
+    const raw=hsConfDB.fields[f[0]]; el.value=(raw!==undefined&&raw!==null&&raw!=='')?raw:(f[2]==='number'||f[0]==='date'||f[0]==='cic'?'':(HS_CONF_DEF[f[0]]||'')); });
+  const a1=hsConfAutoCands('TFHS'), a2=hsConfAutoCands('TGHS');
+  [['cand_TFHS_ben',a1.ben],['cand_TFHS_san',a1.san],['cand_TGHS_ben',a2.ben],['cand_TGHS_san',a2.san]].forEach(x=>{ const el=document.getElementById('hs_conf_'+x[0]); if(el) el.placeholder=String(x[1]); });
+  const d=document.getElementById('hs_conf_date'); if(d) d.placeholder=hsConfToday();
+  const c=document.getElementById('hs_conf_cic'); if(c) c.placeholder=hsConfCic();
+}
+let _hsConfT=null;
+function hsConfSetField(k,v){ hsConfDB.fields[k]=v; hsConfSave(); clearTimeout(_hsConfT); _hsConfT=setTimeout(hsConfPaint,250); }
+function hsConfPaint(){
+  const pv=document.getElementById('hs_confPreview'); if(!pv) return;
+  pv.innerHTML=hsConfLetterHtml();
+  const S1=hsConfStats('TFHS'), S2=hsConfStats('TGHS'), st=document.getElementById('hs_confStatus');
+  if(st) st.textContent=(S1.known||S2.known)?'Subject columns = only subjects with enrolled students in the Progress Ledger (subject-wise entry). Click any table cell to correct it.':'No subject-wise enrolment in the Progress Ledger yet — columns show the allotted / day subjects. Enter subject-wise counts in the Progress Ledger (Subject-wise button) and press "Re-read Ledger".';
+}
+function hsConfRender(){ hsConfLoad(); hsConfBuildForm(); hsConfFillForm(); hsConfPaint(); }
+function hsConfReset(){ if(!confirm('Re-read all figures from the Progress Ledger? Manual table and candidate-count edits will be cleared.')) return; hsConfDB.ov={}; ['TFHS','TGHS'].forEach(v=>['ben','san'].forEach(m=>{ delete hsConfDB.fields['cand_'+v+'_'+m]; })); hsConfSave(); hsConfFillForm(); hsConfPaint(); }
+function hsConfPrint(){
+  hsConfPaint();
+  const pg=document.getElementById('hs_confPage'); if(!pg) return;
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
+  const html=pg.outerHTML.replace(/\scontenteditable="true"/g,'');
+  const css=document.getElementById('confReportCss').textContent;
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Confidential Report \u2014 H.S. 2027 [SEM-III] \u2014 Centre 2206</title><style>@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}body{margin:0;background:#fff}.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}</style><style>'+css+TF_DOC_SEAL_CSS+'</style><style>.cr-page{width:194mm;max-width:none;margin:0 auto;padding:0;border:0;box-shadow:none}@media screen{body{background:#e5e7eb}.cr-page{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}}@media print{.no-print{display:none!important}}</style></head><body><div class="tb no-print"><span>Confidential Report \u2014 A4 portrait. Use the tool to change wording or figures.</span><button onclick="window.print()">Print</button></div>'+html+'</body></html>');
+  w.document.close();
+}
+document.addEventListener('input',function(ev){
+  const t=ev.target; if(!t||!t.dataset||!t.dataset.k||!t.closest||!t.closest('#hs_confPage')) return;
+  hsConfDB.ov[t.dataset.k]=t.textContent.trim(); hsConfSave();
+});
 </script>
 </body>
 </html>
