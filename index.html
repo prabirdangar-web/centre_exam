@@ -457,6 +457,27 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="hsPrintTeacherDutyDeclaration()">Generate On Duty Form</button></div>
       </div>
     </div>
+
+    <div class="table-container no-print" style="padding:16px;">
+      <h3 style="margin:0 0 8px;">On Duty Certificate — School-wise, Day-wise (tick teachers)</h3>
+      <div style="font-size:9pt;color:#475569;margin-bottom:10px;">Pick a feeder school and an examination date. Every teacher of that school (from the Room-wise Invigilator Allotment roster) is listed below with a checkbox. Tick the teacher(s) who actually served on that date, then generate a single On Duty Certificate for just the selected teachers.</div>
+      <div class="control-deck" style="margin:0 0 10px;grid-template-columns:2fr 2fr 1fr;">
+        <div class="form-group"><label>Feeder School</label><select id="hs_certSchoolSelect" onchange="hsCertRenderTeacherCheckboxes()"><option value="">Select School</option></select></div>
+        <div class="form-group"><label>Examination Date</label><select id="hs_certDateSelect"></select></div>
+        <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%;" onclick="hsCertPopulateSchools()">Refresh School List</button></div>
+      </div>
+      <div id="hs_certTeacherCheckboxes" style="border:1px solid #cbd5e1;border-radius:8px;padding:10px;background:#f8fafc;margin-bottom:10px;font-size:9pt;">Select a school to list its teachers.</div>
+      <button class="btn btn-success" onclick="hsPrintCheckedTeachersDutyCertificate()">Generate On Duty Certificate for Selected Teachers</button>
+    </div>
+
+    <div class="table-container no-print" style="padding:16px;">
+      <h3 style="margin:0 0 8px;">On Duty Certificate — School-wise (after examination is complete, for Head of Institution)</h3>
+      <div style="font-size:9pt;color:#475569;margin-bottom:10px;">Once all examination days are over, generate one consolidated certificate per feeder school, addressed to the Head of Institution of that school, listing every teacher sent by that school and every date each of them served — sourced from the Invigilator Entry Sheet.</div>
+      <div class="control-deck" style="margin:0 0 6px;grid-template-columns:2fr 1fr;">
+        <div class="form-group"><label>Feeder School</label><select id="hs_hoiSchoolSelect"><option value="">Select School</option></select></div>
+        <div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="hsPrintSchoolWiseHOICertificate()">Generate Certificate to Head of Institution</button></div>
+      </div>
+    </div>
   </div>
 
 
@@ -2147,6 +2168,100 @@ function hsPrintTeacherDutyDeclaration(){
   w.document.write(`<!doctype html><html><head><title>ON DUTY DECLARATION — ${esc(rec.name)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script></body></html>`);
   w.document.close();
 }
+/* ================================================================
+   HS :: ON DUTY CERTIFICATE -- SCHOOL-WISE, TICK-BOX SELECTION
+   (a) pick a feeder school + one examination date, tick whichever
+       roster teachers of that school actually served that date, and
+       print one certificate covering just the ticked names.
+   (b) after the exam is fully over, print one consolidated
+       certificate per feeder school -- addressed to the Head of
+       Institution of that school -- listing every teacher the Entry
+       Sheet shows as sent by that school, with every date they served.
+   ================================================================ */
+function hsCertAllRosterSchools(){
+  hsRdLoad();
+  const seen=new Set(), out=[];
+  Object.values(hsRdDB).forEach(v=>(v.rows||[]).forEach(r=>{
+    const s=String(r.s||'').trim();
+    if(s && !seen.has(s.toUpperCase())){ seen.add(s.toUpperCase()); out.push(s); }
+  }));
+  return out.sort(hsDictCmp);
+}
+function hsCertPopulateSchools(){
+  const schools=hsCertAllRosterSchools();
+  ['hs_certSchoolSelect','hs_hoiSchoolSelect'].forEach(id=>{
+    const sel=document.getElementById(id); if(!sel) return;
+    const old=sel.value;
+    sel.innerHTML='<option value="">Select School</option>'+schools.map(s=>`<option value="${hsEscapeFormText(s)}">${hsEscapeFormText(s)}</option>`).join('');
+    if(old && schools.includes(old)) sel.value=old;
+  });
+  hsCertPopulateDates();
+  hsCertRenderTeacherCheckboxes();
+}
+function hsCertPopulateDates(){
+  const dd=document.getElementById('hs_certDateSelect'); if(!dd) return;
+  const old=dd.value;
+  let html='';
+  hsOfficialExamRoutineTimeline.forEach((x,i)=>{
+    const sched=(hsReqLiveSystemState.schedule||{})[i]||{};
+    if(sched.sub==='OFF DAY') return;
+    html+=`<option value="${i}">${hsEscapeFormText(x.date)} — ${hsEscapeFormText(sched.day||x.day)}</option>`;
+  });
+  dd.innerHTML=html;
+  if(old && Array.from(dd.options).some(o=>o.value===old)) dd.value=old;
+}
+function hsCertRenderTeacherCheckboxes(){
+  const box=document.getElementById('hs_certTeacherCheckboxes'); if(!box) return;
+  const sel=document.getElementById('hs_certSchoolSelect');
+  const school=sel?sel.value:'';
+  if(!school){ box.innerHTML='Select a school to list its teachers.'; return; }
+  const names=hsEntryRosterTeachers(school);
+  if(!names.length){ box.innerHTML='No teachers found for this school in the Room-wise Invigilator Allotment roster.'; return; }
+  box.innerHTML=names.slice().sort(hsDictCmp).map(n=>`<label style="display:inline-flex;align-items:center;gap:5px;margin:3px 14px 3px 0;"><input type="checkbox" class="hs-cert-teacher-cb" value="${hsEscapeFormText(n)}">${hsEscapeFormText(n)}</label>`).join('');
+}
+function hsPrintCheckedTeachersDutyCertificate(){
+  const schoolSel=document.getElementById('hs_certSchoolSelect');
+  const dateSel=document.getElementById('hs_certDateSelect');
+  const school=schoolSel?schoolSel.value:'';
+  if(!school) return alert('Select a feeder school first.');
+  const idx=dateSel?parseInt(dateSel.value,10):NaN;
+  if(isNaN(idx) || !hsOfficialExamRoutineTimeline[idx]) return alert('Select an examination date.');
+  const checked=Array.from(document.querySelectorAll('.hs-cert-teacher-cb:checked')).map(cb=>cb.value);
+  if(!checked.length) return alert('Tick at least one teacher.');
+  const esc=hsEscapeFormText;
+  const x=hsOfficialExamRoutineTimeline[idx];
+  const sched=(hsReqLiveSystemState.schedule||{})[idx]||{};
+  const venue=hsGetVenue();
+  const venueLabel={TFHS:'TALDANGRA FULMATI HIGH SCHOOL [H.S.] (114071)',TGHS:"TALDANGRA GIRLS' HIGH SCHOOL [H.S.] (114200)"}[venue]||venue;
+  const rows=checked.slice().sort(hsDictCmp).map((n,i)=>`<tr><td>${i+1}</td><td>${esc(n)}</td><td>Invigilator</td><td></td></tr>`).join('');
+  const c={venue:'TALDANGRA Examination Centre',venueCode:'2206'};
+  const body=`<h3>ON DUTY CERTIFICATE</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><p>This is to certify that the following teacher(s) of <b>${esc(school)}</b> were engaged with examination duty at <b>${esc(venueLabel)}</b> on <b>${esc(x.date)} (${esc(sched.day||x.day)})</b>, Subject(s): <b>${esc(hsSubjectCode4(sched.sub||x.sub))}</b>:</p><table><tr><th>Sl.</th><th>Name of the Teacher</th><th>Designation</th><th>Signature</th></tr>${rows}</table><p style="margin-top:20px;">The above mentioned day may be treated as &ldquo;ON DUTY&rdquo; in respect of the teacher(s) named above.</p><p>Signature of Convenor / DI of Schools (SE) with date: ______________________________</p>`;
+  const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
+  w.document.write(`<!doctype html><html><head><title>ON DUTY CERTIFICATE — ${esc(school)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}</style></head><body>${hsFormHeaderHtml(c)}${body}<script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.close();
+}
+function hsPrintSchoolWiseHOICertificate(){
+  const sel=document.getElementById('hs_hoiSchoolSelect');
+  const school=sel?sel.value:'';
+  if(!school) return alert('Select a feeder school first.');
+  const bySchool=hsCollectFeederSchoolDutyDays();
+  const rec=bySchool[school];
+  if(!rec || !Object.keys(rec).length) return alert('No duty records found for this school yet in the Invigilator Entry Sheet. Fill in the "Teacher name(s)" against this school on the requisition dates first.');
+  const esc=hsEscapeFormText;
+  const teachers=Object.keys(rec).sort((a,b)=>hsDictCmp(rec[a].name,rec[b].name)).map(k=>rec[k]);
+  const rows=teachers.map((t,i)=>{
+    const days=t.days.slice().sort((a,b)=>hsParseDMYToSortable(a.date)-hsParseDMYToSortable(b.date));
+    const dateStr=days.map(d=>`${esc(d.date)} (${esc(d.day)})`).join(', ');
+    return `<tr><td>${i+1}</td><td>${esc(t.name)}</td><td>${dateStr}</td><td>${days.length}</td></tr>`;
+  }).join('');
+  const body=`<h3>ON DUTY CERTIFICATE — SCHOOL-WISE</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><p>To,<br>The Head of Institution,<br><b>${esc(school)}</b></p><p>This is to certify that the following teacher(s) of your institution were deputed for invigilation duty and were engaged with examination-related work, on the date(s) noted against each name, in connection with Semester-III of H.S. Examination, 2027:</p><table><tr><th>Sl.</th><th>Name of the Teacher</th><th>Date(s) of Duty</th><th>Total Days</th></tr>${rows}</table><p style="margin-top:20px;">The above mentioned day(s) may kindly be treated as &ldquo;ON DUTY&rdquo; in respect of the teacher(s) named above, for all official purposes.</p><p style="margin-top:30px;">Signature of Convenor / DI of Schools (SE) with date: ______________________________</p>`;
+  const c={venue:'TALDANGRA Examination Centre',venueCode:'2206'};
+  const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
+  w.document.write(`<!doctype html><html><head><title>ON DUTY CERTIFICATE — ${esc(school)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}</style></head><body>${hsFormHeaderHtml(c)}${body}<script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.close();
+}
+cloudRunWhenReady(()=>{ try{ hsCertPopulateSchools(); }catch(e){} });
+
 function hsOpenMultiFormWindow(venue,dates,types){
   const pages=[];
   dates.forEach(date=>{ const c=hsGetCentreFormContext(venue,date); (types||['venue','ra','seal']).forEach(type=>pages.push(hsBuildDayFormPage(type,c))); });
