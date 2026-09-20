@@ -1907,6 +1907,30 @@ function hsAllocationKey(venue,date){return venue+'|'+date;}
 function hsSubjectOptions(item){
   return String(item?.sub||'').split(',').map(x=>x.trim()).filter(Boolean);
 }
+/* Subjects that really have students ENROLLED (first 6 ledger figures) for one ledger row.
+   Returns an array (possibly empty) when it can be told, or null when the day only has an
+   aggregate total over several subjects (cannot tell which subject the students belong to). */
+function hsRowEnrolledSubjects(row){
+  try{
+    if(!row) return null;
+    const opts=hsSubjectOptions(row); if(!opts.length) return null;
+    const enr=a=>(Array.isArray(a)?a:[]).slice(0,6).reduce((t,v)=>t+(Number(v)||0),0);
+    if(row.subWise && row.subVals) return opts.filter(sub=>enr(row.subVals[sub])>0);
+    if(opts.length===1) return enr(row.vals)>0?opts.slice():[];
+    return null;
+  }catch(e){ return null; }
+}
+/* Subjects to print on any form / label / cover: only those with enrolled students (or ticked by hand);
+   the whole day's subject list is used ONLY when nothing at all can be told. */
+function hsSubjectsForDisplay(venue,date,item){
+  let alloc=[]; try{ alloc=hsGetAllocatedSubjects(venue,date)||[]; }catch(e){}
+  let row=null; try{ row=(hsTrackingStateDatabase[venue]||[]).find(r=>r.date===date); }catch(e){}
+  const en=hsRowEnrolledSubjects(row);
+  if(en && en.length) return en;
+  if(alloc.length) return alloc;
+  if(en!==null) return [];
+  return hsSubjectOptions(item||row||{});
+}
 function hsLoadSubjectAllocation(){
   try{ hsCentreSubjectAllocation=JSON.parse(localStorage.getItem('hsCentreSubjectAllocation2027')||'{}')||{}; }catch(e){ hsCentreSubjectAllocation={}; }
 }
@@ -2821,6 +2845,12 @@ function hsBuildMemoHtmlSegment(typeTag, rowData, examYear){
   const enSum = v[0]+v[1]+v[2]+v[3]+v[4]+v[5];
   const apSum = v[6]+v[7]+v[8]+v[9]+v[10]+v[11];
   const abSum = enSum - apSum;
+  let memoSubTxt=String(rowData.sub||'');
+  if(!/^\s*No Examination/i.test(memoSubTxt)){
+    let _subs=hsRowEnrolledSubjects(rowData);
+    if(_subs===null){ try{ _subs=hsGetAllocatedSubjects(hsActiveSchool,rowData.date)||[]; }catch(e){ _subs=[]; } if(!_subs.length) _subs=hsSubjectOptions(rowData); }
+    memoSubTxt=_subs.length?_subs.map(hsSubjectCode4).join(', '):'\u2014';
+  }
   return `
     <div class="badge-type">${typeTag}</div>
     <div class="memo-header"><h2>WEST BENGAL COUNCIL OF HIGHER SECONDARY EDUCATION</h2><h3>${schoolNameText}</h3>
@@ -2828,7 +2858,7 @@ function hsBuildMemoHtmlSegment(typeTag, rowData, examYear){
     <table style="width:100%; font-size:10pt; margin-bottom:5px;"><tr>
       <td><strong>Exam Date:</strong> ${rowData.date.replace("2026", examYear)} (${rowData.day})</td>
       <td style="text-align:right;"><strong>Reporting Year:</strong> ${examYear}</td></tr>
-      <tr><td colspan="2" style="font-size:9pt; color:#334155; padding-top:2px;"><strong>Subject:</strong> ${rowData.sub}</td></tr></table>
+      <tr><td colspan="2" style="font-size:9pt; color:#334155; padding-top:2px;"><strong>Subject:</strong> ${memoSubTxt}</td></tr></table>
     <table class="memo-data-table"><thead><tr><th>Stream Details Class Category</th><th>Enrolled (M)</th><th>Enrolled (F)</th><th>Appeared (M)</th><th>Appeared (F)</th><th>Absent (M)</th><th>Absent (F)</th></tr></thead>
       <tbody>
         <tr><td>Semester-III (Regular)</td><td>${v[0]}</td><td>${v[1]}</td><td>${v[6]}</td><td>${v[7]}</td><td>${v[0]-v[6]}</td><td>${v[1]-v[7]}</td></tr>
@@ -4676,8 +4706,7 @@ function hsRdCode(s){
   return HS_SUBJECT_NAME_TO_CODE[up]||raw;
 }
 function hsRdCodes(venue,item){
-  let subs=[]; try{subs=hsGetAllocatedSubjects(venue,item.date)||[];}catch(e){}
-  if(!subs.length) subs=hsSubjectOptions(item);
+  let subs=[]; try{subs=hsSubjectsForDisplay(venue,item.date,item);}catch(e){ subs=hsSubjectOptions(item); }
   return subs.map(hsRdCode).join(', ');
 }
 function hsRdNormRoom(x){
@@ -5202,9 +5231,8 @@ function hsPrintSpeedPost(mode){
   const v1=HS_VENUE_INFO.TFHS, v2=HS_VENUE_INFO.TGHS;
   const pages=dates.map(date=>{
     const item=T.find(x=>x.date===date)||{date,day:''};
-    let subs=[]; try{subs=hsGetAllocatedSubjects(venue,date)||[];}catch(e){}
-    if(!subs.length){ try{subs=hsSubjectOptions(item);}catch(e){} }
-    const subTxt=subs.map(hsSubjectCode4).join(', ');
+    let subs=[]; try{subs=hsSubjectsForDisplay(venue,date,item);}catch(e){}
+    const subTxt=subs.map(hsSubjectCode4).join(', ')||'\u2014';
     return `<section class="sheet">
   <div class="band"><div class="a">INSURED SPEED POST</div><div class="b">INSURED FOR <span contenteditable="true">${esc(S.insured)}</span></div></div>
   <div class="ids"><div>BNPL Customer ID<br><b contenteditable="true">${esc(S.bnpl)}</b></div><div>CONTRACT ID<br><b contenteditable="true">${esc(S.contract)}</b></div></div>
@@ -5690,9 +5718,8 @@ function hsPrintCovers(mode,which){
   const off={oic:String(off0.centreInCharge||'DIPANKAR DAS').toUpperCase(), sec:String(off0.centreSecretary||'PRABIR KUMAR DANGAR').toUpperCase()};
   const pages=dates.map(date=>{
     const item=T.find(x=>x.date===date)||{date,day:''};
-    let subs=[]; try{subs=hsGetAllocatedSubjects(venue,date)||[];}catch(e){}
-    if(!subs.length){ try{subs=hsSubjectOptions(item);}catch(e){} }
-    const subTxt=subs.map(hsSubjectCode4).join(', ');
+    let subs=[]; try{subs=hsSubjectsForDisplay(venue,date,item);}catch(e){}
+    const subTxt=subs.map(hsSubjectCode4).join(', ')||'\u2014';
     return hsCoverEnvelopeHtml(item,subTxt,S,off)+hsCoverSpeedPostHtml(item,subTxt,S,off);
   }).join('');
   const sizeOpts=Object.keys(HS_ENV_SIZES).map(k=>`<option value="${k}">${HS_ENV_SIZES[k].label}</option>`).join('');
