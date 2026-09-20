@@ -894,7 +894,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       </table>
       <div class="letter-footer">
         <div style="width:60%; font-size:8.3pt; line-height:1.4;"><strong>N.B.:</strong> Mobile or such electronic devices should not bring with them in this H.S.-<span class="hs_outYear">2027</span> EXAMINATION Centre in compliance with the existing rules of W.B.C.H.S.E.</div>
-        <div style="text-align:center; width:40%; font-size:9.3pt;">
+        <div style="text-align:center; width:40%; font-size:9.3pt; position:relative;"><span class="doc-seal" data-seal="hs" data-mm="27" style="left:-16mm;top:-6mm"></span>
           With Thanks<br><br><span style="font-family:'Courier New',monospace; font-weight:700; letter-spacing:1px;">_ _ _ _ _ _ _ _ _ _ _</span><br>
           <strong style="font-size:8.3pt; display:block; margin-top:4px;">Centre Secretary / Centre-in-Charge</strong>
           <span style="font-size:7.8pt; color:#334155;">TALDANGRA Examination Centre<br>Centre Code: 2206<br>Venue Code: <span id="hs_reqVenueCodeFooter">114071</span></span>
@@ -968,7 +968,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
             <div style="margin-top:8px; padding-top:5px; border-top:1px dashed #cbd5e1; font-weight:700;">Total Candidates: <span class="hs_outCand">0</span> nos. candidates @ Rs. <span class="hs_outRate">0</span>/- per head.</div>
           </div>
         </div>
-        <div class="receipt-footer"><div><br><br>______________________________<br>Depositor Signature</div><div style="text-align:right;"><br><br>______________________________<br><strong>Officer-In-Charge / Centre Secretary</strong></div></div>
+        <div class="receipt-footer"><div><br><br>______________________________<br>Depositor Signature</div><div style="text-align:right;position:relative;"><span class="doc-seal" data-seal="hs" data-mm="17" style="right:24mm;top:-7mm"></span><br><br>______________________________<br><strong>Officer-In-Charge / Centre Secretary</strong></div></div>
       </div>
     </div>
     <button class="btn btn-success no-print" style="margin:16px auto; display:block;" onclick="hsPrintReceiptLandscape('hs')">Print Receipt &mdash; A4 Landscape (Full Page)</button>
@@ -1128,7 +1128,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       </table>
       <div class="letter-footer">
         <div style="width:60%; font-size:8.3pt; line-height:1.4;"><strong>N.B.:</strong> Mobile or such electronic devices should not bring with them in this Madhyamik-<span class="mp_outYear">2027</span> EXAMINATION Centre in compliance with the existing rules of W.B.B.S.E.</div>
-        <div style="text-align:center; width:40%; font-size:9.3pt;">
+        <div style="text-align:center; width:40%; font-size:9.3pt; position:relative;"><span class="doc-seal" data-seal="mp" data-mm="27" style="left:-16mm;top:-6mm"></span>
           With Thanks<br><br><span style="font-family:'Courier New',monospace; font-weight:700; letter-spacing:1px;">_ _ _ _ _ _ _ _ _ _ _</span><br>
           <strong style="font-size:8.3pt; display:block; margin-top:4px;">Centre Secretary / Centre-in-Charge</strong>
           <span style="font-size:7.8pt; color:#334155;">Taldangra Madhyamik Centre<br>Center Code: <span id="mp_centerCodeLabel2">2206</span></span>
@@ -1196,7 +1196,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
             <div style="margin-top:8px; padding-top:5px; border-top:1px dashed #cbd5e1; font-weight:700;">Total Candidates: <span class="mp_outCand">0</span> nos. candidates @ Rs. <span class="mp_outRate">0</span>/- per head.</div>
           </div>
         </div>
-        <div class="receipt-footer"><div><br><br>______________________________<br>Depositor Signature</div><div style="text-align:right;"><br><br>______________________________<br><strong>Officer-In-Charge / Centre Secretary</strong></div></div>
+        <div class="receipt-footer"><div><br><br>______________________________<br>Depositor Signature</div><div style="text-align:right;position:relative;"><span class="doc-seal" data-seal="mp" data-mm="17" style="right:24mm;top:-7mm"></span><br><br>______________________________<br><strong>Officer-In-Charge / Centre Secretary</strong></div></div>
       </div>
     </div>
     <button class="btn btn-success no-print" style="margin:16px auto; display:block;" onclick="hsPrintReceiptLandscape('mp')">Print Receipt &mdash; A4 Landscape (Full Page)</button>
@@ -2268,11 +2268,12 @@ table.cert-table th,table.cert-table td{border:1px solid #000;padding:6px}
 table.cert-table th{background:#f2f2f2;font-weight:700}
 table.cert-table td.nm{text-align:left}
 .letter-footer{margin-top:auto;padding-top:24px;display:flex;justify-content:flex-end}
-.sig-block{text-align:center;font-size:9.5pt;width:65mm}
+.sig-block{text-align:center;font-size:9.5pt;width:65mm;position:relative}
 .sig-block .thanks{margin-bottom:24px;font-weight:700}
 .sig-block .role{font-weight:800;font-size:9.3pt;margin-top:4px}
 .sig-block .addr{font-size:8pt;color:#334155;margin-top:2px;line-height:1.4}
-@media print{.no-print{display:none!important}}`;
+@media print{.no-print{display:none!important}}
+${typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:''}`;
 }
 function hsCertLetterHeadHtml(){
   const year=hsReqLiveSystemState.year||'2027';
@@ -2320,7 +2321,7 @@ function hsPrintCheckedTeachersDutyCertificate(){
     <div class="cert-title">Participation Certificate</div>
     <div class="cert-body">Certified that the following ${names.length} Assistant Teacher(s) of <b>${esc(school)}</b> whose name(s) are given below have / has performed the duty of invigilator(s) in Higher Secondary Examination-${year} [SEM-III] at this Venue, on ${dateDay} as noted in the following table. The committee also likes to extend their thanks to the concerned Headmaster / Headmistress / T.I.C. of the above mentioned school for their co-operation.</div>
     <table class="cert-table"><tr><th style="width:8%;">Sl.</th><th style="width:36%;">Name(s)</th><th style="width:34%;">Date(s)</th><th style="width:22%;">Total Day(s)</th></tr>${rows}</table>
-    <div class="letter-footer"><div class="sig-block">
+    <div class="letter-footer"><div class="sig-block">${tfDocSeal(26,'hs','left:-25mm;top:1mm')}
       <div class="thanks">With Thanks</div>
       <div>______________________________</div>
       <div class="role">Centre Secretary / Centre-in-Charge</div>
@@ -2348,7 +2349,7 @@ function hsPrintSchoolWiseHOICertificate(){
     <div class="cert-title">Participation Certificate</div>
     <div class="cert-body">Certified that the following ${teachers.length} Assistant Teacher(s) of <b>${esc(school)}</b> whose name(s) are given below have / has performed the duty of invigilator(s) in Higher Secondary Examination-${year} [SEM-III] at this Venue, on the dates as noted in the following table. The committee also likes to extend their thanks to the concerned Headmaster / Headmistress / T.I.C. of the above mentioned school for their co-operation.</div>
     <table class="cert-table"><tr><th style="width:8%;">Sl.</th><th style="width:30%;">Name(s)</th><th style="width:40%;">Date(s)</th><th style="width:22%;">Total Day(s)</th></tr>${rows}</table>
-    <div class="letter-footer"><div class="sig-block">
+    <div class="letter-footer"><div class="sig-block">${tfDocSeal(26,'hs','left:-25mm;top:1mm')}
       <div class="thanks">With Thanks</div>
       <div>______________________________</div>
       <div class="role">Centre Secretary / Centre-in-Charge</div>
@@ -3419,7 +3420,7 @@ function hsEntryCertRefresh(){
 }
 function hsCertFooterHtml(){
   const year=hsReqLiveSystemState.year||'2027';
-  return `<div class="letter-footer"><div class="sig-block">
+  return `<div class="letter-footer"><div class="sig-block">${tfDocSeal(26,'hs','left:-25mm;top:1mm')}
       <div class="thanks">With Thanks</div>
       <div>______________________________</div>
       <div class="role">Centre Secretary / Centre-in-Charge</div>
@@ -5377,7 +5378,7 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
 .receipt-footer{display:flex;justify-content:space-between;margin-top:auto;font-size:8.8pt;padding-top:14px}
 @media screen{body{background:#cbd5e1}.page{margin:10px auto;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.3)}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>Fee Receipt — A4 Landscape, full page. Counterfoil (left) and receipt (right) are separated by the cut line.</span><button onclick="window.print()">Print</button></div><div class="page">${el.outerHTML.replace(/\sid="[^"]*"/g,'').replace('print-target','')}</div></body></html>`);
+${typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:''}</style></head><body><div class="tb no-print"><span>Fee Receipt — A4 Landscape, full page. Counterfoil (left) and receipt (right) are separated by the cut line.</span><button onclick="window.print()">Print</button></div><div class="page">${el.outerHTML.replace(/\sid="(?!cs\d)[^"]*"/g,'').replace('print-target','')}</div></body></html>`);
   w.document.close();
 }
 
@@ -5442,7 +5443,9 @@ const HS_OFFICIAL_CSS=`
 .of-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:10mm;padding-top:6mm;flex:none}
 .of-foot.near{margin-top:14mm}
 .of-page table.of-t.sg.tall td{height:13.5mm}
-.of-sig{text-align:center;min-width:62mm;font-size:10pt;line-height:1.3}
+.of-sig{text-align:center;min-width:62mm;font-size:10pt;line-height:1.3;position:relative}
+.doc-seal{position:absolute;line-height:0;pointer-events:none;transform:rotate(-9deg);opacity:.92;mix-blend-mode:multiply;z-index:2;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.doc-seal svg{display:block}
 .of-sig .ln{border-top:.3mm solid #000;padding-top:1mm;font-weight:700}
 .of-sig .nm{font-size:8.5pt;text-transform:uppercase}
 .of-page [contenteditable]{outline:none}
@@ -5478,9 +5481,9 @@ function hsOfInvigilatorPair(c){
 function hsOfHead(){
   return `<header class="of-head"><img class="of-logo" src="${HS_WBCHSE_LOGO_URL}" alt="WBCHSE"><div class="of-cn">WEST BENGAL COUNCIL OF HIGHER SECONDARY EDUCATION</div><div class="of-ad">Vidyasagar Bhavan, 9/2 Block DJ, Sector-II, Salt Lake, Kolkata – 700 091</div><div class="of-ex">Semester-III of Higher Secondary Examination, 2027</div></header>`;
 }
-function hsOfSigBlock(label,name){
+function hsOfSigBlock(label,name,seal){
   const esc=hsRdEsc;
-  return `<div class="of-sig"><div class="ln">${esc(label)}</div>${name?`<div class="nm" contenteditable="true">(${esc(name)})</div>`:''}</div>`;
+  return `<div class="of-sig">${seal?tfDocSeal(27,'hs','left:-26mm;top:-16mm'):''}<div class="ln">${esc(label)}</div>${name?`<div class="nm" contenteditable="true">(${esc(name)})</div>`:''}</div>`;
 }
 function hsOfBuildPage(type,c){
   const esc=hsRdEsc, O=hsOfOfficials(c), dd=`${esc(c.date)} (${esc(c.day)})`;
@@ -5516,7 +5519,7 @@ function hsOfBuildPage(type,c){
 <div class="of-line"></div><div class="of-line"></div><div class="of-line"></div><div class="of-line"></div>
 <table class="of-t sg" style="margin-top:5mm"><tr><th style="width:24%">Date &amp; Time</th><td></td><th style="width:24%">Venue Supervisor Signature</th><td></td></tr><tr><th>Name of Venue Supervisor</th><td><span class="of-nm" contenteditable="true">${esc(O.venueSupervisor)}</span></td><th>Mob. No.</th><td></td></tr><tr><th>School Name with Code</th><td colspan="3">${esc(c.venue)} — ${esc(c.venueCode)}</td></tr></table>
 <div class="of-note">Note: This format is used by the venue supervisor for examination-day rule violations / untoward incidents. Detailed report may be sent to dsexamination@wbchse.org.</div>
-<div class="of-foot"><div></div>${hsOfSigBlock('Centre Secretary / Centre-in-Charge',O.centreSecretary)}</div></section>`;
+<div class="of-foot"><div></div>${hsOfSigBlock('Centre Secretary / Centre-in-Charge',O.centreSecretary,true)}</div></section>`;
   }
   /* duty */
   return `<section class="of-page">${hsOfHead()}
@@ -5548,14 +5551,16 @@ hsPrintCentreForm=function(type,venueOverride,dateOverride){
    CENTRE SEAL (violet, circular) + ENVELOPE COVER + INSURED SPEED POST COVER
    ================================================================ */
 let _hsSealN=0;
-function hsCentreSealSvg(mm){
-  const id='cs'+(++_hsSealN), col='#5b2c9e';
+function hsCentreSealSvg(mm,kind){
+  const id='cs'+(++_hsSealN), col='#5b2c9e', mpk=(kind==='mp');
+  const tTop=mpk?'TALDANGRA MADHYAMIK CENTRE':'TALDANGRA H.S. CENTRE', tBot=mpk?'MADHYAMIK EXAMINATION 2027':'H.S. EXAMINATION 2027';
+  const fT=mpk?5:6.4, lT=mpk?88:90, fB=mpk?5.4:6.6, lB=mpk?98:100;
   return `<svg class="cseal-svg" width="${mm}mm" height="${mm}mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
 <defs><path id="${id}t" d="M 18.5,50 A 31.5,31.5 0 0 1 81.5,50"/><path id="${id}b" d="M 12,50 A 38,38 0 0 0 88,50"/></defs>
 <g fill="none" stroke="${col}"><circle cx="50" cy="50" r="47.5" stroke-width="2.4"/><circle cx="50" cy="50" r="44" stroke-width=".8"/><circle cx="50" cy="50" r="27.5" stroke-width=".9"/></g>
 <g fill="${col}" font-family="Arial,Helvetica,sans-serif" font-weight="700">
-<text font-size="6.4"><textPath href="#${id}t" startOffset="50%" text-anchor="middle" textLength="90" lengthAdjust="spacing">TALDANGRA H.S. CENTRE</textPath></text>
-<text font-size="6.6"><textPath href="#${id}b" startOffset="50%" text-anchor="middle" textLength="100" lengthAdjust="spacing">H.S. EXAMINATION 2027</textPath></text>
+<text font-size="${fT}"><textPath href="#${id}t" startOffset="50%" text-anchor="middle" textLength="${lT}" lengthAdjust="spacing">${tTop}</textPath></text>
+<text font-size="${fB}"><textPath href="#${id}b" startOffset="50%" text-anchor="middle" textLength="${lB}" lengthAdjust="spacing">${tBot}</textPath></text>
 <text x="12.6" y="52.8" font-size="7" text-anchor="middle">&#9733;</text><text x="87.4" y="52.8" font-size="7" text-anchor="middle">&#9733;</text>
 <text x="50" y="42.3" font-size="6.2" text-anchor="middle" letter-spacing=".7">CENTRE</text>
 <text x="50" y="57.2" font-size="15" text-anchor="middle" letter-spacing=".8">2206</text>
@@ -5712,6 +5717,16 @@ document.getElementById('showSel').value='${which==='env'?'env':which==='sp'?'sp
 hsPrintSpeedPost=function(mode){ hsPrintCovers(mode,'sp'); };
 function hsPrintEnvelope(mode){ hsPrintCovers(mode,'env'); }
 
+</script>
+<style id="docSealPatch">
+/* Round Centre seal on requisition letters, fee receipts, participation certificates, confidential (incident) report */
+.doc-seal{position:absolute;line-height:0;pointer-events:none;transform:rotate(-9deg);opacity:.92;mix-blend-mode:multiply;z-index:2;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.doc-seal svg{display:block}
+</style>
+<script id="docSealPatchJs">
+const TF_DOC_SEAL_CSS='.doc-seal{position:absolute;line-height:0;pointer-events:none;transform:rotate(-9deg);opacity:.92;mix-blend-mode:multiply;z-index:2;-webkit-print-color-adjust:exact;print-color-adjust:exact}.doc-seal svg{display:block}';
+function tfDocSeal(mm,kind,pos){ return '<span class="doc-seal" style="'+(pos||'')+'">'+hsCentreSealSvg(mm,kind)+'</span>'; }
+(function(){ try{ document.querySelectorAll('.doc-seal[data-seal]').forEach(function(el){ if(el.firstChild) return; el.innerHTML=hsCentreSealSvg(parseFloat(el.dataset.mm)||26, el.dataset.seal); }); }catch(e){ console.error('doc seal',e); } })();
 </script>
 </body>
 </html>
