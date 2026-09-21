@@ -473,6 +473,8 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <button class="btn btn-success" onclick="hsPrintCovers('all','both')" title="Envelope cover + Insured Speed Post cover for every ticked day">Envelope + Speed Post — All Days</button>
         <button class="btn btn-primary" onclick="hsPrintSpeedPost('day')">Speed Post Cover — This Day</button>
         <button class="btn btn-primary" onclick="hsPrintSpeedPost('all')">Speed Post Covers — All Days</button>
+        <button class="btn btn-primary" onclick="hsPrintDespatch('day')" title="WBCHSE Despatch Report Form 3A (AP) with the day's subject codes">Despatch Report (3A AP) — This Day</button>
+        <button class="btn btn-primary" onclick="hsPrintDespatch('all')" title="One Despatch Report Form per ticked day">Despatch Reports — All Days</button>
       </div>
     </div>
     <div class="table-container no-print" style="padding:16px;">
@@ -506,6 +508,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
           <tr><td><strong>On Duty Declaration</strong></td><td>Exam year, period, school and staff name</td><td>On-duty certification</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('duty')">Generate</button></td></tr>
           <tr><td><strong>Confidential Format</strong></td><td>Venue Supervisor, school/code, date/time</td><td>Rule violation / untoward incident report</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('confidential')">Generate</button></td></tr>
           <tr><td><strong>Speed Post Address Cover (Insured) — Day-wise</strong></td><td>Auto: date, day, full subject names; BNPL / Contract ID; To: Deputy Secretary (MRO); From: centre &amp; venue</td><td>Big A4 colour address label for each day's OMR parcel — official seal box, parcel no.</td><td><button class="btn btn-primary" onclick="hsPrintSpeedPost('day')">This Day</button> <button class="btn btn-primary" onclick="hsPrintSpeedPost('all')">All Days</button></td></tr>
+          <tr><td><strong>Despatch Report Form 3A (AP) — Day-wise</strong></td><td>Auto: examination date and day-wise 4-letter subject codes only (SUBJECT(S) column); all other particulars left blank</td><td>Despatch report for answer-paper packets sent to the Regional Office</td><td><button class="btn btn-primary" onclick="hsPrintDespatch('day')">This Day</button> <button class="btn btn-primary" onclick="hsPrintDespatch('all')">All Days</button></td></tr>
           <tr><td><strong>Room-wise Allotment of Invigilator</strong></td><td>Invigilator, school, Room No. and signature for every 2027 examination date</td><td>Room duty chart; also feeds Invigilator 1 / 2 on the V.S. Data Sheet</td><td><button class="btn btn-primary" onclick="switchTool('roomduty');hsRdRender()">Open</button></td></tr>
         </tbody>
       </table>
@@ -5385,6 +5388,109 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
 @media screen{body{background:#cbd5e1}.sheet{margin:10px auto;box-shadow:0 2px 10px rgba(0,0,0,.3)}[contenteditable]:hover{background:#fef9c3}[contenteditable]:focus{background:#dbeafe}}
 @media print{.no-print{display:none!important}}
 </style></head><body><div class="tb no-print"><span>Insured Speed Post covers — ${dates.length} page(s), A4 colour. <u>Click any line to edit</u>. Parcel limit 10 kg (8–10 kg): print one copy per parcel and fill PARCEL NO. Then</span><button onclick="window.print()">Print</button></div>${pages}</body></html>`);
+  w.document.close();
+}
+
+/* ================================================================
+   DESPATCH REPORT FORM — WBCHSE Form No. 3A (AP) — DAY-WISE
+   hsPrintDespatch('day')  -> form for the Examination Day selected in Forms
+   hsPrintDespatch('all')  -> one page per ticked day
+   Only the day-wise items are auto-filled: the Examination date and the
+   4-letter SUBJECT CODES in the SUBJECT(S) column. Everything else is left
+   blank for hand-filling, exactly as on the printed Council form.
+   ================================================================ */
+const HS_DESPATCH_TO=[
+  {h:'Deputy Secretary (KRO)', l:['Vidyasagar Bhavan 9/2,','Block-DJ, Sector-II,','Salt Lake, Kolkata-700091','(1st Floor)','Ph:- 033-23374984 to 87']},
+  {h:'Deputy Secretary (BRO)', l:['Nazrul Bhavan','Behind LIC Office','5, Ichlabad (Jalkal Math)','P.O.- Sripally Dt.-Bardhaman','Pin:- 713103','Ph:- 0342-2544720/2541427','Fax:- 0342-2647745']},
+  {h:'Deputy Secretary (MRO)', l:['Sahid Matangini Bhavan','Bidhannagar East,','72, Station Road','P.O.- Midnapur','Dist:- Paschim Medinipur','Pin:- 721101','Ph:- 03222-276318','Fax:- 03222-271840']},
+  {h:'Deputy Secretary (NBRO)', l:['Rahul Sankrityayn Bhavan','P.O.- N. B. University,','Dist:- Darjeeling','Pin:- 734430','Ph:- 0353-2582097','Fax:- 0353-2582156']}
+];
+function hsPrintDespatch(mode){
+  const venue=hsGetVenue(), esc=hsRdEsc, T=hsOfficialExamRoutineTimeline;
+  const isExam=d=>{const it=T.find(x=>x.date===d); return !!it && !/^\s*No Examination/i.test(it.sub||'');};
+  try{ hsSaveCurrentDaySubjects(); }catch(e){}
+  let dates=[];
+  if(mode==='all'){
+    try{ hsSaveSelectedFormDates(); }catch(e){}
+    const ticked=hsGetSelectedFormDates(venue);
+    dates=(ticked.length?ticked:T.map(x=>x.date).filter(d=>hsGetAllocatedSubjects(venue,d).length)).filter(isExam);
+    if(!dates.length) return alert('Tick at least one examination date (and select its subjects) first.');
+  } else {
+    const d=document.getElementById('hs_formDay')?.value||'';
+    dates=[isExam(d)?d:(T.find(x=>!/^\s*No Examination/i.test(x.sub||''))||T[0]).date];
+  }
+  dates.sort((a,b)=>T.findIndex(x=>x.date===a)-T.findIndex(x=>x.date===b));
+  const toCells=HS_DESPATCH_TO.map(o=>`<td><b>${esc(o.h)}</b><br>${o.l.map(esc).join('<br>')}</td>`).join('');
+  const blank=(w)=>`<span class="fl" style="min-width:${w}mm" contenteditable="true">&nbsp;</span>`;
+  const pages=dates.map(date=>{
+    const item=T.find(x=>x.date===date)||{date,day:''};
+    let subs=[]; try{subs=hsSubjectsForDisplay(venue,date,item);}catch(e){}
+    const codes=subs.map(hsSubjectCode4).filter(Boolean);
+    const codeHtml=codes.map(c=>`<div class="sc" contenteditable="true">${esc(c)}</div>`).join('');
+    return `<section class="sheet">
+  <div class="fno">Form No. 3A (AP)</div>
+  <div class="hd">
+    <img src="${HS_WBCHSE_LOGO_URL}" class="lg" alt="WBCHSE">
+    <div class="cn">WEST BENGAL COUNCIL OF HIGHER SECONDARY EDUCATION</div>
+    <div class="ad">'Vidyasagar Bhavan', Sector-II, 9/2, Block-DJ, Salt Lake, Kolkata-700091</div>
+  </div>
+  <div class="ttl">DESPATCH REPORT FORM</div>
+  <div class="sub">Higher Secondary Examination</div>
+  <div class="from"><b>From:- The Centre &ndash; in &ndash; charge,</b>
+    <div class="fline">${blank(120)}<b>&nbsp;Examination Centre</b></div></div>
+  <div class="tol"><b>To:</b></div>
+  <table class="to"><tr>${toCells}</tr></table>
+  <div class="ln">Examination held on <span class="fl dt" contenteditable="true">${esc(item.date)}</span></div>
+  <div class="ln">Report of despatch by Railway/Messenger dated the ${blank(34)} 20 ${blank(12)} of ${blank(24)}<br>Boxes/Packets, containing answer papers. Details are given below:</div>
+  <table class="dt2">
+    <thead><tr><th style="width:29%">PARTICULARS</th><th style="width:22%">SUBJECT(S)</th><th style="width:25%">No. of Packets<br>DESPATCHED</th><th style="width:24%">No. of Papers<br>DESPATCHED</th></tr></thead>
+    <tbody><tr>
+      <td class="pt"><div class="pa"><b>Name of the Rly. stn.<br>From where booked<br>(if sent by Rail)</b><div class="dots" contenteditable="true">&nbsp;</div></div>
+          <div class="pb"><b>Railway Postal Receipt<br>Number and Date</b><div class="dots" contenteditable="true">&nbsp;</div></div></td>
+      <td class="sj">${codeHtml}</td><td contenteditable="true"></td><td contenteditable="true"></td>
+    </tr></tbody>
+  </table>
+  <div class="sig">Signature of Centre-in-Charge (with seal)</div>
+</section>`;
+  }).join('');
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Despatch Report Form 3A (AP) — TALDANGRA 2206</title><style>
+@page{size:A4 portrait;margin:12mm}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Times New Roman",Times,serif;color:#000;background:#fff;font-size:11pt}
+.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
+.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
+.sheet{width:186mm;height:271mm;margin:0 auto;display:flex;flex-direction:column;page-break-after:always;break-after:page;overflow:hidden}
+.sheet:last-of-type{page-break-after:auto;break-after:auto}
+.fno{font-size:10pt;font-weight:700}
+.hd{text-align:center;margin-top:-2mm}
+.lg{width:17mm;height:17mm;object-fit:contain;display:block;margin:0 auto 1mm}
+.cn{font-size:12.5pt;font-weight:700;line-height:1.2}
+.ad{font-size:9.5pt;line-height:1.25}
+.ttl{text-align:center;font-weight:700;font-size:13.5pt;margin-top:3mm}
+.sub{text-align:center;font-weight:700;font-size:11pt;text-decoration:underline}
+.from{margin-top:3.5mm;font-size:10.5pt}
+.fline{display:flex;align-items:flex-end;margin-top:1.5mm}
+.tol{margin-top:2mm;font-size:10.5pt}
+.to{width:100%;border-collapse:collapse;margin-top:1mm;table-layout:fixed}
+.to td{border:1px solid #000;padding:1.5mm 1.8mm;font-size:8pt;line-height:1.28;vertical-align:top}
+.ln{margin-top:4.5mm;font-size:10.5pt;line-height:1.9}
+.fl{display:inline-block;border-bottom:1px dotted #000;min-height:1em;vertical-align:baseline}
+.fl.dt{font-weight:700;min-width:40mm;text-align:center}
+.dt2{width:100%;border-collapse:collapse;margin-top:2.5mm;flex:1;table-layout:fixed}
+.dt2 th{border:1px solid #000;padding:1.6mm 1mm;font-size:9.5pt;text-align:center;font-weight:700;line-height:1.25}
+.dt2 td{border:1px solid #000;vertical-align:top;padding:1.5mm 2mm}
+.dt2 td.pt{padding:0;position:relative}
+.pa,.pb{text-align:center;font-size:9.5pt;line-height:1.3;padding:0 2mm}
+.pa{margin-top:22mm}.pb{margin-top:30mm}
+.dots{border-bottom:1px dotted #000;min-height:5mm;margin-top:6mm}
+.sj{text-align:center}
+.sc{font-size:14pt;font-weight:700;letter-spacing:1px;line-height:1.5}
+.sig{text-align:right;font-size:10pt;margin-top:8mm;padding-right:4mm}
+[contenteditable]{outline:none}
+@media screen{body{background:#cbd5e1}.sheet{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 10px rgba(0,0,0,.3);height:auto;min-height:271mm;width:210mm}[contenteditable]:hover{background:#fef9c3}[contenteditable]:focus{background:#dbeafe}}
+@media print{.no-print{display:none!important}}
+</style></head><body><div class="tb no-print"><span>Despatch Report Form 3A (AP) &mdash; ${dates.length} page(s), A4 black &amp; white. Day-wise SUBJECT CODES are filled in; <u>click any line to edit</u>. Then</span><button onclick="window.print()">Print</button></div>${pages}</body></html>`);
   w.document.close();
 }
 
