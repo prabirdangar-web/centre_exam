@@ -5441,6 +5441,7 @@ function hsPrintDespatch(mode){
     const fillH=Math.max(0,BODY_MM-rowH*Math.max(n,1));
     const particulars=`<td class="pt" rowspan="${Math.max(n,1)+(fillH>0?1:0)}">
         <div class="pa na"><b><s>Name of the Rly. stn.<br>From where booked<br>(if sent by Rail)</s></b></div>
+        <div class="pp"><b>Name of the P.O.</b><div class="dots po" contenteditable="true">${esc(S.centre)}</div></div>
         <div class="pb"><b>${strike('Railway','Post Office')} Postal Receipt<br>Number and Date</b><div class="dots" contenteditable="true">&nbsp;</div></div></td>`;
     const rows=(n?codes:['']).map((c,i)=>`<tr style="height:${rowH}mm">${i===0?particulars:''}<td class="sj"><span contenteditable="true">${esc(c)}</span></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>`).join('')
       + (fillH>0?`<tr style="height:${fillH}mm"><td class="sj"></td><td></td><td></td></tr>`:'');
@@ -5501,8 +5502,10 @@ body{margin:0;font-family:"Times New Roman",Times,serif;color:#000;background:#f
 .dt2 td{border:1px solid #000;vertical-align:middle;padding:0 2mm}
 .dt2 td.pt{vertical-align:top;padding:0}
 .pa,.pb{text-align:center;font-size:9.5pt;line-height:1.35;padding:0 2mm}
-.pa{margin-top:18mm}.pa.na{color:#555}
-.pb{margin-top:26mm}
+.pa{margin-top:10mm}.pa.na{color:#555}
+.pp{text-align:center;font-size:9.5pt;line-height:1.35;padding:0 2mm;margin-top:5mm}
+.dots.po{font-size:13pt;font-weight:900;letter-spacing:1px;text-align:center;margin-top:1.5mm;color:#000}
+.pb{margin-top:14mm}
 .dots{border-bottom:1px dotted #888;min-height:5mm;margin-top:6mm}
 .sj{text-align:center}
 .sj span{font-size:14pt;font-weight:700;letter-spacing:1px}
