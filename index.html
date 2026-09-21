@@ -1398,7 +1398,12 @@ function cloudHydrateAndBoot(bootFn){
     );
     Promise.all(fetches).finally(()=>{
       cloudSyncReady=true;
-      if(cloudDenied) cloudShowBanner('Cloud access denied — this account has no role yet. Ask the admin to assign it. Showing local data only.','error',true);
+      if(cloudDenied){
+        const cu=firebase.auth().currentUser;
+        cloudShowBanner('Access denied for '+(cu?cu.email:'?')+'. In Firestore create document users/'+(cu?cu.uid:'?')+' with field role = admin. If it already exists, republish the Firestore rules. (Click here to copy the UID)','error',true);
+        const bb=document.getElementById('cloudSyncBanner');
+        if(bb&&cu){ bb.style.cursor='pointer'; bb.onclick=()=>{ try{navigator.clipboard.writeText(cu.uid);}catch(e){} bb.textContent='UID copied: '+cu.uid+'  (Firestore > users > Add document, Document ID = this UID, field role = admin)'; }; }
+      }
       else cloudShowBanner('Cloud data loaded','ok');
       bootFn();
       cloudPostReadyQueue.splice(0).forEach(fn=>fn());
