@@ -5402,11 +5402,13 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
    "Post Office" is written above it.
    ================================================================ */
 const HS_DESPATCH_TO=[
-  {h:'Deputy Secretary (KRO)', l:['Vidyasagar Bhavan 9/2,','Block-DJ, Sector-II,','Salt Lake, Kolkata-700091','(1st Floor)','Ph:- 033-23374984 to 87']},
-  {h:'Deputy Secretary (BRO)', l:['Nazrul Bhavan','Behind LIC Office','5, Ichlabad (Jalkal Math)','P.O.- Sripally Dt.-Bardhaman','Pin:- 713103','Ph:- 0342-2544720/2541427','Fax:- 0342-2647745']},
-  {h:'Deputy Secretary (MRO)', l:['Sahid Matangini Bhavan','Bidhannagar East,','72, Station Road','P.O.- Midnapur','Dist:- Paschim Medinipur','Pin:- 721101','Ph:- 03222-276318','Fax:- 03222-271840']},
-  {h:'Deputy Secretary (NBRO)', l:['Rahul Sankrityayn Bhavan','P.O.- N. B. University,','Dist:- Darjeeling','Pin:- 734430','Ph:- 0353-2582097','Fax:- 0353-2582156']}
+  {k:'KRO', h:'Deputy Secretary (KRO)', l:['Vidyasagar Bhavan 9/2,','Block-DJ, Sector-II,','Salt Lake, Kolkata-700091','(1st Floor)','Ph:- 033-23374984 to 87']},
+  {k:'BRO', h:'Deputy Secretary (BRO)', l:['Nazrul Bhavan','Behind LIC Office','5, Ichlabad (Jalkal Math)','P.O.- Sripally Dt.-Bardhaman','Pin:- 713103','Ph:- 0342-2544720/2541427','Fax:- 0342-2647745']},
+  {k:'MRO', h:'Deputy Secretary (MRO)', l:['Sahid Matangini Bhavan','Bidhannagar East,','72, Station Road','P.O.- Midnapur','Dist:- Paschim Medinipur','Pin:- 721101','Ph:- 03222-276318','Fax:- 03222-271840']},
+  {k:'NBRO', h:'Deputy Secretary (NBRO)', l:['Rahul Sankrityayn Bhavan','P.O.- N. B. University,','Dist:- Darjeeling','Pin:- 734430','Ph:- 0353-2582097','Fax:- 0353-2582156']}
 ];
+// Regional office(s) this centre despatches to; all the others are struck through with a pen line.
+const HS_DESPATCH_KEEP=['MRO'];
 function hsPrintDespatch(mode){
   const venue=hsGetVenue(), esc=hsRdEsc, T=hsOfficialExamRoutineTimeline, S=HS_SPEEDPOST_DW;
   const isExam=d=>{const it=T.find(x=>x.date===d); return !!it && !/^\s*No Examination/i.test(it.sub||'');};
@@ -5422,7 +5424,7 @@ function hsPrintDespatch(mode){
     dates=[isExam(d)?d:(T.find(x=>!/^\s*No Examination/i.test(x.sub||''))||T[0]).date];
   }
   dates.sort((a,b)=>T.findIndex(x=>x.date===a)-T.findIndex(x=>x.date===b));
-  const toCells=HS_DESPATCH_TO.map(o=>`<td><b>${esc(o.h)}</b><br>${o.l.map(esc).join('<br>')}</td>`).join('');
+  const toCells=HS_DESPATCH_TO.map(o=>`<td${HS_DESPATCH_KEEP.includes(o.k)?'':' class="x"'}><b>${esc(o.h)}</b><br>${o.l.map(esc).join('<br>')}</td>`).join('');
   const blank=(w)=>`<span class="fl" style="min-width:${w}mm" contenteditable="true">&nbsp;</span>`;
   // date as printed on the form:  dd.mm  20  yy   (the "20" is pre-printed)
   const dparts=(txt)=>{
@@ -5489,6 +5491,7 @@ body{margin:0;font-family:"Times New Roman",Times,serif;color:#000;background:#f
 .tol{margin-top:1.5mm;font-size:10.5pt}
 .to{width:100%;border-collapse:collapse;margin-top:1mm;table-layout:fixed}
 .to td{border:1px solid #000;padding:1.5mm 1.8mm;font-size:8pt;line-height:1.28;vertical-align:top}
+.to td.x{color:#444;text-decoration:line-through;text-decoration-thickness:1.4px}
 .ln{margin-top:4mm;font-size:10.5pt;line-height:2}
 .ln.po{margin-top:8mm}
 .fl{display:inline-block;border-bottom:1px dotted #888;min-height:1em;line-height:1.25;vertical-align:baseline;text-align:center}
