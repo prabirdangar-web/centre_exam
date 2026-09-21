@@ -5395,9 +5395,11 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
    DESPATCH REPORT FORM — WBCHSE Form No. 3A (AP) — DAY-WISE
    hsPrintDespatch('day')  -> form for the Examination Day selected in Forms
    hsPrintDespatch('all')  -> one page per ticked day
-   Only the day-wise items are auto-filled: the Examination date and the
-   4-letter SUBJECT CODES in the SUBJECT(S) column. Everything else is left
-   blank for hand-filling, exactly as on the printed Council form.
+   Auto-filled: centre (TALDANGRA-2206, big bold), examination date, despatch
+   date (= selected exam date), and one row per 4-letter SUBJECT CODE.
+   Manual only: number of boxes/packets, packets and papers per subject,
+   postal receipt number/date.  Sent by post: "Railway" is struck out and
+   "Post Office" is written above it.
    ================================================================ */
 const HS_DESPATCH_TO=[
   {h:'Deputy Secretary (KRO)', l:['Vidyasagar Bhavan 9/2,','Block-DJ, Sector-II,','Salt Lake, Kolkata-700091','(1st Floor)','Ph:- 033-23374984 to 87']},
@@ -5406,7 +5408,7 @@ const HS_DESPATCH_TO=[
   {h:'Deputy Secretary (NBRO)', l:['Rahul Sankrityayn Bhavan','P.O.- N. B. University,','Dist:- Darjeeling','Pin:- 734430','Ph:- 0353-2582097','Fax:- 0353-2582156']}
 ];
 function hsPrintDespatch(mode){
-  const venue=hsGetVenue(), esc=hsRdEsc, T=hsOfficialExamRoutineTimeline;
+  const venue=hsGetVenue(), esc=hsRdEsc, T=hsOfficialExamRoutineTimeline, S=HS_SPEEDPOST_DW;
   const isExam=d=>{const it=T.find(x=>x.date===d); return !!it && !/^\s*No Examination/i.test(it.sub||'');};
   try{ hsSaveCurrentDaySubjects(); }catch(e){}
   let dates=[];
@@ -5422,11 +5424,26 @@ function hsPrintDespatch(mode){
   dates.sort((a,b)=>T.findIndex(x=>x.date===a)-T.findIndex(x=>x.date===b));
   const toCells=HS_DESPATCH_TO.map(o=>`<td><b>${esc(o.h)}</b><br>${o.l.map(esc).join('<br>')}</td>`).join('');
   const blank=(w)=>`<span class="fl" style="min-width:${w}mm" contenteditable="true">&nbsp;</span>`;
+  // date as printed on the form:  dd.mm  20  yy   (the "20" is pre-printed)
+  const dparts=(txt)=>{
+    const m=String(txt||'').match(/(\d{1,2})\s*[.\-\/]\s*(\d{1,2})\s*[.\-\/]\s*(\d{2,4})/);
+    return m?{dm:m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0'), yy:m[3].slice(-2)}:{dm:String(txt||''),yy:''};
+  };
+  const dfill=(txt)=>{const d=dparts(txt); return `<span class="fl dt" style="min-width:24mm" contenteditable="true">${esc(d.dm)}</span> 20 <span class="fl dt" style="min-width:10mm" contenteditable="true">${esc(d.yy)}</span>`;};
+  const strike=(word,above)=>`<span class="stk"><span class="above" contenteditable="true">${esc(above)}</span><s>${esc(word)}</s></span>`;
+  const BODY_MM=106;
   const pages=dates.map(date=>{
     const item=T.find(x=>x.date===date)||{date,day:''};
     let subs=[]; try{subs=hsSubjectsForDisplay(venue,date,item);}catch(e){}
     const codes=subs.map(hsSubjectCode4).filter(Boolean);
-    const codeHtml=codes.map(c=>`<div class="sc" contenteditable="true">${esc(c)}</div>`).join('');
+    const n=codes.length;
+    const rowH=n?Math.min(16,Math.floor(BODY_MM/n)):16;
+    const fillH=Math.max(0,BODY_MM-rowH*Math.max(n,1));
+    const particulars=`<td class="pt" rowspan="${Math.max(n,1)+(fillH>0?1:0)}">
+        <div class="pa na"><b><s>Name of the Rly. stn.<br>From where booked<br>(if sent by Rail)</s></b></div>
+        <div class="pb"><b>${strike('Railway','Post Office')} Postal Receipt<br>Number and Date</b><div class="dots" contenteditable="true">&nbsp;</div></div></td>`;
+    const rows=(n?codes:['']).map((c,i)=>`<tr style="height:${rowH}mm">${i===0?particulars:''}<td class="sj"><span contenteditable="true">${esc(c)}</span></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>`).join('')
+      + (fillH>0?`<tr style="height:${fillH}mm"><td class="sj"></td><td></td><td></td></tr>`:'');
     return `<section class="sheet">
   <div class="fno">Form No. 3A (AP)</div>
   <div class="hd">
@@ -5437,18 +5454,14 @@ function hsPrintDespatch(mode){
   <div class="ttl">DESPATCH REPORT FORM</div>
   <div class="sub">Higher Secondary Examination</div>
   <div class="from"><b>From:- The Centre &ndash; in &ndash; charge,</b>
-    <div class="fline">${blank(120)}<b>&nbsp;Examination Centre</b></div></div>
+    <div class="fline"><span class="fl big" contenteditable="true">${esc(S.centre)}-${esc(S.centreCode)}</span><b class="ec">Examination Centre</b></div></div>
   <div class="tol"><b>To:</b></div>
   <table class="to"><tr>${toCells}</tr></table>
-  <div class="ln">Examination held on <span class="fl dt" contenteditable="true">${esc(item.date)}</span></div>
-  <div class="ln">Report of despatch by Railway/Messenger dated the ${blank(34)} 20 ${blank(12)} of ${blank(24)}<br>Boxes/Packets, containing answer papers. Details are given below:</div>
+  <div class="ln">Examination held on ${dfill(item.date)}</div>
+  <div class="ln po">Report of despatch by ${strike('Railway','Post Office')}/Messenger dated the ${dfill(item.date)} of ${blank(20)}<br>Boxes/Packets, containing answer papers. Details are given below:</div>
   <table class="dt2">
     <thead><tr><th style="width:29%">PARTICULARS</th><th style="width:22%">SUBJECT(S)</th><th style="width:25%">No. of Packets<br>DESPATCHED</th><th style="width:24%">No. of Papers<br>DESPATCHED</th></tr></thead>
-    <tbody><tr>
-      <td class="pt"><div class="pa"><b>Name of the Rly. stn.<br>From where booked<br>(if sent by Rail)</b><div class="dots" contenteditable="true">&nbsp;</div></div>
-          <div class="pb"><b>Railway Postal Receipt<br>Number and Date</b><div class="dots" contenteditable="true">&nbsp;</div></div></td>
-      <td class="sj">${codeHtml}</td><td contenteditable="true"></td><td contenteditable="true"></td>
-    </tr></tbody>
+    <tbody>${rows}</tbody>
   </table>
   <div class="sig">Signature of Centre-in-Charge (with seal)</div>
 </section>`;
@@ -5469,28 +5482,35 @@ body{margin:0;font-family:"Times New Roman",Times,serif;color:#000;background:#f
 .ad{font-size:9.5pt;line-height:1.25}
 .ttl{text-align:center;font-weight:700;font-size:13.5pt;margin-top:3mm}
 .sub{text-align:center;font-weight:700;font-size:11pt;text-decoration:underline}
-.from{margin-top:3.5mm;font-size:10.5pt}
-.fline{display:flex;align-items:flex-end;margin-top:1.5mm}
-.tol{margin-top:2mm;font-size:10.5pt}
+.from{margin-top:3mm;font-size:10.5pt}
+.fline{display:flex;align-items:flex-end;gap:2mm;margin-top:.5mm}
+.ec{font-size:10.5pt;white-space:nowrap;padding-bottom:.6mm}
+.tol{margin-top:1.5mm;font-size:10.5pt}
 .to{width:100%;border-collapse:collapse;margin-top:1mm;table-layout:fixed}
 .to td{border:1px solid #000;padding:1.5mm 1.8mm;font-size:8pt;line-height:1.28;vertical-align:top}
-.ln{margin-top:4.5mm;font-size:10.5pt;line-height:1.9}
-.fl{display:inline-block;border-bottom:1px dotted #000;min-height:1em;vertical-align:baseline}
-.fl.dt{font-weight:700;min-width:40mm;text-align:center}
-.dt2{width:100%;border-collapse:collapse;margin-top:2.5mm;flex:1;table-layout:fixed}
+.ln{margin-top:4mm;font-size:10.5pt;line-height:2}
+.ln.po{margin-top:8mm}
+.fl{display:inline-block;border-bottom:1px dotted #888;min-height:1em;line-height:1.25;vertical-align:baseline;text-align:center}
+.fl.dt{font-weight:700}
+.fl.big{flex:1;font-size:21pt;font-weight:900;letter-spacing:1.5px;line-height:1.1;text-align:left;padding-left:2mm}
+.stk{position:relative;display:inline-block;line-height:1.25}
+.stk s{text-decoration:line-through;text-decoration-thickness:1.6px}
+.above{position:absolute;left:50%;transform:translateX(-50%);top:-3.3mm;font:700 8pt Arial,Helvetica,sans-serif;white-space:nowrap}
+.dt2{width:100%;border-collapse:collapse;margin-top:2mm;table-layout:fixed}
 .dt2 th{border:1px solid #000;padding:1.6mm 1mm;font-size:9.5pt;text-align:center;font-weight:700;line-height:1.25}
-.dt2 td{border:1px solid #000;vertical-align:top;padding:1.5mm 2mm}
-.dt2 td.pt{padding:0;position:relative}
-.pa,.pb{text-align:center;font-size:9.5pt;line-height:1.3;padding:0 2mm}
-.pa{margin-top:22mm}.pb{margin-top:30mm}
-.dots{border-bottom:1px dotted #000;min-height:5mm;margin-top:6mm}
+.dt2 td{border:1px solid #000;vertical-align:middle;padding:0 2mm}
+.dt2 td.pt{vertical-align:top;padding:0}
+.pa,.pb{text-align:center;font-size:9.5pt;line-height:1.35;padding:0 2mm}
+.pa{margin-top:18mm}.pa.na{color:#555}
+.pb{margin-top:26mm}
+.dots{border-bottom:1px dotted #888;min-height:5mm;margin-top:6mm}
 .sj{text-align:center}
-.sc{font-size:14pt;font-weight:700;letter-spacing:1px;line-height:1.5}
-.sig{text-align:right;font-size:10pt;margin-top:8mm;padding-right:4mm}
+.sj span{font-size:14pt;font-weight:700;letter-spacing:1px}
+.sig{text-align:right;font-size:10pt;margin-top:auto;padding-right:4mm}
 [contenteditable]{outline:none}
 @media screen{body{background:#cbd5e1}.sheet{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 10px rgba(0,0,0,.3);height:auto;min-height:271mm;width:210mm}[contenteditable]:hover{background:#fef9c3}[contenteditable]:focus{background:#dbeafe}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>Despatch Report Form 3A (AP) &mdash; ${dates.length} page(s), A4 black &amp; white. Day-wise SUBJECT CODES are filled in; <u>click any line to edit</u>. Then</span><button onclick="window.print()">Print</button></div>${pages}</body></html>`);
+</style></head><body><div class="tb no-print"><span>Despatch Report Form 3A (AP) &mdash; ${dates.length} page(s), A4 black &amp; white. Centre, date and SUBJECT CODES are filled in; packets, papers and receipt are manual. <u>Click any line to edit</u>. Then</span><button onclick="window.print()">Print</button></div>${pages}</body></html>`);
   w.document.close();
 }
 
