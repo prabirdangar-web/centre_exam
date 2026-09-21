@@ -261,13 +261,53 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     cloudDB = firebase.firestore();
     cloudDB.enablePersistence({synchronizeTabs:true}).catch(()=>{/* multiple tabs or unsupported browser — offline cache simply skipped */});
     cloudAuthReadyPromise = new Promise((resolve)=>{
-      firebase.auth().onAuthStateChanged(user=>{ if(user) resolve(user); });
-      firebase.auth().signInAnonymously().catch(err=>{
-        console.error('Firebase anonymous sign-in failed — check that Anonymous sign-in is enabled in the Firebase console.', err);
-        resolve(null); // app still boots and runs on local storage only
+      let settled=false;
+      const done=(u)=>{ if(settled) return; settled=true; cloudHideLogin(); resolve(u); };
+      firebase.auth().onAuthStateChanged(user=>{
+        if(user && !user.isAnonymous){ done(user); return; }
+        if(user && user.isAnonymous){ firebase.auth().signOut().catch(()=>{}); return; } // drop old anonymous sessions
+        if(!settled) cloudShowLogin(done); // waits for sign-in, or "continue offline"
       });
     });
   }catch(e){ console.warn('Firebase init failed — app will run on local storage only.', e); }
+
+  function cloudHideLogin(){ const o=document.getElementById('cloudLoginOverlay'); if(o) o.remove(); }
+  function cloudShowLogin(done){
+    const build=()=>{
+      if(document.getElementById('cloudLoginOverlay')) return;
+      const inp='width:100%;box-sizing:border-box;padding:9px;margin-bottom:8px;border:1px solid #94a3b8;border-radius:6px;font-size:11pt;';
+      const btn='width:100%;padding:10px;border:0;border-radius:6px;font:700 11pt "Segoe UI",sans-serif;cursor:pointer;margin-top:4px;';
+      const o=document.createElement('div');
+      o.id='cloudLoginOverlay'; o.className='no-print';
+      o.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.93);display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",sans-serif;';
+      o.innerHTML='<div style="background:#fff;border-radius:12px;padding:24px 26px;width:min(92vw,360px);box-shadow:0 10px 40px rgba(0,0,0,.4)">'
+        +'<h3 style="margin:0 0 4px;color:#1e3a8a;font-size:15pt">Examination Command Center</h3>'
+        +'<div style="color:#475569;font-size:10pt;margin-bottom:14px">Sign in to load and save cloud data.</div>'
+        +'<input id="cloudLoginEmail" type="email" autocomplete="username" placeholder="Email" style="'+inp+'">'
+        +'<input id="cloudLoginPass" type="password" autocomplete="current-password" placeholder="Password" style="'+inp+'">'
+        +'<div id="cloudLoginMsg" style="color:#dc2626;font-size:9.5pt;min-height:18px;margin-bottom:6px"></div>'
+        +'<button id="cloudLoginBtn" style="'+btn+'background:#1e3a8a;color:#fff">Sign in</button>'
+        +'<button id="cloudLoginLocal" style="'+btn+'background:#e2e8f0;color:#334155">Continue offline (this device only)</button>'
+        +'</div>';
+      document.body.appendChild(o);
+      const msg=document.getElementById('cloudLoginMsg');
+      const go=()=>{
+        const email=document.getElementById('cloudLoginEmail').value.trim();
+        const pass=document.getElementById('cloudLoginPass').value;
+        if(!email||!pass){ msg.textContent='Enter email and password.'; return; }
+        msg.style.color='#475569'; msg.textContent='Signing in…';
+        firebase.auth().signInWithEmailAndPassword(email,pass).catch(err=>{
+          msg.style.color='#dc2626';
+          msg.textContent = (err&&err.code==='auth/network-request-failed') ? 'No internet — sign-in needs a connection.' : 'Sign-in failed: '+((err&&err.code)||'unknown error');
+        });
+      };
+      document.getElementById('cloudLoginBtn').onclick=go;
+      o.addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+      document.getElementById('cloudLoginLocal').onclick=()=>done(null);
+      document.getElementById('cloudLoginEmail').focus();
+    };
+    if(document.body) build(); else document.addEventListener('DOMContentLoaded',build);
+  }
 </script>
 
 <style id="letterA4Patch">
@@ -1321,10 +1361,11 @@ function cloudHydrateAndBoot(bootFn){
   cloudShowBanner('Connecting to cloud database…','info',true);
   cloudAuthReadyPromise.then(user=>{
     if(!user){
-      cloudShowBanner('Cloud sign-in failed — running on local storage only. Check that Anonymous sign-in is enabled in Firebase Authentication.','error',true);
+      cloudShowBanner('Not signed in — working on this device only. Changes will NOT be saved to the cloud. Reload and sign in to sync.','error',true);
       bootFn();
       return;
     }
+    let cloudDenied=false;
     const fetches = CLOUD_SYNC_KEYS.map(key =>
       cloudDB.collection(CLOUD_COLLECTION).doc(key).get()
         .then(snap=>{
@@ -1333,11 +1374,12 @@ function cloudHydrateAndBoot(bootFn){
             cloudSyncLastValue[key]=snap.data().value;
           }
         })
-        .catch(()=>{ /* offline or rules block read — keep whatever is already local */ })
+        .catch(err=>{ if(err && err.code==='permission-denied') cloudDenied=true; /* offline: keep whatever is already local */ })
     );
     Promise.all(fetches).finally(()=>{
       cloudSyncReady=true;
-      cloudShowBanner('Cloud data loaded','ok');
+      if(cloudDenied) cloudShowBanner('Cloud access denied — this account has no role yet. Ask the admin to assign it. Showing local data only.','error',true);
+      else cloudShowBanner('Cloud data loaded','ok');
       bootFn();
       cloudPostReadyQueue.splice(0).forEach(fn=>fn());
       cloudAttachLiveListeners();
@@ -1367,7 +1409,7 @@ function cloudForceSaveAll(){
   if(!cloudDB){ cloudShowBanner('Cloud not connected — nothing to save.','error'); return; }
   cloudShowBanner('Saving…','info',true);
   cloudAuthReadyPromise.then(user=>{
-    if(!user){ cloudShowBanner('Not signed in — cannot save to cloud. Check that Anonymous sign-in is enabled in Firebase Authentication.','error'); return; }
+    if(!user){ cloudShowBanner('Not signed in — cannot save to cloud. Reload the page and sign in.','error'); return; }
     const writes = CLOUD_SYNC_KEYS.map(key=>{
       const val=localStorage.getItem(key);
       if(val===null) return Promise.resolve();
