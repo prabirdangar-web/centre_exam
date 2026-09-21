@@ -262,7 +262,7 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
     cloudDB.enablePersistence({synchronizeTabs:true}).catch(()=>{/* multiple tabs or unsupported browser — offline cache simply skipped */});
     cloudAuthReadyPromise = new Promise((resolve)=>{
       let settled=false;
-      const done=(u)=>{ if(settled) return; settled=true; cloudHideLogin(); resolve(u); };
+      const done=(u)=>{ if(settled) return; settled=true; cloudHideLogin(); cloudUpdateAuthBtn(u); resolve(u); };
       firebase.auth().onAuthStateChanged(user=>{
         if(user && !user.isAnonymous){ done(user); return; }
         if(user && user.isAnonymous){ firebase.auth().signOut().catch(()=>{}); return; } // drop old anonymous sessions
@@ -305,6 +305,26 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
       o.addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
       document.getElementById('cloudLoginLocal').onclick=()=>done(null);
       document.getElementById('cloudLoginEmail').focus();
+    };
+    if(document.body) build(); else document.addEventListener('DOMContentLoaded',build);
+  }
+
+  // Small Sign out / Sign in button, bottom-right corner (never printed)
+  function cloudUpdateAuthBtn(user){
+    const build=()=>{
+      let b=document.getElementById('cloudAuthBtn');
+      if(!b){
+        b=document.createElement('button'); b.id='cloudAuthBtn'; b.className='no-print';
+        b.style.cssText='position:fixed;bottom:12px;right:12px;z-index:9998;padding:7px 12px;border:0;border-radius:8px;font:700 9pt "Segoe UI",sans-serif;cursor:pointer;background:#1e3a8a;color:#fff;opacity:.88;box-shadow:0 2px 8px rgba(0,0,0,.3);';
+        document.body.appendChild(b);
+      }
+      if(user){
+        b.textContent='Sign out ('+(user.email||'user')+')';
+        b.onclick=()=>{ if(confirm('Sign out of the cloud database on this device?')) firebase.auth().signOut().finally(()=>location.reload()); };
+      }else{
+        b.textContent='Sign in';
+        b.onclick=()=>location.reload();
+      }
     };
     if(document.body) build(); else document.addEventListener('DOMContentLoaded',build);
   }
