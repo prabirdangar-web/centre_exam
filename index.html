@@ -6290,8 +6290,14 @@ function hsConfStats(venue){
       subs.forEach(sub=>{ const c=hsSubjectCode4(sub); if(!order.includes(c)) order.push(c); });
     });
   }
-  /* apply the per-venue checkbox selection (unticked codes are dropped from the report table) */
+  /* apply the per-venue checkbox selection (unticked codes are dropped from the report table).
+     A code ticked in the "Subjects shown in report table" panel must appear as a column even
+     when the Progress Ledger has no enrolled figures for it yet (e.g. BNGA/SANT before any
+     figure is entered) — otherwise ticking the checkbox has no visible effect. So any selected
+     routine code for this venue is added to the candidate list here, not just codes that
+     already turned up in the ledger scan above. */
   const sel=hsConfSubSelGet(venue);
+  hsConfVenueRoutineCodes(venue).forEach(c=>{ if(sel[c]!==false && !order.includes(c)) order.push(c); });
   const filteredOrder=order.filter(c=>sel[c]!==false);
   if(hsConfDB.fields.manualSub && !filteredOrder.includes('MANL')) filteredOrder.push('MANL');
   return {stats,order:filteredOrder,known};
