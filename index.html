@@ -6182,11 +6182,31 @@ function hsConfAllRoutineCodes(){
   });
   return order;
 }
+/* Subjects actually allotted to THIS venue (per the Centre-wise subject
+   allotment ticked in WBCHSE Centre Forms / Progress Ledger, day by day).
+   Falls back to the full national day-wise routine only when nothing at
+   all has been allotted for this venue yet, so the panel isn't empty for
+   a brand-new setup — once real per-venue subjects are ticked elsewhere
+   in the app, this narrows automatically and the two venues stop sharing
+   an identical column list. */
+function hsConfVenueRoutineCodes(venue){
+  const seen=new Set(), order=[]; let anyAllocated=false;
+  hsConfExamDates().forEach(item=>{
+    let subs=[];
+    try{ subs=hsGetAllocatedSubjects(venue,item.date)||[]; }catch(e){ subs=[]; }
+    if(subs.length) anyAllocated=true;
+    subs.forEach(sub=>{
+      const c=hsSubjectCode4(sub);
+      if(!seen.has(c)){ seen.add(c); order.push(c); }
+    });
+  });
+  return anyAllocated ? order : hsConfAllRoutineCodes();
+}
 function hsConfSubSelGet(venue){
   hsConfDB.subSel=hsConfDB.subSel||{};
   if(!hsConfDB.subSel[venue]) hsConfDB.subSel[venue]={};
   const sel=hsConfDB.subSel[venue];
-  hsConfAllRoutineCodes().forEach(c=>{ if(!(c in sel)) sel[c]=true; });
+  hsConfVenueRoutineCodes(venue).forEach(c=>{ if(!(c in sel)) sel[c]=true; });
   return sel;
 }
 function hsConfSubSelSet(venue,code,on){
@@ -6197,13 +6217,13 @@ function hsConfSubSelSet(venue,code,on){
 }
 function hsConfSubSelAll(venue,on){
   const sel=hsConfSubSelGet(venue);
-  hsConfAllRoutineCodes().forEach(c=>{ sel[c]=!!on; });
+  hsConfVenueRoutineCodes(venue).forEach(c=>{ sel[c]=!!on; });
   hsConfSave();
   hsConfRenderSubSel();
   hsConfPaint();
 }
 function hsConfSubSelHtml(venue){
-  const V=HS_VENUE_INFO[venue], all=hsConfAllRoutineCodes(), sel=hsConfSubSelGet(venue), esc=hsConfEsc;
+  const V=HS_VENUE_INFO[venue], all=hsConfVenueRoutineCodes(venue), sel=hsConfSubSelGet(venue), esc=hsConfEsc;
   const boxes=all.map(code=>{
     const ck=sel[code]!==false?'checked':'';
     return '<label style="display:inline-flex;align-items:center;gap:4px;margin:2px 10px 2px 0;font-size:9pt;">'+
