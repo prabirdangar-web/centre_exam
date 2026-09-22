@@ -6178,9 +6178,15 @@ function hsConfStats(venue){
       stats[code].enr+=enr; stats[code].app+=app; known=true;
     });
   });
-  if(!known){   /* nothing subject-wise in the ledger yet: skeleton from allotted / day subjects */
+  if(!known){   /* nothing subject-wise in the ledger yet: skeleton from ticked / allotted / day subjects.
+                   Once ANY date has a ticked selection for this venue, ticks become authoritative —
+                   a date with no ticks contributes nothing, so the table reflects only what was ticked. */
+    let anyTicked=false;
+    hsConfExamDates().forEach(item=>{ try{ if(hsGetAllocatedSubjects(venue,item.date).length) anyTicked=true; }catch(e){} });
     hsConfExamDates().forEach(item=>{
-      let subs=[]; try{ subs=hsSubjectsForDisplay(venue,item.date,item)||[]; }catch(e){ subs=hsSubjectOptions(item); }
+      let subs=[];
+      if(anyTicked){ try{ subs=hsGetAllocatedSubjects(venue,item.date)||[]; }catch(e){ subs=[]; } }
+      else{ try{ subs=hsSubjectsForDisplay(venue,item.date,item)||[]; }catch(e){ subs=hsSubjectOptions(item); } }
       subs.forEach(sub=>{ const c=hsSubjectCode4(sub); if(!order.includes(c)) order.push(c); });
     });
   }
