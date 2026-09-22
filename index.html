@@ -2598,10 +2598,17 @@ cloudRunWhenReady(()=>{hsLoadSubjectAllocation(); hsRenderFormDays(); hsRenderDa
 // current Sem III venue totals from WBCHSE Centre 2206 Semester III APPROVED-ENROLLED DATA
 // (printed 09.09.2026). Old Supplementary/Old-syllabus carry-over figures cleared — not present
 // in that report. Appeared defaulted equal to Enrolled until actual Day-1 attendance is entered.
-// Rows 1-9 (other exam days) are unchanged — this report has no day-wise breakdown.
+// Rows 2-9 (other exam days) are unchanged — this report has no day-wise breakdown.
+// FIX (22.09.2026): Row 1 used to carry the 79-student Vocational-day figure, but that row is
+// now dated 22.09.2026 = "No Examination" (see hsOfficialExamRoutineTimeline note above) since
+// Vocational subjects were withdrawn from this date and moved to 13.10.2026 (2nd Half) by
+// Notification No. L/PR/357/2026. Leaving the 79 figure on Row 1 meant a "No Examination" date
+// still showed candidates and the count was never picked up on the new 13.10.2026 date — the
+// repeated/mismatched total reported 22.09.2026. Row 1 is zeroed and the 79-student figure is
+// moved to the new Row 10, aligned to 13.10.2026 where the Vocational block now actually sits.
 const hsExcelCurrentYearTFHS = [
   [479,80,0,0,0,0,479,80,0,0,0,0],
-  [79,0,0,0,0,0,79,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0],
   [511,68,0,5,0,0,511,68,0,0,0,0],
   [284,10,0,0,0,0,284,10,0,0,0,0],
   [133,10,0,0,0,0,133,10,0,0,0,0],
@@ -2609,11 +2616,26 @@ const hsExcelCurrentYearTFHS = [
   [357,22,0,5,0,0,357,27,0,0,0,0],
   [41,57,0,5,0,0,41,57,0,0,0,0],
   [462,62,0,0,0,0,462,62,0,0,0,0],
-  [385,0,0,0,0,0,385,0,0,0,0,0]
+  [385,0,0,0,0,0,385,0,0,0,0,0],
+  [79,0,0,0,0,0,79,0,0,0,0,0]
 ];
 const hsImageFallbackPresets = {
   TFHS: hsExcelCurrentYearTFHS[0],
   TGHS: [0,426,0,0,0,0,0,426,0,0,0,0]
+};
+/* TGHS [114200] — Taldangra Girls' High School, all-girls venue — subject-wise
+   ALLOTTED candidates as supplied 22.09.2026. Fed into the Progress Ledger as
+   Regular-Female enrolled (Appeared defaults = Enrolled, same convention as
+   hsExcelCurrentYearTFHS, until actual attendance is entered), which is what
+   the Confidential Report (hsConfStats/hsConfVenueTable) reads its subject
+   columns from.
+   NOTE: NUTN (Nutrition) was given twice in the source instruction — 66 and
+   76. The later value (76) is used below; correct this if 66 was intended or
+   if one of the two was meant for a different subject. */
+const HS_TGHS_SUBJECT_ALLOTTED = {
+  BNGA:426, ENGB:426, COMA:46, HIST:114, NUTN:76, POLS:190, SNSK:241, MATH:113,
+  PHIL:59, PHYS:126, HPED:78, ITEV:9, EDCN:40, ELTV:2, ENVS:1, GEGR:201,
+  AGLV:23, BIOS:137, BWLV:29, CHEM:133
 };
 let hsTrackingStateDatabase = {};
 let hsActiveSchool = "TFHS";
@@ -2879,10 +2901,20 @@ function hsResetToDefaults(){
     date:session.date, day:session.day, sub:session.sub,
     vals:[...(hsExcelCurrentYearTFHS[index] || [0,0,0,0,0,0,0,0,0,0,0,0])]
   }));
-  hsTrackingStateDatabase["TGHS"] = hsOfficialExamRoutineTimeline.map(session=>({
-    date:session.date, day:session.day, sub:session.sub,
-    vals:[0,0,0,0,0,0,0,0,0,0,0,0]
-  }));
+  hsTrackingStateDatabase["TGHS"] = hsOfficialExamRoutineTimeline.map(session=>{
+    const subVals={}; let any=false;
+    String(session.sub||"").split(",").map(s=>s.trim()).filter(Boolean).forEach(name=>{
+      const code=hsSubjectCode4(name);
+      if(Object.prototype.hasOwnProperty.call(HS_TGHS_SUBJECT_ALLOTTED,code)){
+        const n=HS_TGHS_SUBJECT_ALLOTTED[code];
+        subVals[name]=[0,n,0,0,0,0,0,n,0,0,0,0];
+        any=true;
+      }
+    });
+    const vals=[0,0,0,0,0,0,0,0,0,0,0,0];
+    Object.values(subVals).forEach(v=>v.forEach((x,i)=>{ vals[i]+=x; }));
+    return { date:session.date, day:session.day, sub:session.sub, vals, subVals: any?subVals:undefined, subWise: any };
+  });
   hsTrackingStateDatabase["year"] = "2027 [SEM-III]";
 }
 function hsPopulateDateDropdown(){
