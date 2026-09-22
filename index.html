@@ -6164,6 +6164,66 @@ function hsConfDate(){ return hsConfDB.fields.date||hsConfToday(); }
 function hsConfExamDates(){ return hsOfficialExamRoutineTimeline.filter(x=>!/^\s*No Examination/i.test(x.sub||'')); }
 function hsConfSum(a,f,t){ let x=0; for(let i=f;i<t;i++) x+=Number((a||[])[i])||0; return x; }
 function hsConfRows(venue){ try{ return hsTrackingStateDatabase[venue]||[]; }catch(e){ return []; } }
+/* ================================================================
+   HS :: CONFIDENTIAL REPORT — SUBJECT CHECKBOX SELECTION (per venue)
+   Every subject code that appears anywhere in the official routine is a
+   candidate column. Per venue, hsConfDB.subSel[venue][code] = true/false
+   decides whether that column is shown in this venue's report table.
+   Defaults to true (shown) for every code so existing reports are
+   unaffected until the user unticks something in the checkbox panel.
+   ================================================================ */
+function hsConfAllRoutineCodes(){
+  const seen=new Set(), order=[];
+  hsConfExamDates().forEach(item=>{
+    hsSubjectOptions(item).forEach(sub=>{
+      const c=hsSubjectCode4(sub);
+      if(!seen.has(c)){ seen.add(c); order.push(c); }
+    });
+  });
+  return order;
+}
+function hsConfSubSelGet(venue){
+  hsConfDB.subSel=hsConfDB.subSel||{};
+  if(!hsConfDB.subSel[venue]) hsConfDB.subSel[venue]={};
+  const sel=hsConfDB.subSel[venue];
+  hsConfAllRoutineCodes().forEach(c=>{ if(!(c in sel)) sel[c]=true; });
+  return sel;
+}
+function hsConfSubSelSet(venue,code,on){
+  const sel=hsConfSubSelGet(venue);
+  sel[code]=!!on;
+  hsConfSave();
+  hsConfPaint();
+}
+function hsConfSubSelAll(venue,on){
+  const sel=hsConfSubSelGet(venue);
+  hsConfAllRoutineCodes().forEach(c=>{ sel[c]=!!on; });
+  hsConfSave();
+  hsConfRenderSubSel();
+  hsConfPaint();
+}
+function hsConfSubSelHtml(venue){
+  const V=HS_VENUE_INFO[venue], all=hsConfAllRoutineCodes(), sel=hsConfSubSelGet(venue), esc=hsConfEsc;
+  const boxes=all.map(code=>{
+    const ck=sel[code]!==false?'checked':'';
+    return '<label style="display:inline-flex;align-items:center;gap:4px;margin:2px 10px 2px 0;font-size:9pt;">'+
+      '<input type="checkbox" class="hs-conf-subsel" data-venue="'+esc(venue)+'" value="'+esc(code)+'" '+ck+
+      ' onchange="hsConfSubSelSet(\''+venue+'\',\''+esc(code)+'\',this.checked)">'+esc(code)+'</label>';
+  }).join('');
+  return '<div style="border:1px solid #cbd5e1;border-radius:8px;padding:10px;margin:8px 0;background:#f8fafc;">'+
+    '<div style="font-weight:700;margin-bottom:6px;">Venue '+esc(V.name)+' ['+esc(V.code)+'] — Subjects shown in report table</div>'+
+    '<div style="display:flex;flex-wrap:wrap;">'+(boxes||'<span style="color:#64748b;">No subjects found in the routine.</span>')+'</div>'+
+    '<div style="margin-top:6px;">'+
+    '<button type="button" class="btn btn-primary" style="padding:4px 10px;font-size:9pt;" onclick="hsConfSubSelAll(\''+venue+'\',true)">Select All</button> '+
+    '<button type="button" class="btn btn-danger" style="padding:4px 10px;font-size:9pt;" onclick="hsConfSubSelAll(\''+venue+'\',false)">Clear All</button>'+
+    '</div></div>';
+}
+function hsConfRenderSubSel(){
+  const t=document.getElementById('hs_confSubSelTFHS');
+  const g=document.getElementById('hs_confSubSelTGHS');
+  if(t) t.innerHTML=hsConfSubSelHtml('TFHS');
+  if(g) g.innerHTML=hsConfSubSelHtml('TGHS');
+}
 /* subject-wise enrolled / appeared for one venue: ONLY subjects that have enrolled students */
 function hsConfStats(venue){
   const rows=hsConfRows(venue), stats={}, order=[]; let known=false;
@@ -6193,8 +6253,11 @@ function hsConfStats(venue){
       subs.forEach(sub=>{ const c=hsSubjectCode4(sub); if(!order.includes(c)) order.push(c); });
     });
   }
-  if(hsConfDB.fields.manualSub && !order.includes('MANL')) order.push('MANL');
-  return {stats,order,known};
+  /* apply the per-venue checkbox selection (unticked codes are dropped from the report table) */
+  const sel=hsConfSubSelGet(venue);
+  const filteredOrder=order.filter(c=>sel[c]!==false);
+  if(hsConfDB.fields.manualSub && !filteredOrder.includes('MANL')) filteredOrder.push('MANL');
+  return {stats,order:filteredOrder,known};
 }
 function hsConfAutoCands(venue){
   const rows=hsConfRows(venue), item=hsConfExamDates()[0]; let total=0, san=0;
@@ -6296,8 +6359,8 @@ function hsConfPaint(){
   const S1=hsConfStats('TFHS'), S2=hsConfStats('TGHS'), st=document.getElementById('hs_confStatus');
   if(st) st.textContent=(S1.known||S2.known)?'Subject columns = only subjects with enrolled students in the Progress Ledger (subject-wise entry). Click any table cell to correct it.':'No subject-wise figures in the Progress Ledger yet — columns show subjects ticked on each date\'s row (or, if none ticked, the day\'s allotted subjects). Tick the subjects held on each date in the Progress Ledger and press "Re-read Ledger".';
 }
-function hsConfRender(){ hsConfLoad(); hsConfBuildForm(); hsConfFillForm(); hsConfPaint(); }
-function hsConfReset(){ if(!confirm('Re-read all figures from the Progress Ledger? Manual table and candidate-count edits will be cleared.')) return; hsConfDB.ov={}; ['TFHS','TGHS'].forEach(v=>['ben','san'].forEach(m=>{ delete hsConfDB.fields['cand_'+v+'_'+m]; })); hsConfSave(); hsConfFillForm(); hsConfPaint(); }
+function hsConfRender(){ hsConfLoad(); hsConfBuildForm(); hsConfFillForm(); hsConfRenderSubSel(); hsConfPaint(); }
+function hsConfReset(){ if(!confirm('Re-read all figures from the Progress Ledger? Manual table and candidate-count edits will be cleared.')) return; hsConfDB.ov={}; ['TFHS','TGHS'].forEach(v=>['ben','san'].forEach(m=>{ delete hsConfDB.fields['cand_'+v+'_'+m]; })); hsConfSave(); hsConfFillForm(); hsConfRenderSubSel(); hsConfPaint(); }
 function hsConfPrint(){
   hsConfPaint();
   const pg=document.getElementById('hs_confPage'); if(!pg) return;
