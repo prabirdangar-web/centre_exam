@@ -409,6 +409,26 @@ table.schedule-table th{background:#f2f2f2; font-weight:700;}
   body.print-dual .a4-dual-page .badge-type{ float:none !important; display:block; width:max-content; margin:0 0 3px auto; font-size:7.5pt; }
 }
 </style>
+<style id="singleMemoPatch">
+/* ======= SINGLE A4 MEMO — one copy (Council or Office, chosen at print time) full-size on its own page ======= */
+@media print{
+  .a4-dual-page.single-memo .cut-divider{ display:none !important; }
+  .a4-dual-page.single-memo .print-memo-block{ display:none !important; }
+  .a4-dual-page.single-memo.show-council .council-block{ display:block !important; }
+  .a4-dual-page.single-memo.show-office .office-block{ display:block !important; }
+  body.print-dual .a4-dual-page.single-memo{ height:auto !important; max-height:none !important; }
+  body.print-dual .a4-dual-page.single-memo .print-memo-block{ height:auto !important; min-height:0 !important; padding:6mm 0 !important; }
+  body.print-dual .a4-dual-page.single-memo .memo-header h2{ font-size:20pt !important; white-space:normal !important; }
+  body.print-dual .a4-dual-page.single-memo .memo-header h3{ font-size:14pt !important; }
+  body.print-dual .a4-dual-page.single-memo .memo-header p{ font-size:10pt !important; }
+  body.print-dual .a4-dual-page.single-memo table.memo-data-table{ font-size:10.5pt !important; }
+  body.print-dual .a4-dual-page.single-memo table.memo-data-table th,
+  body.print-dual .a4-dual-page.single-memo table.memo-data-table td{ padding:7px 6px !important; }
+  body.print-dual .a4-dual-page.single-memo .memo-summary-box{ font-size:10.5pt !important; padding:8px !important; }
+  body.print-dual .a4-dual-page.single-memo .memo-footer{ margin-top:20mm !important; font-size:10.5pt !important; }
+  body.print-dual .a4-dual-page.single-memo .badge-type{ font-size:8.5pt !important; }
+}
+</style>
 <style id="rdVsPatchCss">
 /* Room-wise Invigilator Allotment panel */
 .rd-scroll{overflow:auto;max-height:70vh;border:1px solid #cbd5e1;border-radius:8px}
@@ -774,6 +794,17 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <label>Print Execution</label>
         <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="window.print()">Print Dual A4 Memo</button>
       </div>
+      <div class="form-group">
+        <label>Single Memo — Copy</label>
+        <select id="hs_singleMemoCopy">
+          <option value="council">Council/Board Copy</option>
+          <option value="office">Office Copy</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="hsPrintSingleMemo()">Print Single Memo</button>
+      </div>
     </div>
 
     <div class="center-registry no-print">
@@ -828,9 +859,9 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
     </div>
 
     <div class="a4-dual-page print-target" id="hs_a4DualPrintPage">
-      <div class="print-memo-block" id="hs_councilMemoBlock"></div>
+      <div class="print-memo-block council-block" id="hs_councilMemoBlock"></div>
       <div class="cut-divider">&#9986; Detach here / Office Perforation Line &#9986;</div>
-      <div class="print-memo-block" id="hs_officeMemoBlock"></div>
+      <div class="print-memo-block office-block" id="hs_officeMemoBlock"></div>
     </div>
   </div>
 
@@ -1090,6 +1121,17 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <label>Print Execution</label>
         <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="window.print()">Print Dual A4 Memo</button>
       </div>
+      <div class="form-group">
+        <label>Single Memo — Copy</label>
+        <select id="mp_singleMemoCopy">
+          <option value="council">Council/Board Copy</option>
+          <option value="office">Office Copy</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="mpPrintSingleMemo()">Print Single Memo</button>
+      </div>
     </div>
 
     <div class="kpi-grid no-print">
@@ -1122,9 +1164,9 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
     </div>
 
     <div class="a4-dual-page print-target" id="mp_a4DualPrintPage">
-      <div class="print-memo-block" id="mp_councilMemoBlock"></div>
+      <div class="print-memo-block council-block" id="mp_councilMemoBlock"></div>
       <div class="cut-divider">&#9986; Detach here / Office Perforation Line &#9986;</div>
-      <div class="print-memo-block" id="mp_officeMemoBlock"></div>
+      <div class="print-memo-block office-block" id="mp_officeMemoBlock"></div>
     </div>
   </div>
 
@@ -5658,6 +5700,26 @@ ${typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:''}</style></head><body><div
   window.addEventListener('beforeprint',function(){ if(ledgerOnScreen()) document.body.classList.add('print-dual'); });
   window.addEventListener('afterprint',function(){ document.body.classList.remove('print-dual'); });
 })();
+/* Single-copy memo printing: prints just the Council or Office copy (picked from the
+   dropdown next to the button) full-size on its own A4 page, then resets back to dual. */
+function hsPrintSingleMemo(){
+  var copy=document.getElementById('hs_singleMemoCopy').value;
+  var page=document.getElementById('hs_a4DualPrintPage'); if(!page) return;
+  page.classList.remove('show-council','show-office');
+  page.classList.add('single-memo', copy==='office'?'show-office':'show-council');
+  function reset(){ page.classList.remove('single-memo','show-council','show-office'); window.removeEventListener('afterprint',reset); }
+  window.addEventListener('afterprint',reset);
+  setTimeout(function(){ window.print(); },30);
+}
+function mpPrintSingleMemo(){
+  var copy=document.getElementById('mp_singleMemoCopy').value;
+  var page=document.getElementById('mp_a4DualPrintPage'); if(!page) return;
+  page.classList.remove('show-council','show-office');
+  page.classList.add('single-memo', copy==='office'?'show-office':'show-council');
+  function reset(){ page.classList.remove('single-memo','show-council','show-office'); window.removeEventListener('afterprint',reset); }
+  window.addEventListener('afterprint',reset);
+  setTimeout(function(){ window.print(); },30);
+}
 </script>
 <script id="officialPrintPatch">
 /* ================================================================
