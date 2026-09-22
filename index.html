@@ -6254,7 +6254,19 @@ function hsConfStats(venue){
   const rows=hsConfRows(venue), stats={}, order=[]; let known=false;
   hsConfExamDates().forEach(item=>{
     const row=rows.find(r=>r.date===item.date); if(!row) return;
-    const opts=hsSubjectOptions(item);
+    let opts=hsSubjectOptions(item);
+    /* Restrict the ledger subject-wise read-out to subjects actually ticked as
+       allotted to THIS venue (Centre-wise subject allotment / Progress Ledger
+       tick boxes), so the report-table columns line up 1:1 with the "Subjects
+       shown in report table" checkboxes below (hsConfVenueRoutineCodes uses
+       the same tick-mark selection). Without this filter, a subject with
+       enrolled figures in the ledger could still show up here even though it
+       was never ticked for this venue, and its column could not be unticked
+       because no matching checkbox existed for it. Fall back to the full day
+       list only when nothing at all has been ticked yet for this venue/date,
+       so the table isn't empty on a brand-new setup. */
+    let alloc=[]; try{ alloc=hsGetAllocatedSubjects(venue,item.date)||[]; }catch(e){ alloc=[]; }
+    if(alloc.length) opts=opts.filter(s=>alloc.includes(s));
     opts.forEach(sub=>{
       let arr=null;
       if(row.subWise&&row.subVals) arr=row.subVals[sub]||[];
