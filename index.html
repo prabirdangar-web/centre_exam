@@ -507,7 +507,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
           <tr><td><strong>Seal Opening Format</strong></td><td>Centre, venue, date, subject and question-paper carton details</td><td>Opening/seal record</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('seal')">Generate</button></td></tr>
           <tr><td><strong>On Duty Declaration</strong></td><td>Exam year, period, school and staff name</td><td>On-duty certification</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('duty')">Generate</button></td></tr>
           <tr><td><strong>Confidential Format</strong></td><td>Venue Supervisor, school/code, date/time</td><td>Rule violation / untoward incident report</td><td><button class="btn btn-primary" onclick="hsPrintCentreForm('confidential')">Generate</button></td></tr>
-          <tr><td><strong>Speed Post Address Cover (Insured) — Day-wise</strong></td><td>Auto: date, day, full subject names; BNPL / Contract ID; To: Deputy Secretary (MRO); From: centre &amp; venue</td><td>Big A4 colour address label for each day's OMR parcel — official seal box, parcel no.</td><td><button class="btn btn-primary" onclick="hsPrintSpeedPost('day')">This Day</button> <button class="btn btn-primary" onclick="hsPrintSpeedPost('all')">All Days</button></td></tr>
+          <tr><td><strong>Speed Post Address Cover (Insured) — Day-wise</strong></td><td>Auto: date, day, full subject names; BNPL / Contract ID; To: Deputy Secretary, Medinipur Regional Office (MRO); From: centre &amp; venue</td><td>Big A4 colour address label for each day's OMR parcel — official seal box, parcel no.</td><td><button class="btn btn-primary" onclick="hsPrintSpeedPost('day')">This Day</button> <button class="btn btn-primary" onclick="hsPrintSpeedPost('all')">All Days</button></td></tr>
           <tr><td><strong>Despatch Report Form 3A (AP) — Day-wise</strong></td><td>Auto: SEM-III, centre, examination date, despatch date, post office and day-wise 4-letter subject codes; round Centre seal on every page. Packets, top-sheet numbers and receipt are typed in large font</td><td>Despatch report for answer-paper packets sent to the Regional Office</td><td><button class="btn btn-primary" onclick="hsPrintDespatch('day')">This Day</button> <button class="btn btn-primary" onclick="hsPrintDespatch('all')">All Days</button></td></tr>
           <tr><td><strong>Room-wise Allotment of Invigilator</strong></td><td>Invigilator, school, Room No. and signature for every 2027 examination date</td><td>Room duty chart; also feeds Invigilator 1 / 2 on the V.S. Data Sheet</td><td><button class="btn btn-primary" onclick="switchTool('roomduty');hsRdRender()">Open</button></td></tr>
         </tbody>
@@ -5226,7 +5226,7 @@ hsBuildDayFormPage=function(type,c){
 /* ---------------- INSURED SPEED POST COVER ---------------- */
 const HS_SPEEDPOST={
   bnpl:'6000013163', contract:'40132987', insured:'RS.200/-',
-  to:['The Deputy Secretary (MRO)','Sahid Matangini Bhavan Bidhannagar East','72, Station Road','P.O.- Midnapore &nbsp; Dist.- Paschim Medinipur','PIN- 721101']
+  to:['The Deputy Secretary, Medinipur Regional Office (MRO)','Sahid Matangini Bhavan Bidhannagar East','72, Station Road','P.O.- Midnapore &nbsp; Dist.- Paschim Medinipur','PIN- 721101']
 };
 function hsPrintSpeedPost(){
   const venue=hsGetVenue(), V=HS_VENUE_INFO[venue], esc=hsRdEsc;
@@ -5289,7 +5289,7 @@ cloudRunWhenReady(()=>{ try{hsRdRender();}catch(e){} });
    ================================================================ */
 const HS_SPEEDPOST_DW={
   bnpl:'6000013163', contract:'40132987', insured:'RS.200/-',
-  to:['The Deputy Secretary (MRO)','Sahid Matangini Bhavan','Bidhannagar East','72, Station Road','P.O.- Midnapore','Dist.- Paschim Medinipur'],
+  to:['The Deputy Secretary, Medinipur Regional Office (MRO)','Sahid Matangini Bhavan','Bidhannagar East','72, Station Road','P.O.- Midnapore','Dist.- Paschim Medinipur'],
   pin:'721101',
   fromPO:'P.O. TALDANGRA, DIST- BANKURA, PIN-722152',
   centre:'TALDANGRA', centreCode:'2206', mobile:'9933035811'
@@ -5404,10 +5404,10 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
    top-sheet numbers per subject, India Post receipt number and date.
    ================================================================ */
 const HS_DESPATCH_TO=[
-  {k:'KRO', h:'Deputy Secretary (KRO)', l:['Vidyasagar Bhavan 9/2,','Block-DJ, Sector-II,','Salt Lake, Kolkata-700091','(1st Floor)','Ph:- 033-23374984 to 87']},
-  {k:'BRO', h:'Deputy Secretary (BRO)', l:['Nazrul Bhavan','Behind LIC Office','5, Ichlabad (Jalkal Math)','P.O.- Sripally Dt.-Bardhaman','Pin:- 713103','Ph:- 0342-2544720/2541427','Fax:- 0342-2647745']},
-  {k:'MRO', h:'Deputy Secretary (MRO)', l:['Sahid Matangini Bhavan','Bidhannagar East,','72, Station Road','P.O.- Midnapur','Dist:- Paschim Medinipur','Pin:- 721101','Ph:- 03222-276318','Fax:- 03222-271840']},
-  {k:'NBRO', h:'Deputy Secretary (NBRO)', l:['Rahul Sankrityayn Bhavan','P.O.- N. B. University,','Dist:- Darjeeling','Pin:- 734430','Ph:- 0353-2582097','Fax:- 0353-2582156']}
+  {k:'KRO', h:'Deputy Secretary, Kolkata Regional Office (KRO)', l:['Vidyasagar Bhavan 9/2,','Block-DJ, Sector-II,','Salt Lake, Kolkata-700091','(1st Floor)','Ph:- 033-23374984 to 87']},
+  {k:'BRO', h:'Deputy Secretary, Bardhaman Regional Office (BRO)', l:['Nazrul Bhavan','Behind LIC Office','5, Ichlabad (Jalkal Math)','P.O.- Sripally Dt.-Bardhaman','Pin:- 713103','Ph:- 0342-2544720/2541427','Fax:- 0342-2647745']},
+  {k:'MRO', h:'Deputy Secretary, Medinipur Regional Office (MRO)', l:['Sahid Matangini Bhavan','Bidhannagar East,','72, Station Road','P.O.- Midnapur','Dist:- Paschim Medinipur','Pin:- 721101','Ph:- 03222-276318','Fax:- 03222-271840']},
+  {k:'NBRO', h:'Deputy Secretary, North Bengal Regional Office (NBRO)', l:['Rahul Sankrityayn Bhavan','P.O.- N. B. University,','Dist:- Darjeeling','Pin:- 734430','Ph:- 0353-2582097','Fax:- 0353-2582156']}
 ];
 // Regional office(s) this centre despatches to; all the others are struck through with a pen line.
 const HS_DESPATCH_KEEP=['MRO'];
@@ -5491,6 +5491,7 @@ body{margin:0;font-family:"Times New Roman",Times,serif;color:#000;background:#f
 .sheet{width:186mm;height:271mm;margin:0 auto;position:relative;display:flex;flex-direction:column;page-break-after:always;break-after:page;overflow:hidden}
 .sheet:last-of-type{page-break-after:auto;break-after:auto}
 .fno{font-size:10.5pt;font-weight:700;text-decoration:underline}.fno .shn{text-decoration:none;font-weight:400;font-size:9.5pt}
+.sheet{border:1mm double #000;padding:3mm}
 .hd{text-align:center;margin-top:-1mm}
 .lg{width:17mm;height:17mm;object-fit:contain;display:block;margin:0 auto 1mm}
 .cn{font-size:15pt;font-weight:700;line-height:1.2}
@@ -5503,11 +5504,12 @@ body{margin:0;font-family:"Times New Roman",Times,serif;color:#000;background:#f
 .tol{margin-top:1.5mm;font-size:11pt}
 .to{width:100%;border-collapse:collapse;margin-top:1mm;table-layout:fixed}
 .to td{border:1px solid #000;padding:1.4mm 1.7mm;font-size:8.6pt;line-height:1.28;vertical-align:top}
-.to td.x{color:#444;text-decoration:line-through;text-decoration-thickness:1.4px}
+.to td.x{color:#444;position:relative}
+.to td.x::after{content:'';position:absolute;left:2mm;top:2mm;right:2mm;bottom:2mm;background:linear-gradient(to top right,transparent calc(50% - .35mm),#000 calc(50% - .35mm),#000 calc(50% + .35mm),transparent calc(50% + .35mm))}
 .ln{margin-top:3mm;font-size:11pt;line-height:1.9}
 .ln.po{margin-top:1mm}
 .fl{display:inline-block;border-bottom:1px dotted #555;min-height:1em;line-height:1.25;vertical-align:baseline;text-align:center}
-.fl.dt{font-weight:700}
+.fl.dt{font-weight:900;font-size:14pt}
 .fl.big{flex:1;font-size:21pt;font-weight:900;letter-spacing:1.5px;line-height:1.1;text-align:left;padding-left:2mm}
 /* LARGE, capital entry font for everything typed in by hand */
 .in{font-family:Arial,Helvetica,sans-serif;font-weight:900;text-transform:uppercase;text-align:center;letter-spacing:.4px;line-height:1.15;word-break:break-word}
@@ -5869,7 +5871,7 @@ function hsCoverEnvelopeHtml(item,subTxt,S,off){
 }
 function hsCoverSpeedPostHtml(item,subTxt,S,off){
   const esc=hsRdEsc, v1=HS_VENUE_INFO.TFHS, v2=HS_VENUE_INFO.TGHS;
-  return `<section class="pg sp"><div class="s-frame">
+  return `<section class="pg sp"><div class="s-outer"><div class="s-frame">
 <div class="s-head"><div class="s-a">INSURED SPEED POST</div><div class="s-b">INSURED FOR <span class="s-amt" contenteditable="true">${esc(S.insured)}</span></div></div>
 <div class="s-ids"><div><small>BNPL Customer ID</small><b contenteditable="true">${esc(S.bnpl)}</b></div><div><small>CONTRACT ID</small><b contenteditable="true">${esc(S.contract)}</b></div></div>
 <div class="s-exam"><div class="s-date"><small>DATE OF EXAMINATION</small><b contenteditable="true">${esc(item.date)}</b><em contenteditable="true">${esc(String(item.day||'').toUpperCase())}</em></div>
@@ -5884,20 +5886,21 @@ function hsCoverSpeedPostHtml(item,subTxt,S,off){
   <div class="fs po" contenteditable="true">${esc(S.fromPO)}</div></div>
  <div class="s-seal cseal">${hsCentreSealSvg(44)}</div></div>
 <div class="s-foot">PARCEL NO. <span contenteditable="true">____</span> OF <span contenteditable="true">____</span> &nbsp;&nbsp;·&nbsp;&nbsp; Parcel limit 10 kg</div>
-</div></section>`;
+</div></div></section>`;
 }
 const HS_COVER_CSS=`
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 :root{--ew:220mm;--eh:110mm;--u:1}
-@page spc{size:A4 portrait;margin:0}
+@page spc{size:A4 portrait;margin:6mm}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff}
 .tb{position:sticky;top:0;z-index:10;background:#111827;color:#fff;padding:8px 14px;font:600 12.5px Arial;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .tb select{font:600 12px Arial;padding:3px 5px}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 18px;font-weight:700;cursor:pointer}
 .tb .hint{font-weight:400;font-size:11px;color:#cbd5e1;flex-basis:100%}
 section.pg{break-before:page;page-break-before:always;background:#fff;position:relative;overflow:hidden;color:#000}
 section.pg:first-of-type{break-before:auto;page-break-before:auto}
-section.env{page:env;width:var(--ew);height:var(--eh);padding:calc(8mm*var(--u)) calc(10mm*var(--u));display:flex;flex-direction:column;font-size:calc(8pt*var(--u))}
-section.sp{page:spc;width:210mm;height:296mm;padding:9mm;text-transform:uppercase}
+section.env{page:env;width:var(--ew);height:var(--eh);padding:calc(8mm*var(--u)) calc(10mm*var(--u));display:flex;flex-direction:column;font-size:calc(8pt*var(--u));border:calc(1mm*var(--u)) double #1e3a8a}
+section.sp{page:spc;width:198mm;height:285mm;padding:6mm;text-transform:uppercase}
+.s-outer{border:1.3mm double #1e3a8a;height:100%;padding:3mm;box-sizing:border-box}
 body.only-env section.sp,body.only-sp section.env{display:none}
 body.no-seal .cseal{display:none}
 .cseal{transform:rotate(-9deg);opacity:.92;mix-blend-mode:multiply;line-height:0}
@@ -6015,9 +6018,9 @@ window.addEventListener('beforeprint',function(){ tfDocSealFill(); tfSignRefresh
 .cr-page .cr-ad{text-align:center;font-weight:700;font-size:10.3pt;margin-top:1.2mm;font-family:Arial,Helvetica,sans-serif}
 .cr-page .cr-from{font-style:italic;font-family:"Courier New",monospace;font-size:10pt;margin-top:1.5mm}
 .cr-page .cr-rule{border-top:.7mm double #000;margin:1mm 0 2mm}
-.cr-page .cr-memo{display:flex;justify-content:space-between;font-style:italic;font-size:11pt;margin-bottom:2mm}
+.cr-page .cr-memo{display:flex;justify-content:space-between;font-style:italic;font-weight:700;font-size:12.5pt;margin-bottom:2mm}
 .cr-page .cr-to{margin-bottom:2mm}
-.cr-page .cr-sub{text-decoration:underline;margin-bottom:2mm}
+.cr-page .cr-sub{text-decoration:underline;font-weight:700;font-size:11.3pt;margin-bottom:2mm}
 .cr-page p{margin:0 0 1.6mm;text-align:justify}
 .cr-page .cr-vt{text-align:center;font-weight:700;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;margin:2mm 0 .8mm}
 .cr-page table.cr-t{width:100%;border-collapse:collapse;table-layout:fixed;margin:0 0 1.5mm;font-size:7.6pt}
@@ -6188,7 +6191,7 @@ function hsConfPrint(){
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
   const html=pg.outerHTML.replace(/\scontenteditable="true"/g,'');
   const css=document.getElementById('confReportCss').textContent;
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Confidential Report \u2014 H.S. 2027 [SEM-III] \u2014 Centre 2206</title><style>@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}body{margin:0;background:#fff}.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}</style><style>'+css+TF_DOC_SEAL_CSS+'</style><style>.cr-page{width:194mm;max-width:none;margin:0 auto;padding:0;border:0;box-shadow:none}@media screen{body{background:#e5e7eb}.cr-page{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}}@media print{.no-print{display:none!important}}</style></head><body><div class="tb no-print"><span>Confidential Report \u2014 A4 portrait. Use the tool to change wording or figures.</span><button onclick="window.print()">Print</button></div>'+html+'</body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Confidential Report \u2014 H.S. 2027 [SEM-III] \u2014 Centre 2206</title><style>@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}body{margin:0;background:#fff}.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}.tb label{font-weight:600;cursor:pointer}</style><style>'+css+TF_DOC_SEAL_CSS+'</style><style>.cr-page{width:194mm;max-width:none;margin:0 auto;padding:6mm;border:1mm double #1e3a8a;box-shadow:none}body.no-seal .doc-seal{display:none}@media screen{body{background:#e5e7eb}.cr-page{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}}@media print{.no-print{display:none!important}}</style></head><body><div class="tb no-print"><span>Confidential Report \u2014 A4 portrait. Use the tool to change wording or figures.</span><label><input type="checkbox" checked onchange="document.body.classList.toggle(\'no-seal\',!this.checked)"> Round Centre seal</label><button onclick="window.print()">Print</button></div>'+html+'</body></html>');
   w.document.close();
 }
 document.addEventListener('input',function(ev){
