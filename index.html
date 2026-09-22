@@ -1004,10 +1004,14 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
     <div class="control-panel no-print">
       <div class="panel-title">Confidential Report to the Deputy Secretary, W.B.C.H.S.E. Regional Office &mdash; H.S. 2027 [SEM-III]</div>
       <div class="form-grid" id="hs_confForm"></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center;">
         <button class="btn btn-success" onclick="hsConfPrint()">Print / Save PDF (A4)</button>
         <button class="btn btn-primary" onclick="hsConfReset()">Re-read Ledger (clear manual edits)</button>
         <button class="btn btn-primary" onclick="cloudForceSaveAll()">Save to Cloud Now</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:9pt;font-weight:700;color:#334155;cursor:pointer;margin-left:6px;">
+          <input type="checkbox" id="hs_confManualSub" onchange="hsConfSetManualSub(this.checked)">
+          Manual subject selection (only subjects ticked in Progress Ledger; adds one extra editable column)
+        </label>
       </div>
       <div id="hs_confStatus" style="font-size:9pt;color:#475569;margin-top:8px;"></div>
     </div>
@@ -6179,17 +6183,17 @@ function hsConfStats(venue){
     });
   });
   if(!known){   /* nothing subject-wise in the ledger yet: skeleton from ticked / allotted / day subjects.
-                   Once ANY date has a ticked selection for this venue, ticks become authoritative —
-                   a date with no ticks contributes nothing, so the table reflects only what was ticked. */
-    let anyTicked=false;
-    hsConfExamDates().forEach(item=>{ try{ if(hsGetAllocatedSubjects(venue,item.date).length) anyTicked=true; }catch(e){} });
+                   Default = subjects fetched from the DB/ledger for the date (as before). Manual mode
+                   (checkbox) makes ticked subjects authoritative — a date with no ticks contributes nothing. */
+    const manual=!!hsConfDB.fields.manualSub;
     hsConfExamDates().forEach(item=>{
       let subs=[];
-      if(anyTicked){ try{ subs=hsGetAllocatedSubjects(venue,item.date)||[]; }catch(e){ subs=[]; } }
+      if(manual){ try{ subs=hsGetAllocatedSubjects(venue,item.date)||[]; }catch(e){ subs=[]; } }
       else{ try{ subs=hsSubjectsForDisplay(venue,item.date,item)||[]; }catch(e){ subs=hsSubjectOptions(item); } }
       subs.forEach(sub=>{ const c=hsSubjectCode4(sub); if(!order.includes(c)) order.push(c); });
     });
   }
+  if(hsConfDB.fields.manualSub && !order.includes('MANL')) order.push('MANL');
   return {stats,order,known};
 }
 function hsConfAutoCands(venue){
@@ -6225,7 +6229,10 @@ function hsConfVenueTable(venue,S,singleTable){
   const lastI=singleTable?0:(list.length-1);
   for(let i=0;i<list.length && i<=lastI;i+=chunk){
     const cs=list.slice(i,i+chunk), n=cs.length;
-    const head='<tr><th class="med">Medium</th><th class="lbl">Subject</th>'+cs.map(c=>'<th>'+hsConfEsc(c)+'</th>').join('')+'</tr>';
+    const head='<tr><th class="med">Medium</th><th class="lbl">Subject</th>'+cs.map(c=>{
+      if(c==='MANL'){ const lbl=hsConfF('manualColLabel_'+venue)||'OTHER'; return '<th contenteditable="true" data-mcl="'+hsConfEsc(venue)+'" title="Type a custom subject name/code here">'+hsConfEsc(lbl)+'</th>'; }
+      return '<th>'+hsConfEsc(c)+'</th>';
+    }).join('')+'</tr>';
     const rowFor=(med,label,kind)=>'<tr>'+(kind==='app'?'<th class="med" rowspan="2">'+label+'</th>':'')+'<th class="lbl">'+(kind==='app'?'Appeared':'Absent')+'</th>'+cs.map(c=>{ if(!c) return '<td></td>'; const r=hsConfCell(venue,c,med,kind,S); return '<td contenteditable="true" data-k="'+hsConfEsc(r.key)+'">'+hsConfEsc(r.val)+'</td>'; }).join('')+'</tr>';
     parts.push('<table class="cr-t"><thead>'+head+'</thead><tbody>'+rowFor('ben','Bengali','app')+rowFor('ben','Bengali','abs')+rowFor('san','Santali','app')+rowFor('san','Santali','abs')+'</tbody></table>');
   }
@@ -6278,7 +6285,9 @@ function hsConfFillForm(){
   [['cand_TFHS_ben',a1.ben],['cand_TFHS_san',a1.san],['cand_TGHS_ben',a2.ben],['cand_TGHS_san',a2.san]].forEach(x=>{ const el=document.getElementById('hs_conf_'+x[0]); if(el) el.placeholder=String(x[1]); });
   const d=document.getElementById('hs_conf_date'); if(d) d.placeholder=hsConfToday();
   const c=document.getElementById('hs_conf_cic'); if(c) c.placeholder=hsConfCic();
+  const m=document.getElementById('hs_confManualSub'); if(m) m.checked=!!hsConfDB.fields.manualSub;
 }
+function hsConfSetManualSub(on){ hsConfDB.fields.manualSub=!!on; hsConfSave(); hsConfPaint(); }
 let _hsConfT=null;
 function hsConfSetField(k,v){ hsConfDB.fields[k]=v; hsConfSave(); clearTimeout(_hsConfT); _hsConfT=setTimeout(hsConfPaint,250); }
 function hsConfPaint(){
@@ -6299,8 +6308,9 @@ function hsConfPrint(){
   w.document.close();
 }
 document.addEventListener('input',function(ev){
-  const t=ev.target; if(!t||!t.dataset||!t.dataset.k||!t.closest||!t.closest('#hs_confPage')) return;
-  hsConfDB.ov[t.dataset.k]=t.textContent.trim(); hsConfSave();
+  const t=ev.target; if(!t||!t.dataset||!t.closest||!t.closest('#hs_confPage')) return;
+  if(t.dataset.k){ hsConfDB.ov[t.dataset.k]=t.textContent.trim(); hsConfSave(); return; }
+  if(t.dataset.mcl){ hsConfDB.fields['manualColLabel_'+t.dataset.mcl]=t.textContent.trim(); hsConfSave(); }
 });
 </script>
 </body>
