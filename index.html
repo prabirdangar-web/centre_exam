@@ -2178,6 +2178,33 @@ function hsGetAllocatedSubjects(venue,date){
   hsSyncSubjectAllocationFromLedger(venue,date);
   const key=hsAllocationKey(venue,date); return (hsCentreSubjectAllocation[key]||[]).slice();
 }
+/* ================================================================
+   HS :: SUBJECT TICK-BOXES DIRECTLY ON THE PROGRESS LEDGER ROW
+   Same save-target (hsCentreSubjectAllocation, keyed venue|date) as the
+   tick list on the Cover/Form generator, so ticking here is picked up
+   everywhere else automatically — Despatch Report, Speed Post cover,
+   Room Allocation, and the Confidential Report subject columns.
+   ================================================================ */
+function hsLedgerSubTickHtml(rowIndex,row){
+  const subjects=hsRowSubjectList(row); if(!subjects.length) return '';
+  const venue=hsActiveSchool, date=row.date;
+  hsSyncSubjectAllocationFromLedger(venue,date);
+  const key=hsAllocationKey(venue,date);
+  const selected=hsCentreSubjectAllocation[key]||[];
+  const opts=subjects.map(sub=>{
+    const ck=selected.includes(sub)?'checked':'';
+    return `<label title="${hsEscapeFormText(sub)}" style="display:inline-flex;align-items:center;gap:3px;margin:2px 6px 2px 0;font-size:7.6pt;font-weight:700;color:#334155;cursor:pointer;"><input type="checkbox" class="hs-ledger-subtick" data-row="${rowIndex}" value="${hsEscapeFormText(sub)}" ${ck} onchange="hsSaveLedgerRowSubjects(${rowIndex})">${hsEscapeFormText(hsSubjectCode4(sub))}</label>`;
+  }).join('');
+  return `<div style="margin-top:4px;padding-top:4px;border-top:1px dashed #cbd5e1;"><div style="font-size:6.6pt;color:#64748b;text-transform:uppercase;font-weight:700;margin-bottom:2px;">Subjects held this date (tick &amp; save — feeds Confidential Report &amp; every form)</div>${opts}</div>`;
+}
+function hsSaveLedgerRowSubjects(rowIndex){
+  const row=(hsTrackingStateDatabase[hsActiveSchool]||[])[rowIndex]; if(!row) return;
+  const venue=hsActiveSchool, date=row.date;
+  const boxes=document.querySelectorAll('.hs-ledger-subtick[data-row="'+rowIndex+'"]');
+  const arr=[...boxes].filter(x=>x.checked).map(x=>x.value);
+  hsCentreSubjectAllocation[hsAllocationKey(venue,date)]=arr; hsSaveSubjectAllocation();
+  try{ if(document.getElementById('hs_confPage')) hsConfPaint(); }catch(e){}
+}
 function hsGetCentreFormContext(venueOverride,dateOverride){
   const venueKey=venueOverride || hsGetVenue();
   const venue=HS_VENUE_INFO[venueKey].name;
@@ -2884,7 +2911,7 @@ function hsRenderReportingMatrixTable(){
     const toggleBtn = multi
       ? `<button class="btn btn-primary" style="padding:3px 7px;font-size:8pt;margin-top:5px;" onclick="hsToggleSubjectWise(${rowIndex})">${row.subWise?'Hide Subject-wise Entry':'Subject-wise Entry ('+subjects.length+')'}</button>`
       : '';
-    let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${hsSubjectListWithCodes(row.sub)}<br>${toggleBtn}</td>`;
+    let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${hsSubjectListWithCodes(row.sub)}<br>${toggleBtn}${hsLedgerSubTickHtml(rowIndex,row)}</td>`;
     for(let v=0; v<12; v++){
       rowHtml += row.subWise
         ? `<td><div class="hs-auto-box" style="min-height:26px;">${row.vals[v]}</div></td>`
@@ -6252,7 +6279,7 @@ function hsConfPaint(){
   const pv=document.getElementById('hs_confPreview'); if(!pv) return;
   pv.innerHTML=hsConfLetterHtml();
   const S1=hsConfStats('TFHS'), S2=hsConfStats('TGHS'), st=document.getElementById('hs_confStatus');
-  if(st) st.textContent=(S1.known||S2.known)?'Subject columns = only subjects with enrolled students in the Progress Ledger (subject-wise entry). Click any table cell to correct it.':'No subject-wise enrolment in the Progress Ledger yet — columns show the allotted / day subjects. Enter subject-wise counts in the Progress Ledger (Subject-wise button) and press "Re-read Ledger".';
+  if(st) st.textContent=(S1.known||S2.known)?'Subject columns = only subjects with enrolled students in the Progress Ledger (subject-wise entry). Click any table cell to correct it.':'No subject-wise figures in the Progress Ledger yet — columns show subjects ticked on each date\'s row (or, if none ticked, the day\'s allotted subjects). Tick the subjects held on each date in the Progress Ledger and press "Re-read Ledger".';
 }
 function hsConfRender(){ hsConfLoad(); hsConfBuildForm(); hsConfFillForm(); hsConfPaint(); }
 function hsConfReset(){ if(!confirm('Re-read all figures from the Progress Ledger? Manual table and candidate-count edits will be cleared.')) return; hsConfDB.ov={}; ['TFHS','TGHS'].forEach(v=>['ben','san'].forEach(m=>{ delete hsConfDB.fields['cand_'+v+'_'+m]; })); hsConfSave(); hsConfFillForm(); hsConfPaint(); }
