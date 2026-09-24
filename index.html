@@ -5565,7 +5565,7 @@ function hsPrintDespatch(mode){
         <div class="pbx" style="height:${b1}mm"><b>Name of the Post Office<br>From where booked<br>(if sent by India Post)</b><div class="in po" contenteditable="true">${esc(S.centre)}</div></div>
         <div class="pbx" style="height:${b2}mm"><b>India Post Receipt<br>Number and Date</b><div class="in rc" contenteditable="true">&nbsp;</div></div>
         <div class="pbx last" style="height:${b3}mm"><div class="in rc" contenteditable="true">&nbsp;</div></div></td>`;
-    const rows=(n?codes:['']).map((c,i)=>`<tr style="height:${rowH}mm">${i===0?particulars:''}<td class="sj"><span contenteditable="true">${esc(c)}</span></td><td class="in" contenteditable="true"></td><td class="in" contenteditable="true"></td></tr>`).join('')
+    const rows=(n?codes:['']).map((c,i)=>`<tr style="height:${rowH}mm">${i===0?particulars:''}<td class="sj"><span contenteditable="true">${esc(c)}</span></td><td class="in" contenteditable="true"></td><td class="in ts" contenteditable="true"></td></tr>`).join('')
       + (fillH>0?`<tr style="height:${fillH}mm"><td class="sj"></td><td></td><td></td></tr>`:'');
     return `<section class="sheet">
   <div class="fno">Form No. 3A (AP)${np>1?` <span class="shn">&nbsp;&mdash; Sheet ${pi+1} of ${np} (${esc(item.date)})</span>`:''}</div>
@@ -5583,7 +5583,7 @@ function hsPrintDespatch(mode){
   <div class="ln"><b>Examination held on ${dfill(item.date)}</b></div>
   <div class="ln po"><b>Report of despatch by India Post/Messenger dated the ${dfill(item.date)} of ${blank(20)}<br>Boxes/Packets, containing answer papers. Details are given below:</b></div>
   <table class="dt2">
-    <thead><tr><th style="width:30%">PARTICULARS</th><th style="width:17%">SUBJECT(S)</th><th style="width:26%">NOs of PACKETS<br>DESPATCHED</th><th style="width:27%">SL. NOs. of TOP<br>SHEETS</th></tr></thead>
+    <thead><tr><th style="width:30%">PARTICULARS</th><th style="width:17%">SUBJECT(S)</th><th style="width:18%">NOs of PACKETS<br>DESPATCHED</th><th style="width:35%">SL. NOs. of TOP<br>SHEETS</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <div class="sigw"><div class="sig">Signature of Centre-in-Charge (with seal)</div>${tfDocSeal(30,'hs','right:56mm;bottom:8mm',SEAL_TXT)}</div>
@@ -5628,6 +5628,7 @@ body{margin:0;font-family:"Times New Roman",Times,serif;color:#000;background:#f
 .dt2 th{border:1px solid #000;padding:1.6mm 1mm;font-size:10.5pt;text-align:center;font-weight:700;line-height:1.25}
 .dt2 td{border:1px solid #000;vertical-align:middle;padding:0 1.5mm;overflow:hidden}
 .dt2 td.in{font-size:18pt}
+.dt2 td.in.ts{font-size:13pt;letter-spacing:.2px}
 .dt2 td.pt{padding:0;vertical-align:top}
 .pbx{border-bottom:1px solid #000;padding:2mm 2mm 0;font-size:10.5pt;line-height:1.35;text-align:left}
 .pbx.last{border-bottom:0}
