@@ -5946,8 +5946,8 @@ hsPrintCentreForm=function(type,venueOverride,dateOverride){
 let _hsSealN=0;
 function hsCentreSealSvg(mm,kind,bot){
   const id='cs'+(++_hsSealN), col='#5b2c9e', mpk=(kind==='mp');
-  const tTop=mpk?'TALDANGRA MADHYAMIK CENTRE':'TALDANGRA H.S. CENTRE', tBot=bot||(mpk?'MADHYAMIK EXAMINATION 2027':'H.S. EXAMINATION 2027');
-  const fT=mpk?5:6.4, lT=mpk?88:90, fB=bot?6.2:(mpk?5.4:6.6), lB=mpk?98:100;
+  const tTop=mpk?'TALDANGRA MADHYAMIK CENTRE':'TALDANGRA H.S. CENTRE', tBot=bot||(mpk?'MADHYAMIK EXAMINATION 2027':'H.S. EXAMINATION 2027 SEM-III');
+  const fT=mpk?5:6.4, lT=mpk?88:90, fB=bot?6.2:(mpk?5.4:5.8), lB=mpk?98:100;
   return `<svg class="cseal-svg" width="${mm}mm" height="${mm}mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
 <defs><path id="${id}t" d="M 18.5,50 A 31.5,31.5 0 0 1 81.5,50"/><path id="${id}b" d="M 12,50 A 38,38 0 0 0 88,50"/></defs>
 <g fill="none" stroke="${col}"><circle cx="50" cy="50" r="47.5" stroke-width="2.4"/><circle cx="50" cy="50" r="44" stroke-width=".8"/><circle cx="50" cy="50" r="27.5" stroke-width=".9"/></g>
