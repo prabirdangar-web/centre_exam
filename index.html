@@ -6376,8 +6376,18 @@ function hsConfVenueTable(venue,S,singleTable){
   }
   return '<div class="cr-vt">Venue '+hsConfEsc(V.name)+' ['+hsConfEsc(V.code)+']</div>'+parts.join('');
 }
+function hsConfYear(){
+  /* Reporting year is not a separate input — pulled straight from the
+     Progress Ledger's own exam-year tracking (hsTrackingStateDatabase.year,
+     e.g. "2027 [SEM-III]"), same as the exam dates/subjects below. */
+  try{
+    const raw=String((hsTrackingStateDatabase||{})["year"]||'').trim();
+    const m=raw.match(/\d{4}/);
+    return m?m[0]:'2027';
+  }catch(e){ return '2027'; }
+}
 function hsConfLetterHtml(){
-  const year='2027', VT=HS_VENUE_INFO.TFHS, VG=HS_VENUE_INFO.TGHS;
+  const year=hsConfYear(), VT=HS_VENUE_INFO.TFHS, VG=HS_VENUE_INFO.TGHS;
   const c1=hsConfCands('TFHS'), c2=hsConfCands('TGHS'), w=n=>amountToWordsShared(n);
   const S1=hsConfStats('TFHS'), S2=hsConfStats('TGHS');
   return '<div class="cr-page" id="hs_confPage">'+
