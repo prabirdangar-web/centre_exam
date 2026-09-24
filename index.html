@@ -5598,7 +5598,7 @@ body{margin:0;font-family:"Times New Roman",Times,serif;color:#000;background:#f
 .tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
 .tb label{font-weight:600;cursor:pointer}
-.sheet{width:186mm;height:273mm;margin:0 auto;position:relative;display:flex;flex-direction:column;page-break-after:always;break-after:page;overflow:hidden}
+.sheet{width:186mm;min-height:273mm;margin:0 auto;position:relative;display:flex;flex-direction:column;page-break-after:always;break-after:page;overflow:visible}
 .sheet:last-of-type{page-break-after:auto;break-after:auto}
 .fno{font-size:10.5pt;font-weight:700;text-decoration:underline}.fno .shn{text-decoration:none;font-weight:400;font-size:9.5pt}
 .sheet{border:1mm double #000;padding:3mm}
@@ -5636,7 +5636,7 @@ body{margin:0;font-family:"Times New Roman",Times,serif;color:#000;background:#f
 .pbx .in.rc{font-size:14.5pt}
 .dt2 td.sj{text-align:center}
 .dt2 td.sj span{font:900 17pt Arial,Helvetica,sans-serif;letter-spacing:1px}
-.sigw{position:relative;margin-top:auto;height:38mm;flex:none}
+.sigw{position:relative;margin-top:auto;height:38mm;flex:none;page-break-inside:avoid;break-inside:avoid}
 .sig{position:absolute;right:4mm;bottom:2mm;font-size:11pt;font-weight:700}
 body.no-seal .doc-seal{display:none}
 [contenteditable]{outline:none}
