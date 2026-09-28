@@ -5241,7 +5241,9 @@ const HS_VS_LAND_CSS=`
 section.vs-land:last-of-type{page-break-after:auto;break-after:auto}
 .vs-head{display:flex;align-items:center;gap:4mm;height:14mm;flex:none}
 .vs-logo{width:13mm;height:13mm;object-fit:contain;flex:none}
-.vs-ttlbox{flex:1;text-align:center;margin-right:17mm}
+.vs-ttlbox{flex:1;text-align:center;margin-left:27mm}
+.vs-subzone{width:44mm;flex:none;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:1mm}
+.vs-oval{display:inline-block;border:.5mm solid #111;border-radius:999px;padding:.7mm 3mm;font-size:10pt;font-weight:700;line-height:1.2;text-align:center;letter-spacing:.2mm;white-space:nowrap}
 .vs-title{font-size:14pt;font-weight:700;text-decoration:underline;line-height:1.15}
 .vs-sub{font-size:7pt;font-weight:700;line-height:1.25;margin-top:.8mm}
 .vs-meta{display:flex;justify-content:space-between;gap:4mm;font-size:9pt;font-weight:700;margin:1.6mm 0 1.4mm;white-space:nowrap;flex:none}
@@ -5308,7 +5310,7 @@ function hsVsLandPages(c){
       return `<tr>${ed('hall',r.room)}${ed('nm',i1)}${ed('nm',i2)}${ed('sub',sub)}${ed('sl',z.qFrom||'')}${ed('sl',z.qTo||'')}${ed('tot',z.seats||'')}${ed('sl','')}${ed('sl',z.omrFrom||'')}${ed('sl',z.omrTo||'')}${ed('tot',z.seats||'')}<td></td></tr>`;
     }).join('');
     pages.push(`<section class="page vs-land">
-  <div class="vs-head"><img src="${HS_WBCHSE_LOGO_URL}" class="vs-logo" alt="WBCHSE"><div class="vs-ttlbox"><div class="vs-title">VENUE SUPERVISOR FORMAT ( DATA SHEET )</div><div class="vs-sub">TO BE USED FOR SENDING DETAILED RECORDS OF QUESTION PAPER AND OMR ANSWER SHEET OF SEMESTER III OF HIGHER SECONDARY EXAMINATION, 2027<br>FROM THE DESK OF VENUE SUPERVISOR TO INVIGILATORS OF THE RESPECTIVE EXAMINATION HALLS / ROOMS</div></div></div>
+  <div class="vs-head"><img src="${HS_WBCHSE_LOGO_URL}" class="vs-logo" alt="WBCHSE"><div class="vs-ttlbox"><div class="vs-title">VENUE SUPERVISOR FORMAT ( DATA SHEET )</div><div class="vs-sub">TO BE USED FOR SENDING DETAILED RECORDS OF QUESTION PAPER AND OMR ANSWER SHEET OF SEMESTER III OF HIGHER SECONDARY EXAMINATION, 2027<br>FROM THE DESK OF VENUE SUPERVISOR TO INVIGILATORS OF THE RESPECTIVE EXAMINATION HALLS / ROOMS</div></div><div class="vs-subzone">${(c.subjects||[]).map(s=>`<span class="vs-oval ed" contenteditable="true">${esc(hsRdCode(s))}</span>`).join('')}</div></div>
   <div class="vs-meta"><div>CENTRE CODE : <span class="ed" contenteditable="true">${esc(c.centreCode)}</span></div><div>VENUE CODE : <span class="ed" contenteditable="true">${esc(c.venueCode)}</span></div><div>EXAMINATION DATE : <span class="ed" contenteditable="true">${esc(c.date)}</span></div><div>VENUE NAME : <span class="ed" contenteditable="true">${esc(c.venue)}</span></div></div>
   <table class="vs-tab" style="--rh:${rh}mm"><colgroup><col style="width:14mm"><col style="width:31mm"><col style="width:31mm"><col style="width:17mm"><col style="width:31.5mm"><col style="width:31.5mm"><col style="width:13mm"><col style="width:19mm"><col style="width:31.5mm"><col style="width:31.5mm"><col style="width:13mm"><col style="width:20mm"></colgroup>
   <thead>
