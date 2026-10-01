@@ -1801,17 +1801,20 @@ const HS_DEFAULT_EXAM_OFFICIALS = {
   ra:'',
   other:''
 };
-function hsDailyOpsDefaultOfficials(base={}){ return {...HS_DEFAULT_EXAM_OFFICIALS,...(base||{})}; }
+function hsFixCouncilNominee(v){ const t=String(v||'').trim(); if(!t || /^j[ao]g?[ji]+[bv]+[ao]n\b/i.test(t.replace(/\s+/g,' ')) || /^jagjib|^jogjib|^jagjiv/i.test(t)) return HS_DEFAULT_EXAM_OFFICIALS.councilNominee; return t; }
+function hsDailyOpsDefaultOfficials(base={}){ const o={...HS_DEFAULT_EXAM_OFFICIALS,...(base||{})}; o.councilNominee=hsFixCouncilNominee(o.councilNominee); return o; }
 function hsEnsureDefaultOfficialsEverywhere(){
   hsDailyOpsLoad();
   let changed=false;
   Object.keys(hsDailyOpsDB||{}).forEach(k=>{
     const r=hsDailyOpsDB[k]; r.officials=hsDailyOpsDefaultOfficials(r.officials||{});
     if(r.officials.venueSupervisor!==HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor || !r.officials.venueSupervisor){ r.officials.venueSupervisor=HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor; changed=true; }
+    if(r.officials.councilNominee!==HS_DEFAULT_EXAM_OFFICIALS.councilNominee){ r.officials.councilNominee=HS_DEFAULT_EXAM_OFFICIALS.councilNominee; changed=true; }
   });
   Object.keys(hsDailyOpsTemplates||{}).forEach(v=>{
     hsDailyOpsTemplates[v]=hsDailyOpsDefaultOfficials(hsDailyOpsTemplates[v]||{});
     if(!hsDailyOpsTemplates[v].venueSupervisor){ hsDailyOpsTemplates[v].venueSupervisor=HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor; changed=true; }
+    if(hsDailyOpsTemplates[v].councilNominee!==HS_DEFAULT_EXAM_OFFICIALS.councilNominee){ hsDailyOpsTemplates[v].councilNominee=HS_DEFAULT_EXAM_OFFICIALS.councilNominee; changed=true; }
   });
   if(changed) hsDailyOpsPersist();
 }
@@ -1846,7 +1849,7 @@ function hsDailyOpsRender(){
   document.getElementById('hs_opsVenueSupervisor').value=rec.officials.venueSupervisor||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor;
   document.getElementById('hs_opsCentreSecretary').value=rec.officials.centreSecretary||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary;
   document.getElementById('hs_opsCentreInCharge').value=rec.officials.centreInCharge||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge;
-  document.getElementById('hs_opsCouncilNominee').value=rec.officials.councilNominee||HS_DEFAULT_EXAM_OFFICIALS.councilNominee;
+  document.getElementById('hs_opsCouncilNominee').value=hsFixCouncilNominee(rec.officials.councilNominee);
   document.getElementById('hs_opsRA').value=rec.officials.ra||'';
   document.getElementById('hs_opsOtherOfficial').value=rec.officials.other||'';
   const tbody=document.getElementById('hs_dailyOpsSubjectBody'); if(!tbody)return;
@@ -1905,7 +1908,7 @@ function hsDailyOpsSetManualRoom(sub, room){
   hsDailyOpsPersist();
 }
 function hsDailyOpsCollectOfficials(){
-  return {venueSupervisor:document.getElementById('hs_opsVenueSupervisor')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor,centreSecretary:document.getElementById('hs_opsCentreSecretary')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary,centreInCharge:document.getElementById('hs_opsCentreInCharge')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge,councilNominee:document.getElementById('hs_opsCouncilNominee')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.councilNominee,ra:document.getElementById('hs_opsRA')?.value.trim()||'',other:document.getElementById('hs_opsOtherOfficial')?.value.trim()||''};
+  return {venueSupervisor:document.getElementById('hs_opsVenueSupervisor')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor,centreSecretary:document.getElementById('hs_opsCentreSecretary')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary,centreInCharge:document.getElementById('hs_opsCentreInCharge')?.value.trim()||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge,councilNominee:hsFixCouncilNominee(document.getElementById('hs_opsCouncilNominee')?.value),ra:document.getElementById('hs_opsRA')?.value.trim()||'',other:document.getElementById('hs_opsOtherOfficial')?.value.trim()||''};
 }
 function hsDailyOpsSaveDay(){
   const venue=hsGetVenue(), date=document.getElementById('hs_opsDate')?.value||hsOfficialExamRoutineTimeline[0].date;
@@ -2276,7 +2279,7 @@ function hsBuildDayFormPage(type,c){
         <tr><th>FROM</th><th>TO</th><th>FROM</th><th>TO</th></tr>
       </thead><tbody>${(()=>{const rec=hsDailyOpsGetRecord(c.venueKey,c.date)||{};const subjects=c.subjects||[];const rows=[];for(let i=0;i<6;i++){const sub=subjects[i]||'';const d=(rec.subjects&&sub&&rec.subjects[sub])||{};rows.push(`<tr><td>${i+1}</td><td>${esc(d.inv1||'')}</td><td>${esc(d.inv2||'')}</td><td>${esc(sub)}</td><td>${esc(d.qFrom||'')}</td><td>${esc(d.qTo||'')}</td><td>${esc(d.qReq||'')}</td><td></td><td>${esc(d.omrFrom||'')}</td><td>${esc(d.omrTo||'')}</td><td>${esc(d.omrReq||'')}</td><td></td></tr>`)}return rows.join('')})()}</tbody></table>
       <div class="venue-notes"><b>N.B. :</b>&nbsp;&nbsp; 1) &nbsp; Invigilators are instructed to open Non Transparent Poly Pouch containing Question Papers at 10:55 am in presence of examinees, signing by any<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TWO of them on it.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2) &nbsp; Distribute Question Papers and OMR Answer Sheets among examinees at 11:00 am.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3) &nbsp; The day-to-day records are to be preserved by the Venue Supervisor for future reference and requirement.</div>
-      <div class="venue-signature">Venue Supervisor: <b>${esc((hsDailyOpsGetRecord(c.venueKey,c.date)||{}).officials?.venueSupervisor||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor)}</b><br>Centre Secretary: <b>${esc((hsDailyOpsGetRecord(c.venueKey,c.date)||{}).officials?.centreSecretary||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary)}</b><br>Centre-in-Charge: <b>${esc((hsDailyOpsGetRecord(c.venueKey,c.date)||{}).officials?.centreInCharge||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge)}</b><br>Council Nominee: <b>${esc((hsDailyOpsGetRecord(c.venueKey,c.date)||{}).officials?.councilNominee||HS_DEFAULT_EXAM_OFFICIALS.councilNominee)}</b><br><br>............................................................<br><b>( Signature of Venue Supervisor with Date &amp; Seal )</b></div>
+      <div class="venue-signature">Venue Supervisor: <b>${esc((hsDailyOpsGetRecord(c.venueKey,c.date)||{}).officials?.venueSupervisor||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor)}</b><br>Centre Secretary: <b>${esc((hsDailyOpsGetRecord(c.venueKey,c.date)||{}).officials?.centreSecretary||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary)}</b><br>Centre-in-Charge: <b>${esc((hsDailyOpsGetRecord(c.venueKey,c.date)||{}).officials?.centreInCharge||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge)}</b><br>Council Nominee: <b>${esc(hsFixCouncilNominee((hsDailyOpsGetRecord(c.venueKey,c.date)||{}).officials?.councilNominee))}</b><br><br>............................................................<br><b>( Signature of Venue Supervisor with Date &amp; Seal )</b></div>
     </section>`;
   }
   if(type==='seal'){
@@ -4374,7 +4377,7 @@ hsBuildDayFormPage=function(type,c){
       ${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.d.inv1||'')}</td><td>${esc(x.d.inv2||'')}</td><td>${esc(hsSubjectWithCode(x.sub)||'')}</td><td>${esc(x.z.qFrom||'')}</td><td>${esc(x.z.qTo||'')}</td><td>${esc(x.z.seats||'')}</td><td></td><td>${esc(x.z.omrFrom||'')}</td><td>${esc(x.z.omrTo||'')}</td><td>${esc(x.z.seats||'')}</td><td></td></tr>`).join('')}
     </tbody></table>
     <div class="venue-notes"><b>N.B. :</b>&nbsp;&nbsp; 1) &nbsp; Invigilators are instructed to open Non Transparent Poly Pouch containing Question Papers at 10:55 am in presence of examinees, signing by any TWO of them on it.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2) &nbsp; Distribute Question Papers and OMR Answer Sheets among examinees at 11:00 am.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3) &nbsp; The day-to-day records are to be preserved by the Venue Supervisor for future reference and requirement.</div>
-    <div class="venue-signature">Venue Supervisor: <b>${esc(rec.officials?.venueSupervisor||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor)}</b><br>Centre Secretary: <b>${esc(rec.officials?.centreSecretary||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary)}</b><br>Centre-in-Charge: <b>${esc(rec.officials?.centreInCharge||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge)}</b><br>Council Nominee: <b>${esc(rec.officials?.councilNominee||HS_DEFAULT_EXAM_OFFICIALS.councilNominee)}</b><br><br>............................................................<br><b>( Signature of Venue Supervisor with Date &amp; Seal )</b></div>
+    <div class="venue-signature">Venue Supervisor: <b>${esc(rec.officials?.venueSupervisor||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor)}</b><br>Centre Secretary: <b>${esc(rec.officials?.centreSecretary||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary)}</b><br>Centre-in-Charge: <b>${esc(rec.officials?.centreInCharge||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge)}</b><br>Council Nominee: <b>${esc(hsFixCouncilNominee(rec.officials?.councilNominee))}</b><br><br>............................................................<br><b>( Signature of Venue Supervisor with Date &amp; Seal )</b></div>
   </section>`;
 };
 /* Refresh enhanced controls whenever the user changes venue/day. */
@@ -5858,7 +5861,7 @@ function hsFormsToolbar(types){
 function hsOfOfficials(c){
   let rec={}; try{ rec=hsDailyOpsGetRecord(c.venueKey,c.date)||{}; }catch(e){}
   const off=rec.officials||{}, D=HS_DEFAULT_EXAM_OFFICIALS||{};
-  const g=k=>String(off[k]||D[k]||'').trim();
+  const g=k=>k==='councilNominee'?hsFixCouncilNominee(off[k]):String(off[k]||D[k]||'').trim();
   return {venueSupervisor:g('venueSupervisor'),centreSecretary:g('centreSecretary'),centreInCharge:g('centreInCharge'),councilNominee:g('councilNominee'),rec};
 }
 // two invigilators present at seal opening: first teachers placed in a room on that date (school-wise A-Z, as in the printed chart)
@@ -5889,9 +5892,9 @@ function hsOfBuildPage(type,c){
   const info=`<table class="of-t kv"><tr><th>Centre Name / Code</th><td>${esc(c.centre)} / ${esc(c.centreCode)}</td><th style="width:20%">Venue Code</th><td style="width:22%">${esc(c.venueCode)}</td></tr><tr><th>Venue</th><td colspan="3">${esc(c.venue)}</td></tr><tr><th>Date / Day</th><td>${esc(c.date)} / ${esc(c.day)}</td><th>Subject(s)</th><td>${esc(c.subject)}</td></tr></table>`;
   if(type==='seal'){
     const inv=hsOfInvigilatorPair(c);
-    const person=(n,d)=>`<td class="c"><span class="of-nm" contenteditable="true">${esc(n||'')}</span></td><td class="c"><span class="of-des">(${esc(d)})</span></td>`;
+    const person=(n,d)=>`<td class="c"><span class="of-nm" contenteditable="true">${esc(n||'')}</span></td><td class="c"><span class="of-des">${esc(d)}</span></td>`;
     const rows=[[O.venueSupervisor,'Venue Supervisor'],[O.councilNominee,'Council Nominee'],[inv[0]||'','Invigilator'],[inv[1]||'','Invigilator'],['',''],['','']]
-      .map((r,i)=>`<tr><td class="c">${i+1}.</td>${r[1]?person(r[0],r[1]):`<td></td><td class="c"><span class="of-des">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span></td>`}<td></td></tr>`).join('');
+      .map((r,i)=>`<tr><td class="c">${i+1}.</td>${r[1]?person(r[0],r[1]):`<td></td><td class="c"><span class="of-des">&nbsp;</span></td>`}<td></td></tr>`).join('');
     return `<section class="of-page">${hsOfHead()}
 <div class="of-title">SEAL OPENING FORMAT</div><div class="of-sub">For Question Paper Cloth Bags in Venue Supervisor’s Confidential Room</div>
 <div class="of-box"><p>Question Papers of Semester-III of Higher Secondary Examination, 2027 of the subject(s) <span class="of-fill wide" contenteditable="true">${esc(c.subject)}</span> contained in sealed Cloth Bag(s) bearing No(s). <span class="of-fill wide" contenteditable="true">&nbsp;</span> are being opened on <span class="of-fill" contenteditable="true">${dd}</span> at <b>10:15 am</b> in presence of the following Examination Personnel.</p>
