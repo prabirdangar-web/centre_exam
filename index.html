@@ -1032,7 +1032,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
           <select id="hs_schoolPreset" onchange="hsRecLoadPreset(this.value)"></select>
         </div>
         <div class="form-group"><label>Varying Exam Year</label><input type="text" id="hs_inYear" value="2027" oninput="hsRecCalculateAutoValues()"></div>
-        <div class="form-group"><label>Per Candidate Rate (Rs.)</label><input type="number" id="hs_inRate" value="40" oninput="hsRecCalculateAutoValues()"></div>
+        <div class="form-group"><label>Per Candidate Rate (Rs.)</label><input type="number" id="hs_inRate" value="75" oninput="hsRecCalculateAutoValues()"></div>
         <div class="form-group span-2"><label>School Authority Name</label><input type="text" id="hs_inSchoolName" oninput="hsRecCalculateAutoValues()"></div>
         <div class="form-group"><label>Ref / Receipt No.</label><input type="text" id="hs_inRefNo" value="THSEC/2027/REC/07" oninput="hsRecCalculateAutoValues()"></div>
         <div class="form-group"><label>Voucher Date</label><input type="text" id="hs_inDate" value="28-Jun-2027" oninput="hsRecCalculateAutoValues()"></div>
@@ -5727,39 +5727,83 @@ switchTool=function(tool){
 /* ---------------- FEE RECEIPT: A4 LANDSCAPE, FULL PAGE ---------------- */
 function hsPrintReceiptLandscape(pfx){
   const el=document.getElementById(pfx+'_printSheet'); if(!el) return window.print();
-  const acc=pfx==='mp'?['#7c2d12','#431407']:['#1e3a8a','#0f172a'];
+  const acc=pfx==='mp'?['#7c2d12','#431407','#fdf2e9']:['#1e3a8a','#0f172a','#eef2ff'];
+  const E=hsRdEsc, g=c=>{const n=el.querySelector('.'+pfx+'_'+c);return n?n.textContent.trim():'';}, id=i=>{const n=document.getElementById(pfx+'_'+i);return n?n.textContent.trim():'0';};
+  const year=g('outYearRec'), ref=g('outRef'), date=g('outDate'), school=g('outSchool'), amt=g('outAmt'), cand=g('outCand'), rate=parseInt(g('outRate'))||0;
+  const words=id('outWords'), title=(el.querySelector('.main-pane .center-title')||{}).textContent||'', sub=(el.querySelector('.main-pane .center-subtitle')||{}).textContent||'';
+  const badge=(el.querySelector('.receipt-title-badge span')||{}).textContent||'RECEIPT';
+  const rows=[1,2,3].map(i=>{const m=parseInt(id('r_m'+i))||0,f=parseInt(id('r_f'+i))||0,t=m+f;return {l:g('lbl'+i),m,f,t,a:t*rate};}).filter(r=>r.l);
+  const seal='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(hsCentreSealSvg(32,pfx));
+  const signOn=(typeof tfSignOn==='function')&&tfSignOn();
+  const signBlk=signOn?`<div class="doc-sign" style="font-size:.95mm">${tfSignInner()}</div>`:`<div class="sline"></div>`;
+  const logo=(pfx==='hs'&&typeof HS_WBCHSE_LOGO_URL==='string')?`<img class="logo" src="${HS_WBCHSE_LOGO_URL}" alt="">`:'';
+  const tr=rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${E(r.l)}</td><td class="n">${r.m}</td><td class="n">${r.f}</td><td class="n">${r.t}</td><td class="n">${r.a}.00</td></tr>`).join('');
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Fee Receipt — A4 Landscape</title><style>
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Fee Receipt — ${E(ref)}</title><style>
 @page{size:A4 landscape;margin:0}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-:root{--accent:${acc[0]};--accent-dark:${acc[1]}}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff}
-.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
+:root{--a:${acc[0]};--d:${acc[1]};--t:${acc[2]}}
+body{margin:0;font-family:Georgia,'Times New Roman',serif;color:#111827;background:#fff}
+.tb{position:sticky;top:0;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center}
 .tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}
-.page{width:297mm;height:209mm;padding:7mm}
-.print-sheet{display:grid;grid-template-columns:30% 14mm 1fr;height:100%;border:.7mm solid var(--accent);border-radius:3mm;background:#fff;overflow:hidden}
-.document-pane{padding:6mm 6mm;display:flex;flex-direction:column;min-width:0}
-.counterfoil-pane{zoom:1.28;padding:3mm 3mm}
-.main-pane{zoom:1.46;padding:3mm 3mm}
-.perforation-line{position:relative;border-left:.8mm dashed #0f172a;width:0;height:100%;margin:0 auto}
-.perforation-line::after{content:"\\2702  CUT HERE — DETACH COUNTERFOIL";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);white-space:nowrap;background:#fff;padding:0 5mm;font-size:8.5pt;font-weight:800;color:#334155;letter-spacing:1px}
-.doc-badge{font-size:7.3pt;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #cbd5e1;padding-bottom:3px}
-.center-title{font-weight:900;letter-spacing:.4px;text-transform:uppercase;margin:0;color:var(--accent)}
-.main-pane .center-title{font-size:16pt;text-align:center}
-.counterfoil-pane .center-title{font-size:12.5pt;text-align:left}
-.center-subtitle{color:#475569;margin:4px 0;font-weight:600}
-.main-pane .center-subtitle{font-size:8.3pt;text-align:center}
-.counterfoil-pane .center-subtitle{font-size:7.3pt;text-align:left}
-.receipt-meta{display:flex;justify-content:space-between;margin:12px 0;font-size:8.8pt;border-bottom:1px solid #cbd5e1;padding-bottom:5px}
-.receipt-title-badge{text-align:center;margin:12px 0}
-.receipt-title-badge>span{background:var(--accent);color:#fff;padding:4px 14px;font-weight:700;font-size:8.8pt;border-radius:3px}
-.receipt-body{font-size:9.3pt;line-height:1.6;text-align:justify;flex:1}
-.highlight-box{background:#f1f5f9;border:1px solid #cbd5e1;padding:10px;margin:12px 0;font-size:8.8pt;border-radius:4px}
-.breakup-line{margin:3px 0}
-.receipt-footer{display:flex;justify-content:space-between;margin-top:auto;font-size:8.8pt;padding-top:14px}
+.page{width:297mm;height:209mm;padding:8mm;overflow:hidden}
+.sheet{height:100%;border:.8mm solid var(--a);padding:1.2mm;display:flex}
+.in{flex:1;border:.25mm solid var(--a);display:flex}
+.cf{width:27%;padding:6mm 5mm;display:flex;flex-direction:column;font:10.5pt/1.5 Arial,sans-serif}
+.cut{width:0;border-left:.5mm dashed #475569;margin:4mm 0;position:relative}
+.cut span{position:absolute;top:50%;left:0;transform:translate(-50%,-50%) rotate(-90deg);background:#fff;padding:0 4mm;font:700 7.5pt Arial;letter-spacing:1.4px;color:#475569;white-space:nowrap}
+.mn{flex:1;padding:7mm 10mm 6mm;display:flex;flex-direction:column}
+.hd{display:flex;align-items:center;gap:5mm;border-bottom:.8mm double var(--a);padding-bottom:3mm}
+.logo{height:19mm;width:auto}
+.hd .tt{flex:1;text-align:center}
+.hd h1{margin:0;font:700 19pt/1.2 Georgia,serif;color:var(--a);letter-spacing:.4px;text-transform:uppercase}
+.hd p{margin:1mm 0 0;font:600 8.8pt Arial,sans-serif;color:#475569;letter-spacing:.3px}
+.meta{display:flex;justify-content:space-between;margin:4mm 0 3mm;font:600 10.5pt Arial,sans-serif}
+.meta b{color:var(--a)}
+.bdg{text-align:center;margin:1mm 0 4mm}
+.bdg span{display:inline-block;background:var(--a);color:#fff;padding:1.6mm 9mm;font:700 11pt Arial,sans-serif;letter-spacing:1.2px;border-radius:1mm}
+.txt{font-size:12pt;line-height:1.75;text-align:justify}
+.txt .amt{font-weight:700;color:var(--a);border-bottom:.3mm solid var(--a)}
+table{width:100%;border-collapse:collapse;margin:4mm 0 2mm;font:10.5pt Arial,sans-serif}
+th{background:var(--a);color:#fff;padding:2mm 2.5mm;font-weight:700;font-size:9.5pt;letter-spacing:.4px;border:.25mm solid var(--a)}
+td{padding:2mm 2.5mm;border:.25mm solid #94a3b8}
+td.n{text-align:right}td.c{text-align:center;width:11mm}
+tr.tot td{background:var(--t);font-weight:700;border-top:.5mm solid var(--a)}
+.ft{margin-top:auto;display:grid;grid-template-columns:1fr 38mm 1fr;align-items:end;gap:4mm;font:600 9.5pt Arial,sans-serif;text-align:center}
+.sl{padding-top:14mm}
+.sline{border-top:.3mm solid #111;margin-top:15mm;padding-top:1.5mm}
+.sealbox{display:flex;justify-content:center}.sealbox img{width:32mm;height:32mm;transform:rotate(-9deg)}
+.sg{text-align:center}
+.sg .sline{margin-top:15mm}
+.note{margin-top:3mm;font:italic 8pt Arial,sans-serif;color:#64748b;text-align:center;border-top:.2mm solid #cbd5e1;padding-top:1.5mm}
+.cf h3{margin:0 0 1mm;font:700 11.5pt Arial,sans-serif;color:var(--a);text-transform:uppercase}
+.cf .bt{font:700 7.5pt Arial;letter-spacing:1px;color:#64748b;text-transform:uppercase;border-bottom:.2mm solid #cbd5e1;padding-bottom:1.5mm;margin-bottom:3mm}
+.cf .bx{background:var(--t);border:.25mm solid var(--a);padding:2.5mm;margin:3mm 0;font-size:10pt}
+.cf .sg2{margin-top:auto;display:flex;justify-content:space-between;font:600 8.5pt Arial}
+.cf .sg2 div{border-top:.3mm solid #111;padding-top:1mm;width:42%;text-align:center}
+.doc-sign{display:block;width:44em;max-width:100%;margin:0 auto;text-align:center;line-height:1.25}
+.doc-sign .ds-img{display:block;width:24em;height:auto;margin:0 auto;mix-blend-mode:multiply}
+.doc-sign .ds-date{font:italic 400 3.6em 'Segoe Print','Bradley Hand','Comic Sans MS',cursive;color:#1420e6;margin:.15em 0 .45em;letter-spacing:.05em}
+.doc-sign .ds-t1{font:700 3.4em Georgia,serif;color:#4a189c}.doc-sign .ds-t2,.doc-sign .ds-t3{font:700 2.5em Georgia,serif;color:#4a189c}
 @media screen{body{background:#cbd5e1}.page{margin:10px auto;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.3)}}
 @media print{.no-print{display:none!important}}
-${typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:''}</style></head><body><div class="tb no-print"><span>Fee Receipt — A4 Landscape, full page. Counterfoil (left) and receipt (right) are separated by the cut line.</span><button onclick="window.print()">Print</button></div><div class="page">${el.outerHTML.replace(/\sid="(?!cs\d)[^"]*"/g,'').replace('print-target','')}</div></body></html>`);
+</style></head><body><div class="tb no-print"><span>Fee Receipt — A4 Landscape. Counterfoil (left) and receipt (right).</span><button onclick="window.print()">Print</button></div>
+<div class="page"><div class="sheet"><div class="in">
+<div class="cf"><div class="bt">Office Counterfoil Copy</div><h3>${E(title.replace(/\s*EXAMINATION CENTRE COMMITTEE/i,'').trim())}</h3>
+<div>Centre Code: 2206 &bull; Bankura</div><div style="margin-top:3mm"><b>Ref:</b> ${E(ref)}<br><b>Date:</b> ${E(date)}<br><b>Year:</b> ${E(year)}</div>
+<div style="margin-top:3mm">Received <b>Rs. ${E(amt)}/-</b> from <b>${E(school)}</b> as Centre Fees for ${E(year)}.</div>
+<div class="bx">${rows.map(r=>`${E(r.l)}: <b>${r.t}</b> (M ${r.m} / F ${r.f})`).join('<br>')}<div style="border-top:1px dashed #64748b;margin-top:2mm;padding-top:1.5mm"><b>Total: ${E(cand)}</b> @ Rs. ${rate}/-</div></div>
+<div class="sg2"><div>Collector</div><div>Sec / O.C.</div></div></div>
+<div class="cut"><span>&#9986; CUT HERE — DETACH COUNTERFOIL</span></div>
+<div class="mn"><div class="hd">${logo}<div class="tt"><h1>${E(title)}</h1><p>${E(sub)}</p></div>${logo?'<div style="width:19mm"></div>':''}</div>
+<div class="meta"><div><b>Ref No:</b> ${E(ref)}</div><div><b>Date:</b> ${E(date)}</div></div>
+<div class="bdg"><span>${E(badge)}</span></div>
+<div class="txt">Received with thanks the sum of <span class="amt">Rs. ${E(amt)}/-</span> [ <em>Rupees ${E(words)} Only</em> ] from the School Authority of <b>${E(school)}</b> as category-wise Examination Centre Fees for the <b>${E(year)}</b> examination, details as under:</div>
+<table><thead><tr><th>Sl.</th><th style="text-align:left">Category</th><th>Male</th><th>Female</th><th>Total</th><th>Amount (Rs.)</th></tr></thead><tbody>${tr}
+<tr class="tot"><td colspan="2" style="text-align:right">TOTAL &nbsp;(${E(cand)} candidates @ Rs. ${rate}/- per head)</td><td class="n">${rows.reduce((x,r)=>x+r.m,0)}</td><td class="n">${rows.reduce((x,r)=>x+r.f,0)}</td><td class="n">${E(cand)}</td><td class="n">${E(amt)}.00</td></tr></tbody></table>
+<div class="ft"><div class="sl"><div class="sline">Depositor Signature</div></div><div class="sealbox"><img src="${seal}" alt=""></div><div class="sg">${signBlk}${signOn?'':'<div style="font-weight:700">Officer-In-Charge / Centre Secretary</div>'}</div></div>
+<div class="note">This is a computer-generated receipt, valid with the Centre seal and signature.</div></div>
+</div></div></div></body></html>`);
   w.document.close();
 }
 
