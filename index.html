@@ -5998,18 +5998,28 @@ hsPrintCentreForm=function(type,venueOverride,dateOverride){
    ================================================================ */
 let _hsSealN=0;
 function hsCentreSealSvg(mm,kind,bot){
-  const id='cs'+(++_hsSealN), col='#5b2c9e', mpk=(kind==='mp');
+  const col='#5b2c9e', mpk=(kind==='mp');
   const tTop=mpk?'TALDANGRA MADHYAMIK CENTRE':'TALDANGRA H.S. CENTRE', tBot=bot||(mpk?'MADHYAMIK EXAMINATION 2027':'H.S. EXAMINATION 2027 SEM-III');
-  const fT=mpk?5:6.4, lT=mpk?88:90, fB=bot?6.2:(mpk?5.4:5.8), lB=mpk?98:100;
+  const esc=c=>c==='&'?'&amp;':c==='<'?'&lt;':c;
+  /* every letter is placed on the circle individually (no textPath) so it prints in any browser/PDF engine */
+  function arc(txt,r,fs,top){
+    const n=txt.length, maxSpan=2.75;
+    while(n*fs*0.72/r>maxSpan) fs-=0.1;
+    const step=(fs*0.72/r)*180/Math.PI; let o='';
+    for(let i=0;i<n;i++){
+      const ch=txt[i]; if(ch===' ') continue;
+      const ang=top?(i-(n-1)/2)*step:((n-1)/2-i)*step;
+      o+=`<text x="50" y="${top?50-r:50+r}" font-size="${fs.toFixed(2)}" text-anchor="middle" transform="rotate(${ang.toFixed(2)} 50 50)">${esc(ch)}</text>`;
+    }
+    return o;
+  }
   return `<svg class="cseal-svg" width="${mm}mm" height="${mm}mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-<defs><path id="${id}t" d="M 18.5,50 A 31.5,31.5 0 0 1 81.5,50"/><path id="${id}b" d="M 12,50 A 38,38 0 0 0 88,50"/></defs>
-<g fill="none" stroke="${col}"><circle cx="50" cy="50" r="47.5" stroke-width="2.4"/><circle cx="50" cy="50" r="44" stroke-width=".8"/><circle cx="50" cy="50" r="27.5" stroke-width=".9"/></g>
+<g fill="none" stroke="${col}"><circle cx="50" cy="50" r="48" stroke-width="2.6"/><circle cx="50" cy="50" r="44.5" stroke-width=".9"/><circle cx="50" cy="50" r="28.5" stroke-width="1"/></g>
 <g fill="${col}" font-family="Arial,Helvetica,sans-serif" font-weight="700">
-<text font-size="${fT}"><textPath href="#${id}t" startOffset="50%" text-anchor="middle" textLength="${lT}" lengthAdjust="spacing">${tTop}</textPath></text>
-<text font-size="${fB}"><textPath href="#${id}b" startOffset="50%" text-anchor="middle" textLength="${lB}" lengthAdjust="spacing">${tBot}</textPath></text>
-<text x="12.6" y="52.8" font-size="7" text-anchor="middle">&#9733;</text><text x="87.4" y="52.8" font-size="7" text-anchor="middle">&#9733;</text>
-<text x="50" y="42.3" font-size="6.2" text-anchor="middle" letter-spacing=".7">CENTRE</text>
-<text x="50" y="57.2" font-size="15" text-anchor="middle" letter-spacing=".8">2206</text>
+${arc(tTop,33,7.2,true)}${arc(tBot,38.5,6.6,false)}
+<text x="13.5" y="52.6" font-size="7" text-anchor="middle">&#9733;</text><text x="86.5" y="52.6" font-size="7" text-anchor="middle">&#9733;</text>
+<text x="50" y="42" font-size="6.2" text-anchor="middle" letter-spacing=".7">CENTRE</text>
+<text x="50" y="57" font-size="15" text-anchor="middle" letter-spacing=".8">2206</text>
 <text x="50" y="65.6" font-size="5.6" text-anchor="middle" letter-spacing=".6">BANKURA</text></g></svg>`;
 }
 const HS_ENV_SIZES={dl:{w:220,h:110,label:'DL — 220 × 110 mm (standard letter cover)'},in9:{w:229,h:102,label:'9 × 4 inch — 229 × 102 mm'},c5:{w:229,h:162,label:'C5 — 229 × 162 mm'},c4:{w:324,h:229,label:'C4 — 324 × 229 mm (unfolded A4)'}};
