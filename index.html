@@ -7065,10 +7065,10 @@ function sbPrint(b,what){
   }
   const MAT={
     used:{c:'#075985',bg:'#e0f2fe',t:'USED OMR',tag:'LAST DAY \u2014 SEALED',flow:['RECEIVING ENVELOPE<small>TOP SHEET PASTED</small>','POLYBAG','BOX']},
-    unused:{c:'#047857',bg:'#d1fae5',t:'UNUSED OMR',tag:'BLANK',flow:['SEPARATE ENVELOPE','BOX']},
-    cancel:{c:'#b91c1c',bg:'#fee2e2',t:'CANCELLED OMR',tag:'',flow:['SEPARATE ENVELOPE','BOX']},
-    ra:{c:'#6d28d9',bg:'#ede9fe',t:'RA OMR',tag:'IF ANY',flow:['SEPARATE ENVELOPE','BOX']},
-    asr:{c:'#b45309',bg:'#fef3c7',t:'ASR',tag:'',flow:['SEPARATE ENVELOPE','BOX']},
+    unused:{c:'#047857',bg:'#d1fae5',t:'UNUSED OMR',tag:'BLANK',flow:['SEPARATE ENVELOPE']},
+    cancel:{c:'#b91c1c',bg:'#fee2e2',t:'CANCELLED OMR',tag:'',flow:['SEPARATE ENVELOPE']},
+    ra:{c:'#6d28d9',bg:'#ede9fe',t:'RA OMR',tag:'IF ANY',flow:['SEPARATE ENVELOPE']},
+    asr:{c:'#b45309',bg:'#fef3c7',t:'ASR',tag:'',flow:['SEPARATE ENVELOPE']},
     md:{c:'#334155',bg:'#e2e8f0',t:'METAL DETECTOR',tag:'',flow:['LARGE BOX']}
   };
   function ccBlock(){ return '<div class="p-cc"><small>CENTRE CODE</small><strong>'+CODE+'</strong><em>'+CENTRE+'</em></div>'; }
