@@ -473,6 +473,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
   <button class="tool-btn" data-tool="dailyops" onclick="switchTool('dailyops')"><span class="dot"></span>Daily Subject &amp; Duty Entry</button>
   <button class="tool-btn" data-tool="roomduty" onclick="switchTool('roomduty');hsRdRender()"><span class="dot"></span>Room-wise Invigilator Allotment</button>
   <button class="tool-btn" data-tool="confreport" onclick="switchTool('confreport');hsConfRender()"><span class="dot"></span>Confidential Report</button>
+  <button class="tool-btn" data-tool="submission" onclick="switchTool('submission');sbRender()"><span class="dot"></span>Submission Letter &amp; Box Labels</button>
 </div>
 
 <!-- ============================================================ HS BOARD PANE ============================================================ -->
@@ -1381,7 +1382,7 @@ const CLOUD_SYNC_KEYS = [
   'hsCentreSubjectAllocation2027','hsCentreSelectedDates2027','hsRoomDuty2027',
   'ExamReportingLedgerCache_HS','ExamReportingLedgerCache_MP',
   'ExamRequisitionSystemDataCache_HS','ExamRequisitionSystemDataCache_MP',
-  'hsConfReport2027'
+  'hsConfReport2027','examSubmission2027'
 ];
 const CLOUD_COLLECTION = 'examCommandCenter2027';
 let cloudSyncReady = false;
@@ -6617,6 +6618,386 @@ hsPrintReceiptLandscape=function(pfx){
   '<\/script></body></html>');
   w.document.close();
 };
+</script>
+
+<style id="sbCss">
+/* ===== SUBMISSION LETTER + BOX LABELS (end of examination) ===== */
+.sb-prev{overflow:auto;padding:6px 0 24px}
+.sb-sec{margin-top:18px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px}
+.sb-sec-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-bottom:10px}
+.sb-sec-h .tt{font-size:11pt;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.3px}
+.sb-sec-h .ss{font-size:8.6pt;color:#475569;font-weight:600}
+.sb-chk{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:6px}
+.sb-chk label{display:flex;align-items:center;gap:5px;font-size:8.8pt;font-weight:700;color:#334155;cursor:pointer}
+.sb-scroll{overflow:auto;background:#e5e7eb;padding:8px;border-radius:6px}
+.sb-scroll .sb-sheet,.sb-scroll .sb-letter{zoom:.78}
+
+/* ---------- sheets (shared by preview and print window) ---------- */
+.sb-sheet{position:relative;width:210mm;height:297mm;background:#fff;margin:0 auto 10px;box-shadow:0 2px 8px rgba(0,0,0,.25);box-sizing:border-box;overflow:hidden;page:labelpg;break-after:page;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sb-sheet.inner{padding:9mm 8mm;display:grid;grid-template-columns:repeat(2,97mm);grid-auto-rows:66mm;gap:3mm 4mm;justify-content:center;align-content:start}
+.sb-sheet.outer{padding:6mm 8mm;display:flex;flex-direction:column;gap:5mm}
+.sb-sheet.outer .cut{border-top:.3mm dashed #94a3b8;margin:0 -4mm;height:0;position:relative}
+.sb-sheet.outer .cut:after{content:"\2702  cut here";position:absolute;left:50%;top:-2.4mm;transform:translateX(-50%);background:#fff;padding:0 2mm;font:600 6pt Arial;color:#94a3b8}
+
+/* ---------- inner label ---------- */
+.sb-il{position:relative;border:.55mm solid var(--c);border-radius:2mm;overflow:hidden;display:flex;flex-direction:column;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#0f172a;box-sizing:border-box}
+.sb-il .hd{display:flex;align-items:center;gap:2mm;padding:1.2mm 2.5mm;border-bottom:.25mm solid #cbd5e1}
+.sb-il .hd img{width:8.5mm;height:8.5mm;object-fit:contain}
+.sb-il .hd .lg{width:8.5mm;height:8.5mm;border-radius:50%;background:var(--c);color:#fff;font:800 6pt Arial;display:flex;align-items:center;justify-content:center}
+.sb-il .hd .t{flex:1;font-size:5.8pt;font-weight:700;line-height:1.25;letter-spacing:.2px;color:#334155}
+.sb-il .hd .t b{display:block;font-size:6.8pt;color:#0f172a}
+.sb-il .tt{background:var(--c);color:#fff;text-align:center;font-weight:800;font-size:10.5pt;letter-spacing:.5px;padding:1.5mm 2mm 1.2mm}
+.sb-il .ts{text-align:center;font-size:6.6pt;font-weight:700;color:var(--c);padding:.8mm 2mm 0}
+.sb-il .cc{display:flex;align-items:stretch;margin:1.5mm 2.5mm .8mm;border:.35mm solid var(--c);border-radius:1.2mm;overflow:hidden}
+.sb-il .cc .a{background:#f1f5f9;padding:.8mm 2.2mm;font-size:6pt;font-weight:800;letter-spacing:.4px;display:flex;align-items:center;color:#334155;border-right:.35mm solid var(--c)}
+.sb-il .cc .b{flex:1;text-align:center;font-size:17pt;font-weight:900;letter-spacing:2px;color:var(--c);line-height:1.15}
+.sb-il .cc .c{padding:.8mm 2.2mm;font-size:6.2pt;font-weight:700;display:flex;align-items:center;text-align:center;line-height:1.2;border-left:.35mm solid var(--c);color:#334155}
+.sb-il .rw{display:flex;gap:1.5mm;align-items:flex-end;font-size:7.4pt;padding:.7mm 3mm}
+.sb-il .rw>b{min-width:17mm;font-size:6pt;font-weight:800;text-transform:uppercase;color:#64748b;letter-spacing:.2px;padding-bottom:.2mm}
+.sb-il .rw>span{flex:1;border-bottom:.25mm solid #64748b;min-height:3.6mm;font-weight:700;line-height:1.25}
+.sb-il .rw>span.nb{border-bottom:none}
+.sb-il .ft{margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding:.9mm 3mm;background:#f8fafc;border-top:.25mm solid #cbd5e1;font-size:5.8pt;font-weight:700;color:#475569;letter-spacing:.2px}
+.sb-il .box{display:inline-block;width:2.6mm;height:2.6mm;border:.3mm solid #475569;vertical-align:-.4mm;margin:0 .6mm 0 1.2mm}
+
+/* ---------- outer label ---------- */
+.sb-ol{position:relative;flex:1;border:1.3mm double var(--c);border-radius:3mm;display:flex;flex-direction:column;overflow:hidden;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#0f172a;box-sizing:border-box}
+.sb-ol .oh{display:flex;align-items:center;gap:4mm;padding:2.2mm 5mm;border-bottom:.35mm solid #cbd5e1}
+.sb-ol .oh img{width:15mm;height:15mm;object-fit:contain}
+.sb-ol .oh .lg{width:15mm;height:15mm;border-radius:50%;background:var(--c);color:#fff;font:800 9pt Arial;display:flex;align-items:center;justify-content:center}
+.sb-ol .oh .t{flex:1;text-align:center;line-height:1.25}
+.sb-ol .oh .t b{display:block;font-size:10.5pt;letter-spacing:.3px}
+.sb-ol .oh .t i{display:block;font-style:normal;font-size:7.4pt;color:#475569;font-weight:600}
+.sb-ol .oh .t u{display:block;text-decoration:none;font-size:8.6pt;font-weight:800;color:var(--c);margin-top:.6mm}
+.sb-ol .bn{background:var(--c);color:#fff;text-align:center;font-weight:800;font-size:12.5pt;letter-spacing:1.2px;padding:1.8mm 3mm}
+.sb-ol .mn{display:flex;gap:3mm;padding:2.5mm 5mm 1.5mm}
+.sb-ol .mn .cc{flex:1.7;border:.6mm solid var(--c);border-radius:2mm;text-align:center;padding:1mm 2mm;display:flex;flex-direction:column;justify-content:center}
+.sb-ol .mn .cc small{font-size:7pt;font-weight:800;letter-spacing:1.5px;color:#475569}
+.sb-ol .mn .cc strong{font-size:38pt;line-height:1;font-weight:900;letter-spacing:4px;color:var(--c)}
+.sb-ol .mn .cc em{font-style:normal;font-size:7.8pt;font-weight:800;letter-spacing:.5px}
+.sb-ol .mn .bx{flex:1;background:var(--c);color:#fff;border-radius:2mm;text-align:center;padding:1mm 2mm;display:flex;flex-direction:column;justify-content:center}
+.sb-ol .mn .bx small{font-size:7pt;font-weight:800;letter-spacing:2px;opacity:.9}
+.sb-ol .mn .bx strong{font-size:30pt;line-height:1.05;font-weight:900}
+.sb-ol .mn .bx strong span{font-size:15pt;font-weight:700;opacity:.9}
+.sb-ol .ct{margin:0 5mm;border:.3mm solid #94a3b8;border-radius:1.6mm;padding:1.4mm 3mm;font-size:8.2pt;line-height:1.5}
+.sb-ol .ct .h{font-size:6.6pt;font-weight:800;letter-spacing:1px;color:#64748b;text-transform:uppercase}
+.sb-ol .ct .it{display:flex;gap:1.6mm;align-items:flex-start;font-weight:700}
+.sb-ol .ct .it:before{content:"";flex:none;width:2.6mm;height:2.6mm;border:.3mm solid var(--c);margin-top:1mm}
+.sb-ol .ct .it.nb:before{display:none}
+.sb-ol .ct .it small{font-weight:600;color:#475569;font-size:7.4pt}
+.sb-ol .ad{display:flex;gap:3mm;padding:2mm 5mm 1.4mm;flex:1}
+.sb-ol .ad>div{flex:1;border:.3mm solid #94a3b8;border-radius:1.6mm;padding:1.2mm 3mm;font-size:8.2pt;line-height:1.35;position:relative}
+.sb-ol .ad .h{display:inline-block;background:var(--c);color:#fff;font-size:6.6pt;font-weight:800;letter-spacing:1.2px;padding:.3mm 2mm;border-radius:.8mm;margin-bottom:.8mm}
+.sb-ol .ad b{font-size:8.8pt}
+.sb-ol .fo{display:flex;justify-content:space-between;align-items:center;gap:3mm;padding:1.3mm 5mm;background:#f1f5f9;border-top:.3mm solid #cbd5e1;font-size:6.8pt;font-weight:800;color:#334155;letter-spacing:.3px}
+.sb-ol .fo .ln{display:inline-block;min-width:24mm;border-bottom:.25mm solid #475569;height:3mm;vertical-align:bottom}
+.sb-ol .fo .hc{color:#b91c1c}
+
+/* ---------- letter ---------- */
+.sb-letter{position:relative;width:186mm;margin:0 auto 10px;background:#fff;color:#111;padding:8mm 10mm;font:10.2pt/1.42 Georgia,'Times New Roman',serif;box-shadow:0 2px 8px rgba(0,0,0,.25);box-sizing:content-box;page:letterpg}
+.sb-letter .lh{text-align:center;border-bottom:2px solid #111;padding-bottom:5px;margin-bottom:5px}
+.sb-letter .lh img{width:17mm;height:17mm;object-fit:contain;display:block;margin:0 auto 1mm}
+.sb-letter .lh .cn{font:700 13.5pt Arial,sans-serif;line-height:1.2}
+.sb-letter .lh .ad{font:9.4pt Arial,sans-serif}
+.sb-letter .lh .ex{font:700 9.6pt Arial,sans-serif;margin-top:1px}
+.sb-letter .cm{text-align:center;font:700 11pt Arial,sans-serif;margin-top:3px}
+.sb-letter .cn2{text-align:center;font:700 9.4pt Arial,sans-serif}
+.sb-letter .ca{text-align:center;font:9pt Arial,sans-serif}
+.sb-letter .mm{display:flex;justify-content:space-between;margin-top:6px;font-weight:700}
+.sb-letter .fr{font:700 9.4pt Arial,sans-serif;display:flex;justify-content:space-between;margin-top:5px}
+.sb-letter .to{margin:5px 0 4px}
+.sb-letter .sub{font-weight:700;text-decoration:underline;margin:4px 0 5px;text-align:justify}
+.sb-letter p{margin:0 0 5px;text-align:justify}
+.sb-letter table{width:100%;border-collapse:collapse;margin:5px 0 6px;font:9.2pt Arial,sans-serif}
+.sb-letter th,.sb-letter td{border:.3mm solid #222;padding:1.3mm 1.8mm;vertical-align:top;text-align:left}
+.sb-letter th{background:#eef2f7;text-align:center;font-weight:700}
+.sb-letter td.c{text-align:center}
+.sb-letter .tot{font:700 9.4pt Arial,sans-serif;margin:3px 0 4px}
+.sb-letter .sg{display:flex;justify-content:space-between;align-items:flex-end;margin-top:8mm;position:relative}
+.sb-letter .sg>div{text-align:center;position:relative;min-width:60mm;font-size:9.6pt;line-height:1.3}
+.sb-letter .sg .ln{border-top:.3mm solid #111;padding-top:1px;font-weight:700}
+.sb-letter .en{font:9.2pt Arial,sans-serif;margin-top:5px}
+@media print{.no-print{display:none!important}}
+</style>
+
+<script id="submissionLabelsJs">
+/* ================================================================
+   END-OF-EXAMINATION SUBMISSION :: Letter + INNER labels + OUTER (box) labels
+   One tab for both boards (H.S. / Madhyamik). Everything is editable, saved in
+   localStorage under 'examSubmission2027' and cloud-synced with the other tools.
+   ================================================================ */
+const SB_KEY='examSubmission2027';
+let sbDB={hs:{},mp:{}};
+function sbLoad(){ try{ sbDB=JSON.parse(localStorage.getItem(SB_KEY)||'{}')||{}; }catch(e){ sbDB={}; } sbDB.hs=sbDB.hs||{}; sbDB.mp=sbDB.mp||{}; }
+function sbSave(){ try{ localStorage.setItem(SB_KEY,JSON.stringify(sbDB)); }catch(e){} }
+function sbEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function sbMl(s){ return sbEsc(s).replace(/\n/g,'<br>'); }
+function sbTitle(s){ return String(s||'').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+function sbToday(){ const d=new Date(); return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear(); }
+
+/* ---- per-board configuration ---- */
+function sbCfg(b){
+  const hs=(b==='hs');
+  const V=(typeof HS_VENUE_INFO!=='undefined')?HS_VENUE_INFO:{TFHS:{name:'TALDANGRA FULMATI HIGH SCHOOL',code:'114071'},TGHS:{name:"TALDANGRA GIRLS' HIGH SCHOOL",code:'114200'}};
+  const strip=function(n){ return String(n).replace(/\s*\[H\.S\.\]\s*/i,'').trim(); };
+  const tl=(hs?(typeof hsOfficialExamRoutineTimeline!=='undefined'?hsOfficialExamRoutineTimeline:[]):(typeof mpOfficialExamRoutineTimeline!=='undefined'?mpOfficialExamRoutineTimeline:[])).filter(function(x){ return !/^No Examination/i.test(x.sub); });
+  const conf=(typeof HS_CONF_DEF!=='undefined')?HS_CONF_DEF:{};
+  return {
+    b:b, hs:hs, kind:b, color:hs?'#1e3a8a':'#7c2d12',
+    exam: hs?'H.S. EXAMINATION 2027 [SEM-III]':'MADHYAMIK EXAMINATION 2027',
+    examLine: hs?'Semester-III of Higher Secondary Examination, 2027':'Madhyamik Pariksha (Secondary Examination), 2027',
+    body: hs?'WEST BENGAL COUNCIL OF HIGHER SECONDARY EDUCATION':'WEST BENGAL BOARD OF SECONDARY EDUCATION',
+    addr: hs?'Vidyasagar Bhavan, 9/2 Block DJ, Sector-II, Salt Lake, Kolkata \u2013 700 091':'77/2, Park Street, Kolkata \u2013 700 016',
+    committee: hs?'TALDANGRA H.S.-2027 [SEM-III] EXAMINATION CENTRE COMMITTEE':'TALDANGRA MADHYAMIK 2027 EXAMINATION CENTRE COMMITTEE',
+    centreTitle: hs?'TALDANGRA H.S. EXAMINATION CENTRE':'TALDANGRA MADHYAMIK EXAMINATION CENTRE',
+    venues:[{name:strip(V.TFHS.name),code:hs?V.TFHS.code:''},{name:strip(V.TGHS.name),code:hs?V.TGHS.code:''}],
+    timeline:tl,
+    email:conf.email||'highschooltaldangrafulmati@gmail.com',
+    mob:conf.mob||'Mob No.-9434654678 [Center Secretary]/8250953306 (Centre-In-Charge)',
+    to: hs?(conf.to||'The Deputy Secretary\nMedinipur Regional Office (MRO), W.B.C.H.S.E.'):'The Secretary\nWest Bengal Board of Secondary Education\n77/2, Park Street, Kolkata \u2013 700 016',
+    logo: (hs&&typeof HS_WBCHSE_LOGO_URL==='string')?HS_WBCHSE_LOGO_URL:''
+  };
+}
+const SB_FIELDS=[
+  ['memo','Memo No.','text'],['date','Date (blank = today)','text'],['lastDate','Last date of examination','select'],['cic','Centre-in-Charge name','text'],
+  ['mode','Mode of despatch (optional)','text'],['copies','Inner-label copies per type','number'],
+  ['to','To (address block \u2014 letter + outer labels)','area',2],['toMD','Metal Detector box \u2014 deliver to (blank = same as To)','area',2],
+  ['boxA','No. of boxes \u2014 Sealed OMR','number'],['boxB','No. of boxes \u2014 Cancelled / Unused OMR + ASR','number'],['boxC','No. of boxes \u2014 Metal Detector','number'],['nMD','No. of Metal Detectors','number'],
+  ['q_sealed','Qty \u2014 sealed OMR packets','text'],['q_blank','Qty \u2014 Unused (Blank) OMR','text'],['q_cancel','Qty \u2014 Cancelled OMR','text'],['q_ra','Qty \u2014 RA OMR (if any)','text'],
+  ['q_asr','Qty \u2014 ASR','text'],['confTxt','Confidential Report \u2014 remark','text',2],['incTxt','Report on disputed incident \u2014 remark','text',2]
+];
+const SB_INNER_TYPES=[['env','Receiving envelope (OMR)'],['poly','Polybag'],['blank','Unused / Blank OMR'],['cancel','Cancelled OMR'],['ra','RA OMR'],['asr','ASR'],['md','Metal Detector tags']];
+function sbDef(b){
+  const c=sbCfg(b), last=c.timeline.length?c.timeline[c.timeline.length-1].date:'';
+  const cic=(typeof HS_DEFAULT_EXAM_OFFICIALS!=='undefined')?sbTitle(HS_DEFAULT_EXAM_OFFICIALS.centreInCharge):'';
+  return {memo:'',date:'',lastDate:last,cic:cic,mode:'',copies:'1',to:c.to,toMD:'',boxA:'1',boxB:'1',boxC:'1',nMD:'2',
+    q_sealed:'',q_blank:'',q_cancel:'',q_ra:'',q_asr:'',confTxt:'Submitted herewith in sealed cover',incTxt:'Nil \u2014 no disputed incident occurred during the examination'};
+}
+function sbF(b,k){ const v=sbDB[b][k]; if(v===undefined||v===null||v==='') { const d=sbDef(b); return d[k]!==undefined?d[k]:''; } return v; }
+function sbRaw(b,k){ const v=sbDB[b][k]; return (v===undefined||v===null)?'':v; }
+function sbInnerOn(b,t){ const v=sbDB[b]['inc_'+t]; return v===undefined?true:!!v; }
+function sbN(b,k){ const n=parseInt(sbF(b,k),10); return isNaN(n)||n<0?0:n; }
+function sbDateInfo(b){ const c=sbCfg(b), d=sbF(b,'lastDate'); const it=c.timeline.find(function(x){return x.date===d;})||{date:d,day:'',sub:''}; return it; }
+
+/* ---- parcel boxes (numbered continuously across the three groups) ---- */
+function sbGroups(b){
+  const c=sbCfg(b), a=sbN(b,'boxA'), bb=sbN(b,'boxB'), cc=sbN(b,'boxC');
+  return [
+    {g:'A',n:a,color:c.hs?'#1e3a8a':'#7c2d12',banner:'SEALED OMR PACKETS'},
+    {g:'B',n:bb,color:'#b45309',banner:'CANCELLED / UNUSED OMR & ASR'},
+    {g:'C',n:cc,color:'#334155',banner:'METAL DETECTOR'}
+  ];
+}
+function sbBoxes(b){
+  const gs=sbGroups(b); let list=[], no=0;
+  gs.forEach(function(g){ for(let i=0;i<g.n;i++){ no++; list.push({no:no,g:g.g,color:g.color,banner:g.banner,idx:i+1,of:g.n}); } });
+  list.forEach(function(x){ x.total=no; });
+  return list;
+}
+function sbRange(b,g){ const l=sbBoxes(b).filter(function(x){return x.g===g;}); if(!l.length) return '\u2014'; return l.length===1?('Box No. '+l[0].no):('Box Nos. '+l[0].no+'\u2013'+l[l.length-1].no); }
+
+/* ---- seal + signature (re-use the app's own helpers) ---- */
+function sbSeal(b,mm,pos){ try{ return tfDocSeal(mm,b,pos); }catch(e){ return ''; } }
+function sbSign(){ try{ return tfDocSign(''); }catch(e){ return ''; } }
+function sbLogo(c,cls){ return c.logo?'<img src="'+c.logo+'" alt="">':'<div class="lg">'+(c.hs?'WBCHSE':'WBBSE')+'</div>'; }
+
+/* ================= LETTER ================= */
+function sbLetterHtml(b){
+  const c=sbCfg(b), E=sbEsc, di=sbDateInfo(b), date=sbRaw(b,'date')||sbToday(), cic=sbF(b,'cic');
+  const v1=c.venues[0], v2=c.venues[1];
+  const vtxt=function(v){ return E(v.name)+(v.code?' ('+E(v.code)+')':''); };
+  const q=function(k){ const t=sbRaw(b,k); return t?E(t):'&nbsp;'; };
+  const nMD=sbN(b,'nMD');
+  const rows=[
+    ['Sealed packets of OMRs of the last day\u2019s examination (venue-wise: '+vtxt(v1)+' &amp; '+vtxt(v2)+')',q('q_sealed'),'Top-seat pasted Receiving Envelope \u2192 polybag \u2192 box \u2192 parcelled.<br><b>'+sbRange(b,'A')+'</b>'],
+    ['Unused (Blank) OMR',q('q_blank'),'Separate superscribed envelope.<br><b>'+sbRange(b,'B')+'</b>'],
+    ['Cancelled OMR',q('q_cancel'),'Separate superscribed envelope.<br><b>'+sbRange(b,'B')+'</b>'],
+    ['RA OMR (if any)',q('q_ra'),'Separate superscribed envelope.<br><b>'+sbRange(b,'B')+'</b>'],
+    ['ASR',q('q_asr'),'Separate superscribed envelope.<br><b>'+sbRange(b,'B')+'</b>'],
+    ['Metal Detector'+(nMD>1?'s':''),nMD?(nMD+' nos.'):'&nbsp;','Packed in a large box.<br><b>'+sbRange(b,'C')+'</b>'],
+    ['Confidential Report',E(sbF(b,'confTxt')),'\u2014'],
+    ['Report on any disputed incident during examination (if not reported earlier)',E(sbF(b,'incTxt')),'\u2014']
+  ];
+  const trs=rows.map(function(r,i){ return '<tr><td class="c">'+(i+1)+'</td><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>'; }).join('');
+  const total=sbBoxes(b).length;
+  const hdr='<div class="lh">'+(c.logo?'<img src="'+c.logo+'" alt="">':'')+'<div class="cn">'+c.body+'</div><div class="ad">'+c.addr+'</div><div class="ex">'+c.examLine+'</div></div>';
+  return '<div class="sb-letter" id="sb_'+b+'_letter">'+hdr+
+    '<div class="cm">'+c.committee+'</div><div class="cn2">CENTRE NAME: TALDANGRA &amp; CENTRE CODE: 2206</div>'+
+    '<div class="ca">P.O. &amp; BLOCK: TALDANGRA * SUB.DIV: KHATRA * DIST: BANKURA * PIN-722152</div>'+
+    '<div class="fr"><span>From: Centre Secretary / Centre-In-Charge</span><span>E-mail: '+E(c.email)+'</span></div>'+
+    '<div class="ca" style="text-align:right">'+E(c.mob)+'</div>'+
+    '<div class="mm"><span>Memo No: '+(E(sbRaw(b,'memo'))||'_ _ _ _ _ _ _')+'</span><span>Date: '+E(date)+'</span></div>'+
+    '<div class="to">To<br>'+sbMl(sbF(b,'to'))+'</div>'+
+    '<div class="sub">Sub: Submission of papers / materials on the last date of the '+c.exam+' at Taldangra Centre [Centre Code: 2206].</div>'+
+    '<p>Sir,</p>'+
+    '<p style="text-indent:8mm">I, Sri '+E(cic)+', Centre-in-Charge of the Taldangra '+(c.hs?'H.S.':'Madhyamik')+' Examination Centre [Centre Code: 2206] comprising the Venues '+vtxt(v1)+' &amp; '+vtxt(v2)+', beg to state that the examination at this centre was duly concluded on <b>'+E(di.date)+(di.day?' ('+E(di.day)+')':'')+'</b>'+(di.sub?' with the paper(s) of '+E(di.sub):'')+'. In terms of the instructions, the following papers / materials are being submitted on the last date of examination. Every parcel box bears the Centre Code <b>2206</b> for easy identification:</p>'+
+    '<table><thead><tr><th style="width:7%">Sl.</th><th style="width:38%">Papers / Materials submitted</th><th style="width:22%">Quantity / Remarks</th><th style="width:33%">Packing &amp; Parcel</th></tr></thead><tbody>'+trs+'</tbody></table>'+
+    '<div class="tot">Total number of parcel boxes: '+total+(total?' (Box 1 to Box '+total+')':'')+(sbRaw(b,'mode')?' &nbsp;|&nbsp; Mode of despatch: '+E(sbRaw(b,'mode')):'')+'</div>'+
+    '<p>The above materials are submitted for your kind receipt and acknowledgement.</p>'+
+    '<p style="margin-left:8mm">Thanking you.</p><div style="text-align:right;margin-right:10mm">Yours faithfully,</div>'+
+    '<div class="sg"><div>'+sbSeal(b,24,'left:-4mm;top:-14mm')+'<div class="ln">Centre-In-Charge</div><b>'+E(cic)+'</b><br>'+c.centreTitle+'<br>Centre Code: 2206</div>'+
+    '<div>'+sbSign()+'<div class="ln">Centre Secretary</div>'+c.centreTitle+'<br>Centre Code: 2206</div></div>'+
+    '<div class="en"><b>Enclo.:</b> (1) Confidential Report &nbsp; (2) Report on disputed incident (if any) &nbsp; (3) List of parcel boxes (Box 1 to '+(total||'N')+')</div>'+
+    '</div>';
+}
+
+/* ================= INNER LABELS ================= */
+const SB_INNER={
+  env:   {c:'#1e3a8a',t:'RECEIVING ENVELOPE',s:'Sealed OMR packets \u2014 last day\u2019s examination (top-seat sealed)',v:1,q:'No. of OMRs / packets'},
+  poly:  {c:'#0f766e',t:'POLYBAG PACK',s:'Receiving Envelope with OMRs packed inside this polybag',v:1,q:'No. of envelopes'},
+  blank: {c:'#047857',t:'UNUSED (BLANK) OMR',s:'Unused / Blank OMR sheets \u2014 separate envelope',v:1,q:'No. of Blank OMR'},
+  cancel:{c:'#b91c1c',t:'CANCELLED OMR',s:'Cancelled OMR sheets \u2014 separate envelope',v:1,q:'No. of Cancelled OMR'},
+  ra:    {c:'#6d28d9',t:'RA OMR (IF ANY)',s:'RA OMR \u2014 separate envelope',v:1,q:'No. of RA OMR'},
+  asr:   {c:'#b45309',t:'ASR',s:'ASR \u2014 separate envelope',v:1,q:'No. of ASR sheets'},
+  md:    {c:'#334155',t:'METAL DETECTOR',s:'Handle with care \u2014 return in working condition',v:0,q:'Make / Serial No.'}
+};
+function sbInnerLabel(b,t,venue,di,tag){
+  const c=sbCfg(b), d=SB_INNER[t], E=sbEsc;
+  const rows=[];
+  if(d.v){
+    rows.push('<div class="rw"><b>Venue</b><span>'+E(venue.name)+(venue.code?' \u2014 '+E(venue.code):'')+'</span></div>');
+    rows.push('<div class="rw"><b>Exam date</b><span>'+E(di.date)+(di.day?' ('+E(di.day)+')':'')+'</span></div>');
+    rows.push('<div class="rw"><b>Subject</b><span style="font-size:6.6pt">'+E(di.sub)+'</span></div>');
+    rows.push('<div class="rw"><b>'+d.q+'</b><span>&nbsp;</span></div>');
+  }else{
+    rows.push('<div class="rw"><b>Tag</b><span class="nb"><b style="color:#0f172a;font-size:9pt">'+tag.i+' of '+tag.n+'</b></span></div>');
+    rows.push('<div class="rw"><b>'+d.q+'</b><span>&nbsp;</span></div>');
+    rows.push('<div class="rw"><b>Venue</b><span>&nbsp;</span></div>');
+    rows.push('<div class="rw"><b>Condition</b><span class="nb"><i class="box"></i>Working <i class="box"></i>Faulty <i class="box"></i>Battery removed</span></div>');
+  }
+  return '<div class="sb-il" style="--c:'+d.c+'">'+
+    '<div class="hd">'+sbLogo(c)+'<div class="t"><b>'+c.exam+'</b>'+c.centreTitle+'</div></div>'+
+    '<div class="tt">'+d.t+'</div><div class="ts">'+d.s+'</div>'+
+    '<div class="cc"><div class="a">CENTRE<br>CODE</div><div class="b">2206</div><div class="c">TALDANGRA<br>'+(c.hs?'H.S.':'MADHYAMIK')+'</div></div>'+
+    rows.join('')+
+    '<div class="ft"><span>PACKED BY: ______________</span><span>CHECKED BY: ______________</span></div>'+
+  '</div>';
+}
+function sbInnerList(b){
+  const c=sbCfg(b), di=sbDateInfo(b), copies=Math.max(1,sbN(b,'copies')||1), out=[];
+  ['env','poly','blank','cancel','ra','asr'].forEach(function(t){
+    if(!sbInnerOn(b,t)) return;
+    c.venues.forEach(function(v){ for(let k=0;k<copies;k++) out.push(sbInnerLabel(b,t,v,di)); });
+  });
+  if(sbInnerOn(b,'md')){ const n=sbN(b,'nMD'); for(let i=1;i<=n;i++) out.push(sbInnerLabel(b,'md',null,di,{i:i,n:n})); }
+  return out;
+}
+function sbInnerSheets(b){
+  const list=sbInnerList(b); if(!list.length) return '<div style="padding:14px;font:600 10pt Arial;color:#64748b">No inner label type is ticked.</div>';
+  let h=''; for(let i=0;i<list.length;i+=8) h+='<div class="sb-sheet inner">'+list.slice(i,i+8).join('')+'</div>'; return h;
+}
+
+/* ================= OUTER (BOX) LABELS ================= */
+function sbOuterLabel(b,bx){
+  const c=sbCfg(b), E=sbEsc, di=sbDateInfo(b), date=sbRaw(b,'date')||sbToday();
+  let items='';
+  if(bx.g==='A'){
+    items='<div class="it"><div>Sealed OMR packets of the last day\u2019s examination'+(sbRaw(b,'q_sealed')?' \u2014 '+E(sbRaw(b,'q_sealed')):'')+'<br><small>Top-seat pasted Receiving Envelope \u2192 Polybag \u2192 this Box. Exam date: '+E(di.date)+(di.day?' ('+E(di.day)+')':'')+'</small></div></div>'+
+      '<div class="it nb"><small>Venues: '+c.venues.map(function(v){return E(v.name)+(v.code?' ('+E(v.code)+')':'');}).join(' &amp; ')+'</small></div>';
+  }else if(bx.g==='B'){
+    const qs=function(k){ return sbRaw(b,k)?' \u2014 '+E(sbRaw(b,k)):''; };
+    items='<div class="it"><div>Cancelled OMR'+qs('q_cancel')+'</div></div><div class="it"><div>Unused (Blank) OMR'+qs('q_blank')+'</div></div>'+
+      '<div class="it"><div>RA OMR (if any)'+qs('q_ra')+'</div></div><div class="it"><div>ASR'+qs('q_asr')+'</div></div>'+
+      '<div class="it nb"><small>Each item is kept in a separate envelope, superscribed with its name and Centre Code.</small></div>';
+  }else{
+    const n=sbN(b,'nMD');
+    items='<div class="it"><div>Metal Detector'+(n>1?'s':'')+(n?' \u2014 '+n+' nos.':'')+'<br><small>Handle with care. Each detector carries its own tag.</small></div></div>';
+  }
+  const toTxt=(bx.g==='C'&&sbRaw(b,'toMD'))?sbRaw(b,'toMD'):sbF(b,'to');
+  const from='<b>Centre Secretary / Centre-In-Charge</b><br>'+c.centreTitle+'<br>Centre Code: <b>2206</b><br>P.O. &amp; Block: Taldangra, Sub-Div: Khatra<br>Dist: Bankura, PIN-722152<br>'+E(c.mob.replace(/Mob No\.-?/,'Mob: '));
+  return '<div class="sb-ol" style="--c:'+bx.color+'">'+
+    '<div class="oh">'+sbLogo(c)+'<div class="t"><b>'+c.body+'</b><i>'+c.examLine+'</i><u>'+c.centreTitle+'</u></div></div>'+
+    '<div class="bn">'+bx.banner+'</div>'+
+    '<div class="mn"><div class="cc"><small>CENTRE CODE</small><strong>2206</strong><em>TALDANGRA</em></div>'+
+    '<div class="bx"><small>PARCEL BOX</small><strong>'+bx.no+'<span> / '+bx.total+'</span></strong></div></div>'+
+    '<div class="ct"><div class="h">Contents</div>'+items+'</div>'+
+    '<div class="ad"><div><span class="h">TO</span><br>'+sbMl(toTxt)+'</div><div>'+sbSeal(b,22,'right:3mm;bottom:1mm')+'<span class="h">FROM</span><br>'+from+'</div></div>'+
+    '<div class="fo"><span>DATE OF DESPATCH: <b>'+E(date)+'</b></span><span>SEALED BY: <i class="ln"></i></span><span class="hc">\u26A0 EXAMINATION MATERIAL \u2014 HANDLE WITH CARE \u2014 KEEP DRY</span></div>'+
+  '</div>';
+}
+function sbOuterSheets(b){
+  const bxs=sbBoxes(b); if(!bxs.length) return '<div style="padding:14px;font:600 10pt Arial;color:#64748b">Number of boxes is 0 \u2014 enter the box counts above.</div>';
+  let h=''; for(let i=0;i<bxs.length;i+=2){
+    const pair=bxs.slice(i,i+2);
+    h+='<div class="sb-sheet outer">'+sbOuterLabel(b,pair[0])+(pair[1]?'<div class="cut"></div>'+sbOuterLabel(b,pair[1]):'')+'</div>';
+  }
+  return h;
+}
+
+/* ================= PANEL (built once per board) ================= */
+function sbBuildPanel(b){
+  const pane=document.getElementById('board-'+b); if(!pane||document.getElementById(b+'-submission')) return;
+  const c=sbCfg(b), d=document.createElement('div');
+  d.className='tool-panel app-shell'; d.dataset.tool='submission'; d.id=b+'-submission';
+  d.style.setProperty('--accent',c.color);
+  d.innerHTML=
+  '<div class="control-panel no-print"><div class="panel-title">End-of-Examination Submission &mdash; Letter &amp; Box Labels &mdash; '+c.exam+'</div>'+
+  '<div class="form-grid" id="sb_'+b+'_form"></div>'+
+  '<div style="margin-top:12px;font-size:9.5pt;font-weight:700;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:10px">Inner label types to print (each is printed for both venues, except Metal Detector tags)</div>'+
+  '<div class="sb-chk" id="sb_'+b+'_chk"></div>'+
+  '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center">'+
+    '<button class="btn btn-success" onclick="sbPrint(\''+b+'\',\'all\')">Print Everything (Letter + Inner + Outer)</button>'+
+    '<button class="btn btn-primary" onclick="cloudForceSaveAll()">Save to Cloud Now</button>'+
+    '<span id="sb_'+b+'_count" style="font-size:9pt;color:#475569;font-weight:700"></span></div></div>'+
+  '<div class="sb-prev">'+
+    '<div class="sb-sec"><div class="sb-sec-h"><div><div class="tt">A. Letter of Submission</div><div class="ss">Papers to be submitted on the last date of examination</div></div><button class="btn btn-success" onclick="sbPrint(\''+b+'\',\'letter\')">Print Letter</button></div><div class="sb-scroll" id="sb_'+b+'_pvL"></div></div>'+
+    '<div class="sb-sec"><div class="sb-sec-h"><div><div class="tt">B. Labels of Box &mdash; INNER</div><div class="ss">Envelopes, polybags and metal-detector tags (8 labels per A4 sheet)</div></div><button class="btn btn-primary" onclick="sbPrint(\''+b+'\',\'inner\')">Print Inner Labels</button></div><div class="sb-scroll" id="sb_'+b+'_pvI"></div></div>'+
+    '<div class="sb-sec"><div class="sb-sec-h"><div><div class="tt">C. Labels of Box &mdash; OUTER</div><div class="ss">Parcel box labels, numbered Box 1 of N (2 labels per A4 sheet &mdash; cut on the dashed line)</div></div><button class="btn btn-primary" onclick="sbPrint(\''+b+'\',\'outer\')">Print Outer Labels</button></div><div class="sb-scroll" id="sb_'+b+'_pvO"></div></div>'+
+  '</div>';
+  pane.appendChild(d);
+  /* form */
+  const box=document.getElementById('sb_'+b+'_form');
+  box.innerHTML=SB_FIELDS.map(function(f){
+    const id='sb_'+b+'_f_'+f[0], span=f[3]?' span-'+f[3]:'';
+    let el;
+    if(f[2]==='area') el='<textarea id="'+id+'" rows="3" style="width:100%" oninput="sbSet(\''+b+'\',\''+f[0]+'\',this.value)"></textarea>';
+    else if(f[2]==='select') el='<select id="'+id+'" onchange="sbSet(\''+b+'\',\''+f[0]+'\',this.value)">'+c.timeline.map(function(x){ return '<option value="'+x.date+'">'+x.date+' \u2014 '+sbEsc(x.day)+'</option>'; }).join('')+'</select>';
+    else el='<input type="'+(f[2]==='number'?'number" min="0':'text')+'" id="'+id+'" oninput="sbSet(\''+b+'\',\''+f[0]+'\',this.value)">';
+    return '<div class="form-group'+span+'"><label>'+f[1]+'</label>'+el+'</div>';
+  }).join('');
+  document.getElementById('sb_'+b+'_chk').innerHTML=SB_INNER_TYPES.map(function(t){
+    return '<label><input type="checkbox" id="sb_'+b+'_i_'+t[0]+'" onchange="sbSetChk(\''+b+'\',\''+t[0]+'\',this.checked)">'+t[1]+'</label>';
+  }).join('');
+}
+function sbFill(b){
+  SB_FIELDS.forEach(function(f){ const el=document.getElementById('sb_'+b+'_f_'+f[0]); if(!el) return;
+    const raw=sbDB[b][f[0]]; el.value=(raw!==undefined&&raw!==null&&raw!=='')?raw:((f[0]==='date')?'':sbDef(b)[f[0]]); });
+  const dEl=document.getElementById('sb_'+b+'_f_date'); if(dEl) dEl.placeholder=sbToday();
+  SB_INNER_TYPES.forEach(function(t){ const el=document.getElementById('sb_'+b+'_i_'+t[0]); if(el) el.checked=sbInnerOn(b,t[0]); });
+}
+let _sbT={};
+function sbSet(b,k,v){ sbDB[b][k]=v; sbSave(); clearTimeout(_sbT[b]); _sbT[b]=setTimeout(function(){ sbPaint(b); },250); }
+function sbSetChk(b,t,on){ sbDB[b]['inc_'+t]=!!on; sbSave(); sbPaint(b); }
+function sbPaint(b){
+  const L=document.getElementById('sb_'+b+'_pvL'), I=document.getElementById('sb_'+b+'_pvI'), O=document.getElementById('sb_'+b+'_pvO'); if(!L) return;
+  L.innerHTML=sbLetterHtml(b); I.innerHTML=sbInnerSheets(b); O.innerHTML=sbOuterSheets(b);
+  const n=document.getElementById('sb_'+b+'_count'); if(n) n.textContent='Parcel boxes: '+sbBoxes(b).length+'  |  Inner labels: '+sbInnerList(b).length;
+}
+function sbRender(){ sbLoad(); ['hs','mp'].forEach(function(b){ sbBuildPanel(b); sbFill(b); sbPaint(b); }); }
+
+/* ================= PRINT WINDOW ================= */
+function sbPrint(b,what){
+  sbLoad(); const c=sbCfg(b), css=document.getElementById('sbCss').textContent;
+  let body='', ttl='';
+  if(what==='letter'||what==='all') body+='<div class="sb-lwrap">'+sbLetterHtml(b).replace(/\scontenteditable="true"/g,'')+'</div>';
+  if(what==='inner'||what==='all') body+=sbInnerSheets(b);
+  if(what==='outer'||what==='all') body+=sbOuterSheets(b);
+  ttl={letter:'Submission Letter',inner:'Inner Box Labels',outer:'Outer Box Labels',all:'Submission Letter + Box Labels'}[what];
+  const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+ttl+' \u2014 Centre 2206 \u2014 '+sbEsc(c.exam)+'</title><style>'+
+    '@page{size:A4;margin:0}@page letterpg{size:A4;margin:12mm}@page labelpg{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+    '.tb{position:sticky;top:0;z-index:10;background:'+c.color+';color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}.tb label{font-weight:600;cursor:pointer}'+
+    '</style><style>'+css+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style><style>'+
+    'body.no-seal .doc-seal{display:none}.sb-lwrap{page:letterpg}.sb-letter,.sb-sheet{zoom:1!important}'+
+    '@media screen{body{background:#e5e7eb}.sb-sheet,.sb-letter{margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}.sb-lwrap{padding:1px}}'+
+    '@media print{.no-print{display:none!important}.sb-sheet{margin:0;box-shadow:none}.sb-letter{margin:0;box-shadow:none;width:auto;padding:0}}'+
+    '</style></head><body><div class="tb no-print"><span>'+ttl+' \u2014 A4. Print on plain / sticker paper (scale 100%).</span>'+
+    '<label><input type="checkbox" checked onchange="document.body.classList.toggle(\'no-seal\',!this.checked)"> Round Centre seal</label>'+
+    '<button onclick="window.print()">Print</button></div>'+body+'</body></html>');
+  w.document.close();
+}
+
+/* ---- boot ---- */
+(function(){ try{ sbLoad(); ['hs','mp'].forEach(sbBuildPanel); }catch(e){ console.error('submission tab',e); } })();
 </script>
 
 </body>
