@@ -7000,5 +7000,182 @@ function sbPrint(b,what){
 (function(){ try{ sbLoad(); ['hs','mp'].forEach(sbBuildPanel); }catch(e){ console.error('submission tab',e); } })();
 </script>
 
+
+<script id="centreWiseLabelPatch">
+/* ================================================================
+   CENTRE-WISE LABEL PATCH — TALDANGRA CENTRE 2206
+   - Labels are CENTRE-WISE, never separate venue-wise labels.
+   - Venue names remain numbered Venue-1 / Venue-2 inside the label.
+   - Subject can be fetched from Progress Ledger or entered manually.
+   - Date and Subject can each be shown or hidden.
+   - Secretary signature/seal can be printed ON or OFF.
+   - Metal Detector defaults to exactly 1 tag / 1 detector.
+   - Unused OMR label is marked ALL LEVELS and Encl.-2.
+   - A4 portrait, maximum practical font, no spill.
+================================================================ */
+(function(){
+  const CENTRE='TALDANGRA', CODE='2206';
+  const V1='Venue-1 — TALDANGRA FULMATI HIGH SCHOOL [H.S.] — 114071';
+  const V2="Venue-2 — TALDANGRA GIRLS' HIGH SCHOOL [H.S.] — 114200";
+  const esc0=(v)=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  function cwCfg(b){
+    sbDB[b]=sbDB[b]||{};
+    return {
+      subjectMode: sbDB[b].cwSubjectMode || 'ledger',
+      subject: sbDB[b].cwSubject || '',
+      showSubject: sbDB[b].cwShowSubject !== false,
+      showDate: sbDB[b].cwShowDate !== false,
+      secSign: sbDB[b].cwSecSign !== false,
+      secSeal: sbDB[b].cwSecSeal !== false
+    };
+  }
+  function cwSave(b,k,v){ sbDB[b][k]=v; sbSave(); sbPaint(b); cwSync(b); }
+  function cwDates(b){ const c=sbCfg(b); return c.timeline||[]; }
+  function cwSelectedDate(b){ return sbF(b,'lastDate') || (cwDates(b).length?cwDates(b)[cwDates(b).length-1].date:''); }
+  function cwSubjects(b){
+    const d=cwSelectedDate(b), out=[];
+    try{
+      if(typeof hsGetAllocatedSubjects==='function'){
+        ['TFHS','TGHS'].forEach(v=>{
+          (hsGetAllocatedSubjects(v,d)||[]).forEach(x=>{ if(x && !out.includes(x)) out.push(x); });
+        });
+      }
+    }catch(e){}
+    if(!out.length){
+      try{
+        const it=cwDates(b).find(x=>x.date===d);
+        if(it && it.sub) out.push(it.sub);
+      }catch(e){}
+    }
+    return out;
+  }
+  function cwSubjectText(b){
+    const c=cwCfg(b);
+    if(c.subjectMode==='manual') return c.subject || '____________________________';
+    const a=cwSubjects(b);
+    return a.length?a.join(' / '):'Actual subject(s) from Progress Ledger';
+  }
+  function cwDateText(b){ return cwSelectedDate(b)||'________________'; }
+  function cwSigHtml(b){
+    const c=cwCfg(b), s=[];
+    if(c.secSign){
+      try{s.push(typeof tfDocSign==='function'?tfDocSign(''):'');}catch(e){}
+      s.push('<div class="cw-sigline">Signature of Centre Secretary</div>');
+    } else s.push('<div class="cw-sigline">Centre Secretary</div>');
+    if(c.secSeal){ try{s.push(typeof tfDocSeal==='function'?tfDocSeal(24,b,'right:-2mm;top:-8mm'):'');}catch(e){} }
+    return '<div class="cw-sign">'+s.join('')+'</div>';
+  }
+  function cwHead(b,title,sub){
+    const c=sbCfg(b), cfg=cwCfg(b);
+    return '<div class="cw-head"><div class="cw-exam">'+esc0(c.exam)+'</div><div class="cw-centre">'+CENTRE+' — CENTRE CODE '+CODE+'</div><div class="cw-title">'+title+'</div><div class="cw-sub">'+sub+'</div>'+
+      '<div class="cw-venues"><b>VENUES:</b> 1. '+esc0(V1)+' &nbsp;&nbsp; 2. '+esc0(V2)+'</div>'+
+      (cfg.showDate?'<div class="cw-meta"><b>EXAMINATION DATE:</b> '+esc0(cwDateText(b))+'</div>':'')+
+      (cfg.showSubject?'<div class="cw-meta"><b>SUBJECT:</b> '+esc0(cwSubjectText(b))+'</div>':'')+
+      '</div>';
+  }
+  function cwInnerLabel(b,type){
+    const c=sbCfg(b), cfg=cwCfg(b), date=esc0(cwDateText(b)), sub=esc0(cwSubjectText(b));
+    let title='',desc='',body='';
+    if(type==='env'){title='RECEIVING ENVELOPE';desc='SEALED OMR PACKETS — LAST DAY / ACTUAL SUBMISSION';body='<div class="cw-big">CENTRE-WISE</div><div class="cw-row"><b>Encl.-1</b><span>Sealed OMR / receiving envelope</span></div>';}
+    if(type==='poly'){title='POLYBAG PACK';desc='RECEIVING ENVELOPE WITH OMR PACKETS';body='<div class="cw-big">CENTRE-WISE</div><div class="cw-row"><b>PACK</b><span>Receiving Envelope → Polybag</span></div>';}
+    if(type==='blank'){title='UNUSED / BLANK OMR';desc='ALL LEVELS — SEPARATE PACKET / ENVELOPE';body='<div class="cw-big">Encl.-2</div><div class="cw-row"><b>LEVEL</b><span>ALL LEVELS</span></div><div class="cw-row"><b>STATUS</b><span>UNUSED / BLANK OMR</span></div>';}
+    if(type==='cancel'){title='CANCELLED OMR';desc='SEPARATE ENVELOPE';body='<div class="cw-big">Encl.-2</div><div class="cw-row"><b>STATUS</b><span>CANCELLED OMR</span></div>';}
+    if(type==='ra'){title='RA OMR';desc='IF ANY — SEPARATE ENVELOPE';body='<div class="cw-big">Encl.-2</div><div class="cw-row"><b>STATUS</b><span>RA OMR (IF ANY)</span></div>';}
+    if(type==='asr'){title='ASR';desc='SEPARATE ENVELOPE';body='<div class="cw-big">Encl.-2</div><div class="cw-row"><b>STATUS</b><span>ASR</span></div>';}
+    if(type==='md'){title='METAL DETECTOR TAG';desc='1 NO. DETECTOR — HANDLE WITH CARE';body='<div class="cw-md">METAL DETECTOR<br><strong>TAG 1 OF 1</strong><br><span>1 NO. DETECTOR</span></div><div class="cw-row"><b>CONDITION</b><span>□ Working &nbsp;&nbsp; □ Faulty</span></div>';}
+    return '<div class="cw-label">'+cwHead(b,title,desc)+'<div class="cw-body">'+body+
+      (cfg.showDate||cfg.showSubject?'<div class="cw-fields">'+(cfg.showDate?'<div><b>DATE</b><br>'+date+'</div>':'')+(cfg.showSubject?'<div><b>SUBJECT</b><br>'+sub+'</div>':'')+'</div>':'')+
+      '<div class="cw-code">TALDANGRA • '+CODE+'</div>'+cwSigHtml(b)+'</div></div>';
+  }
+  function cwOuterLabel(b,bx){
+    const c=sbCfg(b), cfg=cwCfg(b), date=esc0(cwDateText(b)), sub=esc0(cwSubjectText(b));
+    const group=bx.g==='A'?'SEALED OMR PACKETS':bx.g==='B'?'UNUSED / CANCELLED OMR & ASR':'METAL DETECTOR';
+    let contents=bx.g==='A'?'SEALED OMR PACKETS — LAST DAY SUBMISSION':bx.g==='B'?'UNUSED / BLANK OMR — ALL LEVELS / CANCELLED OMR / RA OMR / ASR':'1 NO. METAL DETECTOR';
+    return '<div class="cw-outer"><div class="cw-head"><div class="cw-exam">'+esc0(c.exam)+'</div><div class="cw-centre">'+CENTRE+' — CENTRE CODE '+CODE+'</div><div class="cw-title">CENTRE-WISE '+group+'</div><div class="cw-venues"><b>VENUES:</b> 1. '+esc0(V1)+'<br>2. '+esc0(V2)+'</div>'+
+      (cfg.showDate?'<div class="cw-meta"><b>DATE:</b> '+date+'</div>':'')+(cfg.showSubject?'<div class="cw-meta"><b>SUBJECT:</b> '+sub+'</div>':'')+'</div>'+
+      '<div class="cw-boxno">PARCEL BOX <strong>'+bx.no+' / '+bx.total+'</strong></div><div class="cw-content"><b>CONTENTS</b><br>'+contents+'</div>'+
+      '<div class="cw-address"><div><b>TO</b><br>'+sbMl((bx.g==='C'&&sbRaw(b,'toMD'))?sbRaw(b,'toMD'):sbF(b,'to'))+'</div><div><b>FROM</b><br>Centre Secretary / Centre-In-Charge<br>'+esc0(c.centreTitle)+'<br>Centre Code: <strong>'+CODE+'</strong><br>P.O. & Block: Taldangra, Sub-Div: Khatra<br>Dist: Bankura, PIN-722152</div></div>'+
+      '<div class="cw-bottom">DATE OF DESPATCH: '+esc0(sbRaw(b,'date')||sbToday())+' <span>•</span> HANDLE WITH CARE</div>'+cwSigHtml(b)+'</div>';
+  }
+  function cwInnerSheets(b){
+    const types=['env','poly','blank','cancel','ra','asr','md'].filter(t=>sbInnerOn(b,t));
+    if(!types.length) return '';
+    let a=types.map(t=>cwInnerLabel(b,t)); let h=''; for(let i=0;i<a.length;i+=4) h+='<div class="cw-a4 inner-a4">'+a.slice(i,i+4).join('')+'</div>'; return h;
+  }
+  function cwOuterSheets(b){
+    const boxes=sbBoxes(b); let h=''; for(let i=0;i<boxes.length;i+=2){h+='<div class="cw-a4 outer-a4">'+cwOuterLabel(b,boxes[i])+(boxes[i+1]?'<div class="cw-cut"></div>'+cwOuterLabel(b,boxes[i+1]):'')+'</div>';} return h;
+  }
+  function cwLetter(b){
+    const c=sbCfg(b), cfg=cwCfg(b), di=sbDateInfo(b), date=sbRaw(b,'date')||sbToday(), sub=cwSubjectText(b);
+    const total=sbBoxes(b).length;
+    return '<div class="cw-letter">'+cwHead(b,'SUBMISSION OF EXAMINATION MATERIALS','Centre-wise submission — not venue-wise')+
+      '<div class="cw-lmeta"><span>Memo No.: '+esc0(sbRaw(b,'memo')||'____________')+'</span><span>Date: '+esc0(date)+'</span></div>'+
+      '<div class="cw-to"><b>To</b><br>'+sbMl(sbF(b,'to'))+'</div>'+'<p class="cw-p"><b>Sub:</b> Submission of papers / materials at TALDANGRA CENTRE (2206).</p>'+
+      '<p class="cw-p">The examination materials of the centre comprising Venue-1 and Venue-2 are being submitted centre-wise. The actual subject(s) are taken from the selected Progress Ledger date when Ledger mode is selected.</p>'+
+      '<table class="cw-table"><tr><th>Sl.</th><th>Material</th><th>Quantity / Remarks</th><th>Packing</th></tr>'+
+      '<tr><td>1</td><td>Sealed OMR packets</td><td>'+esc0(sbRaw(b,'q_sealed')||'As per actual submission')+'</td><td>Receiving Envelope → Polybag → Box</td></tr>'+
+      '<tr><td>2</td><td>Unused / Blank OMR — ALL LEVELS</td><td>'+esc0(sbRaw(b,'q_blank')||'Nil / as available')+'</td><td>Encl.-2, separate packet</td></tr>'+
+      '<tr><td>3</td><td>Cancelled OMR / RA OMR / ASR</td><td>'+esc0((sbRaw(b,'q_cancel')||'Nil')+' / '+(sbRaw(b,'q_ra')||'Nil')+' / '+(sbRaw(b,'q_asr')||'Nil'))+'</td><td>Encl.-2, separate packets</td></tr>'+
+      '<tr><td>4</td><td>Metal Detector</td><td>1 No.</td><td>Encl.-2 / separate box</td></tr></table>'+
+      '<p class="cw-p">Centre Code <b>'+CODE+'</b> is printed prominently on every label. Venue names remain identified as <b>1</b> and <b>2</b> only inside the centre-wise label.</p>'+
+      '<div class="cw-letter-sign">'+cwSigHtml(b)+'</div></div>';
+  }
+
+  function cwControls(b){
+    const p=document.getElementById(b+'-submission'); if(!p) return;
+    let x=document.getElementById('cw_'+b+'_controls'); if(x) return;
+    x=document.createElement('div'); x.id='cw_'+b+'_controls'; x.className='control-panel no-print';
+    x.innerHTML='<div class="panel-title">CENTRE-WISE LABEL OPTIONS — TALDANGRA 2206</div>'+
+      '<div class="form-grid">'+
+      '<div class="form-group"><label>Subject Source</label><select id="cw_'+b+'_sm"><option value="ledger">FETCH ACTUAL SUBJECT FROM PROGRESS LEDGER</option><option value="manual">MANUAL SUBJECT</option></select></div>'+
+      '<div class="form-group span-2"><label>Manual Subject (used only when Manual selected)</label><input id="cw_'+b+'_sub" type="text" placeholder="Enter subject / subjects"></div>'+
+      '<div class="form-group"><label>Subject on Label</label><select id="cw_'+b+'_ss"><option value="1">SHOW</option><option value="0">HIDE</option></select></div>'+
+      '<div class="form-group"><label>Date on Label</label><select id="cw_'+b+'_sd"><option value="1">SHOW</option><option value="0">HIDE</option></select></div>'+
+      '<div class="form-group"><label>Secretary Signature</label><select id="cw_'+b+'_sg"><option value="1">WITH SIGNATURE</option><option value="0">WITHOUT SIGNATURE</option></select></div>'+
+      '<div class="form-group"><label>Secretary Seal</label><select id="cw_'+b+'_sl"><option value="1">WITH SEAL</option><option value="0">WITHOUT SEAL</option></select></div>'+
+      '<div class="form-group"><label>Actual Submission</label><button class="btn btn-primary" style="width:100%" onclick="cwFetchLedger(\''+b+'\')">FETCH ACTUAL SUB + DATE</button></div>'+
+      '<div class="form-group"><label>Print Centre-wise</label><button class="btn btn-success" style="width:100%" onclick="cwPrint(\''+b+'\',\'inner\')">INNER LABELS — A4</button></div>'+
+      '<div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%" onclick="cwPrint(\''+b+'\',\'outer\')">OUTER LABELS — A4</button></div>'+
+      '<div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%" onclick="cwPrint(\''+b+'\',\'letter\')">SUBMISSION LETTER — A4</button></div>'+
+      '<div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%" onclick="cwPrint(\''+b+'\',\'all\')">PRINT ALL — A4</button></div></div>'+
+      '<div id="cw_'+b+'_status" style="margin-top:8px;font-weight:700;color:#334155">Centre-wise mode: Venue-1 and Venue-2 are combined into one centre label set.</div>';
+    p.insertBefore(x,p.querySelector('.sb-prev'));
+    const c=cwCfg(b); ['sm','sub','ss','sd','sg','sl'].forEach(k=>{const e=document.getElementById('cw_'+b+'_'+k);if(e)e.onchange=e.oninput=function(){const v=e.value; if(k==='sm')cwSave(b,'cwSubjectMode',v);if(k==='sub')cwSave(b,'cwSubject',v);if(k==='ss')cwSave(b,'cwShowSubject',v==='1');if(k==='sd')cwSave(b,'cwShowDate',v==='1');if(k==='sg')cwSave(b,'cwSecSign',v==='1');if(k==='sl')cwSave(b,'cwSecSeal',v==='1');};});
+    document.getElementById('cw_'+b+'_sm').value=c.subjectMode;document.getElementById('cw_'+b+'_sub').value=c.subject;document.getElementById('cw_'+b+'_ss').value=c.showSubject?'1':'0';document.getElementById('cw_'+b+'_sd').value=c.showDate?'1':'0';document.getElementById('cw_'+b+'_sg').value=c.secSign?'1':'0';document.getElementById('cw_'+b+'_sl').value=c.secSeal?'1':'0';
+  }
+  window.cwSync=function(b){const p=document.getElementById('cw_'+b+'_status');if(p){const c=cwCfg(b);p.textContent='Centre-wise • TALDANGRA • 2206 • Subject: '+(c.subjectMode==='ledger'?'Progress Ledger actual':'Manual')+' • Date '+(c.showDate?'ON':'OFF')+' • Subject '+(c.showSubject?'ON':'OFF')+' • Secretary signature '+(c.secSign?'ON':'OFF')+' • seal '+(c.secSeal?'ON':'OFF');}};
+  window.cwFetchLedger=function(b){
+    const c=cwCfg(b), subs=cwSubjects(b), d=cwSelectedDate(b);
+    sbDB[b].cwSubjectMode='ledger'; sbDB[b].cwSubject=subs.join(' / '); sbDB[b].cwShowDate=true; sbDB[b].cwShowSubject=true; sbSave();
+    const st=document.getElementById('cw_'+b+'_status'); if(st) st.textContent='FETCHED FROM PROGRESS LEDGER — Date: '+d+' — Subject(s): '+(subs.length?subs.join(' / '):'No subject allocation found; routine subject retained.');
+    cwSync(b); sbPaint(b);
+  };
+  /* All existing Submission-tab print commands now use the centre-wise engine. */
+  window.sbPrint=function(b,what){ return window.cwPrint(b,what); };
+  window.cwPrint=function(b,what){
+    sbLoad(); const c=sbCfg(b), css=`
+      @page{size:A4 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:Arial,Helvetica,sans-serif}.no-print{display:none!important}
+      .cw-a4{width:210mm;height:297mm;padding:7mm;page-break-after:always;break-after:page;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3mm}.cw-a4.outer-a4{display:flex;flex-direction:column;gap:0}.cw-a4.outer-a4 .cw-outer{height:calc(50% - 1mm)}.cw-cut{height:2mm;border-top:.4mm dashed #555;margin:0 2mm}.cw-label{border:.6mm solid #111;padding:3.5mm;overflow:hidden;display:flex;flex-direction:column}.cw-outer{border:.7mm solid #111;padding:5mm;overflow:hidden;display:flex;flex-direction:column}.cw-head{text-align:center;border-bottom:.5mm solid #111;padding-bottom:2.5mm}.cw-exam{font-size:10pt;font-weight:700;text-transform:uppercase}.cw-centre{font-size:20pt;font-weight:900;letter-spacing:.5px}.cw-title{font-size:16pt;font-weight:900;margin-top:1.5mm}.cw-sub{font-size:9pt;font-weight:700;margin-top:1mm}.cw-venues{font-size:8.5pt;font-weight:700;margin-top:2mm;line-height:1.35}.cw-meta{font-size:10.5pt;font-weight:800;margin-top:1.5mm;word-break:break-word}.cw-body{flex:1;position:relative}.cw-big{text-align:center;font-size:18pt;font-weight:900;margin:5mm 0}.cw-row{display:flex;justify-content:space-between;gap:5mm;border-bottom:.3mm solid #555;padding:2.5mm 0;font-size:10.5pt}.cw-row b{min-width:28mm}.cw-fields{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-top:3mm}.cw-fields>div{border:.35mm solid #777;padding:2mm;text-align:center;font-size:9.5pt;min-height:16mm}.cw-code{text-align:center;font-size:20pt;font-weight:900;margin-top:4mm;letter-spacing:1px}.cw-md{text-align:center;font-size:16pt;font-weight:900;margin:5mm 0}.cw-md strong{font-size:22pt}.cw-md span{font-size:12pt}.cw-sign{position:relative;text-align:center;margin-top:4mm;min-height:18mm;font-size:9pt}.cw-sigline{border-top:.3mm solid #111;padding-top:1mm;margin:6mm auto 0;width:55mm;font-weight:700}.cw-boxno{text-align:center;font-size:15pt;font-weight:800;margin:3mm 0}.cw-boxno strong{font-size:27pt}.cw-content{font-size:13pt;line-height:1.35;border:.4mm solid #333;padding:4mm;margin:2mm 0}.cw-address{display:grid;grid-template-columns:1fr 1fr;gap:5mm;font-size:9.5pt;line-height:1.3;border-top:.4mm solid #111;border-bottom:.4mm solid #111;padding:3mm 0;margin-top:2mm}.cw-bottom{font-size:9pt;font-weight:800;margin-top:auto;padding-top:3mm}.cw-letter{width:190mm;min-height:277mm;margin:10mm;padding:4mm 5mm;border:.4mm solid #111}.cw-letter .cw-centre{font-size:23pt}.cw-letter .cw-title{font-size:18pt}.cw-lmeta{display:flex;justify-content:space-between;font-size:10pt;font-weight:700;margin:4mm 0}.cw-to{font-size:10pt;line-height:1.35;margin:3mm 0}.cw-p{font-size:10pt;line-height:1.45;text-align:justify}.cw-table{width:100%;border-collapse:collapse;font-size:9.2pt;margin:4mm 0}.cw-table th,.cw-table td{border:.35mm solid #111;padding:2.2mm;vertical-align:top}.cw-table th{font-weight:800}.cw-letter-sign{margin-top:15mm}
+      @media screen{body{background:#ddd}.cw-a4,.cw-letter{margin:8px auto;background:#fff;box-shadow:0 2px 10px #888}}
+      @media print{.cw-a4,.cw-letter{margin:0;box-shadow:none}.cw-a4:last-child{page-break-after:auto}}
+    `;
+    let body=''; if(what==='inner'||what==='all') body+=cwInnerSheets(b); if(what==='outer'||what==='all') body+=cwOuterSheets(b); if(what==='letter'||what==='all') body+=cwLetter(b);
+    const title='TALDANGRA CENTRE 2206 — Centre-wise '+what.toUpperCase();
+    const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for printing.');
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>'+css+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+body+'</body></html>');w.document.close();
+  };
+  const oldRender=window.sbRender;
+  window.sbRender=function(){ oldRender(); setTimeout(function(){cwControls('hs');cwControls('mp');cwSync('hs');cwSync('mp');},20); };
+  const oldPaint=window.sbPaint;
+  window.sbPaint=function(b){ oldPaint(b); setTimeout(function(){cwControls(b);cwSync(b);},0); };
+  setTimeout(function(){cwControls('hs');cwControls('mp');cwSync('hs');cwSync('mp');
+    document.querySelectorAll('.sb-prev').forEach(function(e){e.style.display='none';});
+    ['hs','mp'].forEach(function(b){ if(sbDB[b]){if(sbDB[b].cwSubjectMode===undefined)sbDB[b].cwSubjectMode='ledger';if(sbDB[b].cwShowSubject===undefined)sbDB[b].cwShowSubject=true;if(sbDB[b].cwShowDate===undefined)sbDB[b].cwShowDate=true;if(sbDB[b].cwSecSign===undefined)sbDB[b].cwSecSign=true;if(sbDB[b].cwSecSeal===undefined)sbDB[b].cwSecSeal=true;if(!sbDB[b].nMD)sbDB[b].nMD='1';if(!sbDB[b].boxC)sbDB[b].boxC='1';} }); sbSave();
+    /* Make original panel headings centre-wise so the old preview cannot be mistaken for the required mode. */
+    document.querySelectorAll('.sb-sec-h .tt').forEach(function(e){e.textContent=e.textContent.replace(/Labels of Box/g,'Centre-wise Labels of Box').replace(/venue-wise/g,'centre-wise');});
+  },100);
+})();
+</script>
 </body>
 </html>
