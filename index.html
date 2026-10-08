@@ -7059,53 +7059,57 @@ function sbPrint(b,what){
     try{ seal=typeof tfDocSeal==='function'?tfDocSeal(24,b,'right:0;top:-8mm'):''; }catch(e){}
     return '<div class="p-sec">'+seal+sign+'<div class="p-sec-line">CENTRE SECRETARY — SIGNATURE &amp; SEAL</div></div>';
   }
-  function venueBlock(){
-    return '<div class="p-venues"><div><b>VENUE 1</b> — '+esc0(V1)+'</div><div><b>VENUE 2</b> — '+esc0(V2)+'</div></div>';
+  function venueBlock(b){
+    const vs=(sbCfg(b).venues||[]);
+    return '<div class="p-venues">'+vs.map(function(v,i){return '<div><b>VENUE '+(i+1)+'</b><span>'+esc0(v.name)+(v.code?' \u2014 '+esc0(v.code):'')+'</span></div>';}).join('')+'</div>';
   }
   const MAT={
-    used:{color:'#075985',bg:'#e0f2fe',title:'LAST-DAY USED OMR',sub:'SEALED OMR PACKETS — LAST EXAMINATION DAY',big:'TOP-SHEET / RECEIVING ENVELOPE',pack:'TOP SHEET ATTACHED → RECEIVING ENVELOPE → POLYBAG → BOX → PARCEL',extra:'PREVIOUS USED OMR HAS ALREADY BEEN SENT. SEND ONLY THE LAST-DAY EXAMINATION OMR NOW.'},
-    unused:{color:'#047857',bg:'#d1fae5',title:'UNUSED / BLANK OMR',sub:'ALL LEVELS — SEPARATE SUPERSCRIBED ENVELOPE',big:'UNUSED OMR',pack:'SEPARATE ENVELOPE → BOX → PARCEL',extra:'MARK THE ENVELOPE CLEARLY: “UNUSED / BLANK OMR — ALL LEVELS”'},
-    cancel:{color:'#b91c1c',bg:'#fee2e2',title:'CANCELLED OMR',sub:'SEPARATE SUPERSCRIBED ENVELOPE',big:'CANCELLED OMR',pack:'SEPARATE ENVELOPE → BOX → PARCEL',extra:'DO NOT MIX WITH UNUSED OMR / RA OMR / ASR.'},
-    ra:{color:'#6d28d9',bg:'#ede9fe',title:'RA OMR',sub:'SEPARATE SUPERSCRIBED ENVELOPE',big:'RA OMR',pack:'SEPARATE ENVELOPE → BOX → PARCEL',extra:'IF ANY — KEEP SEPARATE AND MENTION CENTRE CODE 2206.'},
-    asr:{color:'#b45309',bg:'#fef3c7',title:'ASR',sub:'SEPARATE SUPERSCRIBED ENVELOPE',big:'ASR',pack:'SEPARATE ENVELOPE → BOX → PARCEL',extra:'KEEP ASR SEPARATE AND MENTION CENTRE CODE 2206.'},
-    md1:{color:'#334155',bg:'#e2e8f0',title:'METAL DETECTOR PACKET — 1 OF 2',sub:'LAST EXAMINATION — HANDLE WITH CARE',big:'METAL DETECTOR',pack:'PACK IN LARGE / SUITABLE BOX → PARCEL',extra:'PACKET 1 OF 2 — CENTRE CODE 2206.'},
-    md2:{color:'#334155',bg:'#e2e8f0',title:'METAL DETECTOR PACKET — 2 OF 2',sub:'LAST EXAMINATION — HANDLE WITH CARE',big:'METAL DETECTOR',pack:'PACK IN LARGE / SUITABLE BOX → PARCEL',extra:'PACKET 2 OF 2 — CENTRE CODE 2206.'}
+    used:{c:'#075985',bg:'#e0f2fe',t:'USED OMR',tag:'LAST DAY \u2014 SEALED',flow:['RECEIVING ENVELOPE<small>TOP SHEET PASTED</small>','POLYBAG','BOX']},
+    unused:{c:'#047857',bg:'#d1fae5',t:'UNUSED OMR',tag:'BLANK',flow:['SEPARATE ENVELOPE','BOX']},
+    cancel:{c:'#b91c1c',bg:'#fee2e2',t:'CANCELLED OMR',tag:'',flow:['SEPARATE ENVELOPE','BOX']},
+    ra:{c:'#6d28d9',bg:'#ede9fe',t:'RA OMR',tag:'IF ANY',flow:['SEPARATE ENVELOPE','BOX']},
+    asr:{c:'#b45309',bg:'#fef3c7',t:'ASR',tag:'',flow:['SEPARATE ENVELOPE','BOX']},
+    md:{c:'#334155',bg:'#e2e8f0',t:'METAL DETECTOR',tag:'',flow:['LARGE BOX']}
   };
-  function materialPage(b,key){
-    const c=sbCfg(b), x=MAT[key], cc=cfg(b);
-    const date=dateText(b), sub=subjectText(b);
-    let details='';
-    if(key==='md1'||key==='md2') details='<div class="p-mdtag">'+x.title+'<br><span>1 NO. METAL DETECTOR</span></div>';
-    else details='<div class="p-big">'+x.big+'</div><div class="p-rule"></div><div class="p-pack">'+x.pack+'</div>';
-    return '<div class="p-a4"><div class="p-label" style="--pc:'+x.color+';--bg:'+x.bg+'">'+
-      '<div class="p-top"><div class="p-exam">'+esc0(c.exam)+'</div><div class="p-centre">'+CENTRE+'</div><div class="p-code">CENTRE CODE <span>'+CODE+'</span></div></div>'+
-      '<div class="p-title">'+x.title+'</div><div class="p-sub">'+x.sub+'</div>'+
-      '<div class="p-identity"><div class="p-centre-name">CENTRE: '+CENTRE+' <span>•</span> CODE: '+CODE+'</div>'+venueBlock()+'</div>'+details+
-      '<div class="p-fields">'+(cc.showDate?'<div><b>EXAMINATION DATE</b><strong>'+esc0(date)+'</strong></div>':'')+(cc.showSubject?'<div><b>SUBJECT</b><strong>'+esc0(sub)+'</strong></div>':'')+'</div>'+
-      '<div class="p-extra">'+x.extra+'</div><div class="p-bottom"><div class="p-packline">PACKING / PARCEL: '+x.pack+'</div><div class="p-code2">TALDANGRA — '+CODE+'</div></div>'+secBlock(b)+
+  function ccBlock(){ return '<div class="p-cc"><small>CENTRE CODE</small><strong>'+CODE+'</strong><em>'+CENTRE+'</em></div>'; }
+  function fieldsBlock(b,withSubject){
+    const cc=cfg(b), f=[];
+    if(cc.showDate) f.push('<div><b>EXAM DATE</b><strong>'+esc0(dateText(b))+'</strong></div>');
+    if(cc.showSubject&&withSubject) f.push('<div class="p-subj"><b>SUBJECT</b><strong>'+esc0(subjectText(b))+'</strong></div>');
+    return f.length?'<div class="p-fields c'+f.length+'">'+f.join('')+'</div>':'';
+  }
+  function mdCount(b){ return Math.max(1,sbN(b,'nMD')||2); }
+  function materialPage(b,key,i,n){
+    const c=sbCfg(b), x=MAT[key], md=(key==='md');
+    const flow=x.flow.map(function(s){return '<div class="p-step">'+s+'</div>';}).join('<div class="p-arrow">\u2192</div>');
+    const tag=md?('PACKET '+i+' OF '+n):x.tag;
+    return '<div class="p-a4"><div class="p-label" style="--pc:'+x.c+';--bg:'+x.bg+'">'+
+      '<div class="p-exam">'+esc0(c.exam)+'</div>'+ccBlock()+
+      '<div class="p-title"><div class="p-t">'+x.t+'</div>'+(tag?'<div class="p-tag">'+tag+'</div>':'')+'</div>'+
+      '<div class="p-flow">'+flow+'</div>'+fieldsBlock(b,!md)+venueBlock(b)+secBlock(b)+
       '</div></div>';
   }
   function boxPage(b,box){
-    const c=sbCfg(b), cc=cfg(b);
-    const group=box.g==='A'?'LAST-DAY USED OMR':box.g==='B'?'UNUSED / CANCELLED OMR / RA / ASR':'METAL DETECTOR';
-    const contents=box.g==='A'?'LAST-DAY USED OMR — RECEIVING ENVELOPE + POLYBAG':box.g==='B'?'SEPARATE ENVELOPES: UNUSED / CANCELLED / RA / ASR':'METAL DETECTOR PACKET(S)';
-    const col=box.g==='A'?'#075985':box.g==='B'?'#b45309':'#334155';
-    const bg=box.g==='A'?'#e0f2fe':box.g==='B'?'#fef3c7':'#e2e8f0';
+    const c=sbCfg(b), g=box.g, n=mdCount(b);
+    const col=g==='A'?'#075985':g==='B'?'#b45309':'#334155';
+    const bg=g==='A'?'#e0f2fe':g==='B'?'#fef3c7':'#e2e8f0';
+    const head=g==='A'?'SEALED OMR \u2014 LAST DAY':g==='B'?'OMR & ASR':'METAL DETECTOR';
+    const items=g==='A'?['USED OMR']:g==='B'?['UNUSED OMR','CANCELLED OMR','RA OMR (IF ANY)','ASR']:['METAL DETECTOR \u00d7 '+n];
     return '<div class="p-a4"><div class="p-label p-box" style="--pc:'+col+';--bg:'+bg+'">'+
-      '<div class="p-top"><div class="p-exam">'+esc0(c.exam)+'</div><div class="p-centre">'+CENTRE+'</div><div class="p-code">CENTRE CODE <span>'+CODE+'</span></div></div>'+
-      '<div class="p-title">PARCEL BOX — '+group+'</div><div class="p-sub">CENTRE-WISE PACKING — VENUE 1 + VENUE 2</div>'+
-      '<div class="p-boxno">BOX <span>'+box.no+'</span> OF <span>'+box.total+'</span></div>'+
-      '<div class="p-identity"><div class="p-centre-name">CENTRE: '+CENTRE+' <span>•</span> CODE: '+CODE+'</div>'+venueBlock()+'</div>'+
-      '<div class="p-boxcontent"><div class="p-boxhead">CONTENTS OF THIS PARCEL</div><div class="p-boxmain">'+contents+'</div><div class="p-boxnote">WHATEVER THE NUMBER OF PARCEL BOXES, <b>CENTRE CODE 2206 MUST BE CLEARLY MENTIONED ON EVERY BOX.</b></div></div>'+
-      (cc.showDate?'<div class="p-boxmeta"><b>LAST EXAMINATION DATE:</b> '+esc0(dateText(b))+'</div>':'')+
-      (cc.showSubject?'<div class="p-boxmeta"><b>SUBJECT:</b> '+esc0(subjectText(b))+'</div>':'')+
-      '<div class="p-bottom"><div class="p-packline">SEAL / TAPE SECURELY • LABEL OUTSIDE • HANDLE WITH CARE</div><div class="p-code2">TALDANGRA — '+CODE+'</div></div>'+secBlock(b)+
+      '<div class="p-exam">'+esc0(c.exam)+'</div>'+ccBlock()+
+      '<div class="p-boxno"><small>PARCEL BOX</small><strong>'+box.no+'<span>OF</span>'+box.total+'</strong></div>'+
+      '<div class="p-title"><div class="p-t">'+head+'</div></div>'+
+      '<div class="p-items">'+items.map(function(t){return '<div class="p-item">'+t+'</div>';}).join('')+'</div>'+
+      fieldsBlock(b,g==='A')+venueBlock(b)+secBlock(b)+
       '</div></div>';
   }
   function allPages(b,mode){
     let a=[];
-    if(mode==='labels'||mode==='all') ['used','unused','cancel','ra','asr','md1','md2'].forEach(k=>a.push(materialPage(b,k)));
-    if(mode==='boxes'||mode==='all') sbBoxes(b).forEach(x=>a.push(boxPage(b,x)));
+    if(mode==='labels'||mode==='all'){
+      ['used','unused','cancel','ra','asr'].forEach(function(k){a.push(materialPage(b,k));});
+      const n=mdCount(b); for(let i=1;i<=n;i++) a.push(materialPage(b,'md',i,n));
+    }
+    if(mode==='boxes'||mode==='all') sbBoxes(b).forEach(function(x){a.push(boxPage(b,x));});
     return a.join('');
   }
   function controls(b){
@@ -7156,31 +7160,40 @@ function sbPrint(b,what){
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .no-print{display:none!important}
-.p-a4{box-sizing:border-box;width:210mm;height:297mm;padding:5mm;page-break-after:always;break-after:page;background:#fff;display:block;overflow:hidden}
-.p-label{box-sizing:border-box;width:100%;height:100%;border:1.2mm solid var(--pc);background:linear-gradient(180deg,var(--bg) 0%,#fff 30%,#fff 100%);padding:5mm;display:flex;flex-direction:column;overflow:hidden;position:relative}
-.p-label:before{content:"";position:absolute;inset:2.2mm;border:.35mm solid var(--pc);pointer-events:none;box-sizing:border-box}
-.p-top,.p-title,.p-sub,.p-identity,.p-big,.p-rule,.p-pack,.p-fields,.p-extra,.p-bottom,.p-sec,.p-mdtag,.p-boxno,.p-boxcontent,.p-boxmeta{position:relative;z-index:1}
-.p-top{text-align:center;border-bottom:.7mm solid var(--pc);padding-bottom:2.5mm}
-.p-exam{font-size:14pt;font-weight:800;letter-spacing:.4px;text-transform:uppercase}
-.p-centre{font-size:40pt;line-height:1;font-weight:1000;letter-spacing:2px;margin-top:2mm;color:var(--pc)}
-.p-code{font-size:18pt;font-weight:900;margin-top:2mm}.p-code span{font-size:34pt;margin-left:2mm}
-.p-title{text-align:center;font-size:26pt;line-height:1.05;font-weight:1000;margin:4mm 0 1.5mm;color:#111}
-.p-sub{text-align:center;font-size:13pt;font-weight:800;line-height:1.25;color:#334155}
-.p-identity{margin-top:3mm;border:.6mm solid var(--pc);background:rgba(255,255,255,.8);padding:2.5mm}
-.p-centre-name{text-align:center;font-size:17pt;font-weight:1000}.p-centre-name span{color:var(--pc);padding:0 2mm}
-.p-venues{margin-top:1.5mm;font-size:11.5pt;font-weight:700;line-height:1.3}.p-venues b{color:var(--pc)}
-.p-big{text-align:center;font-size:30pt;font-weight:1000;margin:7mm 0 3mm;color:var(--pc)}
-.p-rule{height:1mm;background:var(--pc);margin:0 10mm 6mm}
-.p-pack{text-align:center;font-size:16pt;font-weight:1000;line-height:1.25;border:.6mm dashed var(--pc);padding:3mm}
-.p-fields{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-top:4mm}.p-fields>div{border:.55mm solid var(--pc);padding:2.5mm;text-align:center;min-height:24mm}.p-fields b{display:block;font-size:11pt}.p-fields strong{display:block;font-size:17pt;line-height:1.2;margin-top:2mm;word-break:break-word}
-.p-extra{margin-top:4mm;border-left:2mm solid var(--pc);padding:3mm 4mm;font-size:13pt;font-weight:800;line-height:1.35}
-.p-bottom{margin-top:auto;border-top:.6mm solid var(--pc);padding-top:2.5mm;text-align:center}.p-packline{font-size:11.5pt;font-weight:900;line-height:1.35}.p-code2{font-size:23pt;font-weight:1000;color:var(--pc);margin-top:3mm;letter-spacing:1.5px}
+.p-a4{width:210mm;height:297mm;padding:6mm;page-break-after:always;break-after:page;background:#fff;overflow:hidden}
+.p-label{width:100%;height:100%;border:2mm solid var(--pc);border-radius:3mm;padding:5mm;display:flex;flex-direction:column;gap:3.5mm;position:relative;overflow:hidden;background:#fff}
+.p-exam{flex:none;text-align:center;font-size:13pt;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#334155}
+.p-cc{flex:none;background:var(--pc);color:#fff;text-align:center;padding:3mm;border-radius:3mm}
+.p-cc small{display:block;font-size:20pt;font-weight:800;letter-spacing:4px}
+.p-cc strong{display:block;font-size:118pt;line-height:1;font-weight:900;letter-spacing:6px}
+.p-cc em{display:block;font-style:normal;font-size:36pt;font-weight:900;letter-spacing:4px}
+.p-title{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;border:1.2mm solid var(--pc);background:var(--bg);text-align:center;padding:3.5mm 3mm;border-radius:3mm}
+.p-t{font-size:50pt;line-height:1.05;font-weight:900;color:var(--pc)}
+.p-tag{font-size:22pt;font-weight:800;margin-top:1.5mm;color:#111;letter-spacing:1px}
+.p-flow{flex:0 0 34mm;display:flex;align-items:stretch;justify-content:center;gap:3mm}
+.p-step{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:.9mm solid var(--pc);border-radius:2mm;padding:3mm 2mm;font-size:22pt;font-weight:900;line-height:1.15;color:#111;background:#fff}
+.p-step small{font-size:13pt;font-weight:800;color:var(--pc);margin-top:1mm}
+.p-arrow{align-self:center;font-size:30pt;font-weight:900;color:var(--pc)}
+.p-fields{flex:none;display:grid;gap:4mm}
+.p-fields.c1{grid-template-columns:1fr}.p-fields.c2{grid-template-columns:1fr 1.6fr}
+.p-fields>div{border:.9mm solid var(--pc);border-radius:2mm;padding:2.5mm 3mm;text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:27mm}
+.p-fields b{display:block;font-size:12pt;font-weight:800;letter-spacing:2px;color:var(--pc)}
+.p-fields strong{display:block;font-size:27pt;line-height:1.15;font-weight:900;margin-top:1mm;word-break:break-word}
+.p-fields .p-subj strong{font-size:17pt}
+.p-venues{flex:none;border:.6mm solid #94a3b8;border-radius:2mm;padding:3mm 3.5mm;font-size:15pt;font-weight:800;line-height:1.5}
+.p-venues div{display:flex;gap:3mm}.p-venues b{flex:none;width:31mm;color:var(--pc)}
+.p-boxno{flex:none;border:1.2mm solid var(--pc);border-radius:3mm;text-align:center;padding:2mm}
+.p-boxno small{display:block;font-size:15pt;font-weight:800;letter-spacing:3px;color:#334155}
+.p-boxno strong{display:block;font-size:64pt;line-height:1;font-weight:900;color:var(--pc)}
+.p-boxno strong span{font-size:28pt;font-weight:800;color:#111;padding:0 5mm}
+.p-items{flex:1 1 auto;display:flex;flex-direction:column;justify-content:space-evenly;border:1.2mm solid var(--pc);border-radius:3mm;padding:2.5mm 5mm}
+.p-item{display:flex;align-items:center;gap:5mm;font-size:30pt;font-weight:900;line-height:1.3}
+.p-item:before{content:"";flex:none;width:10mm;height:10mm;border:1mm solid var(--pc);border-radius:1.5mm}
+.p-box .p-cc strong{font-size:84pt}.p-box .p-cc small{font-size:16pt}.p-box .p-cc em{font-size:26pt}
+.p-box .p-t{font-size:34pt}.p-box .p-title{flex:none}
 .p-sec{margin-top:2mm;text-align:center;height:29mm;min-height:0;font-size:5pt;font-weight:800;position:relative;overflow:hidden}.p-sec-line{border-top:.3mm solid #111;width:58mm;margin:1.5mm auto 0;padding-top:.7mm;font-size:7pt;line-height:1}
-.p-mdtag{text-align:center;font-size:31pt;font-weight:1000;color:var(--pc);margin:11mm 0}.p-mdtag span{font-size:20pt}
-.p-box .p-title{font-size:24pt}.p-boxno{text-align:center;margin:5mm 0}.p-boxno span{font-size:42pt;font-weight:1000;color:var(--pc)}
-.p-boxcontent{border:.8mm solid var(--pc);margin-top:3mm;padding:4mm;text-align:center}.p-boxhead{font-size:15pt;font-weight:900}.p-boxmain{font-size:23pt;font-weight:1000;color:var(--pc);margin:4mm 0}.p-boxnote{font-size:13pt;line-height:1.4;font-weight:700}
-.p-boxmeta{font-size:14pt;font-weight:800;margin-top:4mm;border-bottom:.35mm solid #555;padding-bottom:2mm}
 .p-sec .doc-sign{display:block;position:relative!important;right:auto!important;top:auto!important;font-size:5pt!important;line-height:1!important;max-height:24mm;overflow:hidden}.p-sec .doc-sign .ds-img{width:38mm!important;height:auto!important;margin:0 auto!important}.p-sec .doc-sign .ds-date{font-size:2.8em!important;margin:.05em 0 .1em!important}.p-sec .doc-sign .ds-t1{font-size:2.5em!important}.p-sec .doc-sign .ds-t2,.p-sec .doc-sign .ds-t3{font-size:1.8em!important}.p-sec .doc-seal{width:18mm!important;height:18mm!important;right:0!important;top:0!important}.p-sec .doc-seal svg{width:18mm!important;height:18mm!important}
+.p-sec{margin-top:auto}
 @media screen{body{background:#d7dce2}.p-a4{margin:10px auto;box-shadow:0 3px 18px #777}.p-a4:last-child{margin-bottom:20px}}
 @media print{.p-a4{margin:0}.p-a4:last-child{page-break-after:auto}}
 `;
