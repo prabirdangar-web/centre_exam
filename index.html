@@ -4733,6 +4733,12 @@ cloudHydrateAndBoot(function(){
   step('hsInitDataEngine',hsInitDataEngine);
   step('hsReqInitSystemWorkspace',hsReqInitSystemWorkspace);
   step('hsRecPopulatePresetSelect',hsRecPopulatePresetSelect);
+  step('recVoucherToday',function(){
+    /* Voucher Date defaults to the current date (dd-Mon-yyyy); it can still be edited by hand afterwards. */
+    var d=new Date(), M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var t=String(d.getDate()).padStart(2,'0')+'-'+M[d.getMonth()]+'-'+d.getFullYear();
+    ['hs_inDate','mp_inDate'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=t; });
+  });
   step('hsRecLoadPreset',function(){ hsRecLoadPreset(6); });
   step('hsMasterLoad',hsMasterLoad);
   step('hsMasterRenderList',hsMasterRenderList);
@@ -6347,7 +6353,7 @@ function hsConfRenderSubSel(){
 }
 /* subject-wise enrolled / appeared for one venue: ONLY subjects that have enrolled students */
 function hsConfStats(venue){
-  const rows=hsConfRows(venue), stats={}, order=[]; let known=false;
+  const rows=hsConfRows(venue), stats={}, order=[], missing=[], due=[]; let known=false;
   hsConfExamDates().forEach(item=>{
     const row=rows.find(r=>r.date===item.date); if(!row) return;
     let opts=hsSubjectOptions(item);
@@ -6363,6 +6369,7 @@ function hsConfStats(venue){
        so the table isn't empty on a brand-new setup. */
     let alloc=[]; try{ alloc=hsGetAllocatedSubjects(venue,item.date)||[]; }catch(e){ alloc=[]; }
     if(alloc.length) opts=opts.filter(s=>alloc.includes(s));
+    const dayHad=new Set();
     opts.forEach(sub=>{
       let arr=null;
       if(row.subWise&&row.subVals) arr=row.subVals[sub]||[];
@@ -6372,8 +6379,18 @@ function hsConfStats(venue){
       if(enr<=0) return;
       const code=hsSubjectCode4(sub);
       if(!stats[code]){ stats[code]={code,name:sub,enr:0,app:0}; order.push(code); }
-      stats[code].enr+=enr; stats[code].app+=app; known=true;
+      stats[code].enr+=enr; stats[code].app+=app; known=true; dayHad.add(sub);
     });
+    /* Day has several subjects but the ledger holds only a day TOTAL (Subject-wise Entry is off):
+       the report cannot know which subject the students belong to, so those columns stay blank.
+       Flag it (exam already held) or mark it as still due (exam date not reached yet). */
+    if(!(row.subWise&&row.subVals) && opts.length>1){
+      const m=String(item.date).match(/(\d+)\.(\d+)\.(\d+)/), td=new Date(); td.setHours(0,0,0,0);
+      const dt=m?new Date(+m[3],+m[2]-1,+m[1]):null;
+      const codes=opts.map(hsSubjectCode4);
+      if(dt && dt>td) due.push({date:item.date,codes});
+      else missing.push({date:item.date,codes,enr:hsConfSum(row.vals,0,6),app:hsConfSum(row.vals,6,12)});
+    }
   });
   if(!known){   /* nothing subject-wise in the ledger yet: skeleton from ticked / allotted / day subjects.
                    Default = subjects fetched from the DB/ledger for the date (as before). Manual mode
@@ -6396,7 +6413,7 @@ function hsConfStats(venue){
   hsConfVenueRoutineCodes(venue).forEach(c=>{ if(sel[c]!==false && !order.includes(c)) order.push(c); });
   const filteredOrder=order.filter(c=>sel[c]!==false);
   if(hsConfDB.fields.manualSub && !filteredOrder.includes('MANL')) filteredOrder.push('MANL');
-  return {stats,order:filteredOrder,known};
+  return {stats,order:filteredOrder,known,missing,due};
 }
 function hsConfAutoCands(venue){
   const rows=hsConfRows(venue), item=hsConfExamDates()[0]; let total=0, san=0;
@@ -6506,7 +6523,16 @@ function hsConfPaint(){
   const pv=document.getElementById('hs_confPreview'); if(!pv) return;
   pv.innerHTML=hsConfLetterHtml();
   const S1=hsConfStats('TFHS'), S2=hsConfStats('TGHS'), st=document.getElementById('hs_confStatus');
-  if(st) st.textContent=(S1.known||S2.known)?'Subject columns = only subjects with enrolled students in the Progress Ledger (subject-wise entry). Click any table cell to correct it.':'No subject-wise figures in the Progress Ledger yet — columns show subjects ticked on each date\'s row (or, if none ticked, the day\'s allotted subjects). Tick the subjects held on each date in the Progress Ledger and press "Re-read Ledger".';
+  const _warn=(function(){
+    let h='';
+    [['TFHS',S1],['TGHS',S2]].forEach(function(p){
+      const miss=p[1].missing||[], due=p[1].due||[];
+      if(miss.length) h+='<br><b style="color:#b91c1c;">'+p[0]+' — exam held but NO subject-wise figures (columns stay blank):</b> '+miss.map(function(x){ return x.date+' ['+x.codes.join(', ')+']'+(x.enr?' day total '+x.enr+'/'+x.app:''); }).join(' &nbsp;|&nbsp; ')+'. In the Progress Ledger click <b>Subject-wise Entry</b> on those dates and enter each subject\'s Enrolled / Appeared.';
+      if(due.length) h+='<br><span style="color:#92400e;">'+p[0]+' — exam still due (blank is expected): '+due.map(function(x){ return x.date+' ['+x.codes.join(', ')+']'; }).join(' | ')+'</span>';
+    });
+    return h;
+  })();
+  if(st) st.innerHTML=(function(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;'); })((S1.known||S2.known)?'Subject columns = only subjects with enrolled students in the Progress Ledger (subject-wise entry). Click any table cell to correct it.':'No subject-wise figures in the Progress Ledger yet — columns show subjects ticked on each date\'s row (or, if none ticked, the day\'s allotted subjects). Tick the subjects held on each date in the Progress Ledger and press "Re-read Ledger".')+_warn;
 }
 function hsConfRender(){ hsConfLoad(); hsConfBuildForm(); hsConfFillForm(); hsConfRenderSubSel(); hsConfPaint(); }
 function hsConfReset(){ if(!confirm('Re-read all figures from the Progress Ledger? Manual table and candidate-count edits will be cleared.')) return; hsConfDB.ov={}; ['TFHS','TGHS'].forEach(v=>['ben','san'].forEach(m=>{ delete hsConfDB.fields['cand_'+v+'_'+m]; })); hsConfSave(); hsConfFillForm(); hsConfRenderSubSel(); hsConfPaint(); }
