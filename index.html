@@ -7350,33 +7350,29 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
   function reportPage(k){
     const V=vInfo(k), D=venueData(k), c=sbCfg(B), date=sbRaw(B,'date')||sbToday(), t=D.tot;
     const sup=get('vsr_sup_'+k,defSup()), rem=get('vsr_rem_'+k,'');
-    const showSeal=get('vsr_seal','1')!=='0';
-    const di=sbDateInfo(B);
+    const showSeal=get('vsr_seal','1')!=='0', di=sbDateInfo(B);
     const trs=D.rows.length?D.rows.map(function(r,i){
-      return '<tr><td class="c">'+(i+1)+'</td><td class="l">'+E(r.date)+'<br><small>'+E(r.day)+'</small></td><td class="l s">'+E(r.sub)+'</td>'+
+      return '<tr><td>'+(i+1)+'</td><td class="l">'+E(r.date)+'</td><td class="l s">'+E(r.sub)+'</td>'+
         '<td class="a">'+r.am+'</td><td class="a">'+r.af+'</td><td class="a b">'+n3(r.am,r.af)+'</td>'+
         '<td class="x">'+r.bm+'</td><td class="x">'+r.bf+'</td><td class="x b">'+n3(r.bm,r.bf)+'</td></tr>';
-    }).join(''):'<tr><td colspan="9" class="c" style="padding:8mm">No day-wise figures found in the Progress Ledger up to the selected last date.</td></tr>';
-    const grand='<tr class="gt"><td colspan="3">GRAND TOTAL</td><td>'+t.am+'</td><td>'+t.af+'</td><td>'+n3(t.am,t.af)+'</td><td>'+t.bm+'</td><td>'+t.bf+'</td><td>'+n3(t.bm,t.bf)+'</td></tr>';
-    const cats=[['reg','Semester-III (Regular)'],['sup','Supplementary'],['old','Old Syllabus']].map(function(x){
-      const o=D.cat[x[0]]; if(!(o.am+o.af+o.bm+o.bf)) return '';
-      return '<tr><td class="l">'+x[1]+'</td><td class="a">'+o.am+'</td><td class="a">'+o.af+'</td><td class="a b">'+n3(o.am,o.af)+'</td><td class="x">'+o.bm+'</td><td class="x">'+o.bf+'</td><td class="x b">'+n3(o.bm,o.bf)+'</td></tr>';
-    }).join('');
-    const catTbl=cats?'<div class="vr-h">CATEGORY-WISE SUMMARY</div><table class="vr-t"><thead><tr><th rowspan="2">Category</th><th colspan="3" class="ha">APPEARED</th><th colspan="3" class="hx">ABSENT</th></tr><tr><th class="ha">M</th><th class="ha">F</th><th class="ha">Total</th><th class="hx">M</th><th class="hx">F</th><th class="hx">Total</th></tr></thead><tbody>'+cats+'</tbody></table>':'';
-    const subTbl=D.subs.length?'<div class="vr-h">SUBJECT-WISE (Appeared / Absent)</div><table class="vr-t sj"><thead><tr><th class="l">Subject</th>'+D.subs.map(function(s){return '<th>'+E(s.code)+'</th>';}).join('')+'</tr></thead><tbody><tr><th class="l ha">Appeared</th>'+D.subs.map(function(s){return '<td class="a">'+s.app+'</td>';}).join('')+'</tr><tr><th class="l hx">Absent</th>'+D.subs.map(function(s){return '<td class="x">'+(s.abs||'\u2014')+'</td>';}).join('')+'</tr></tbody></table>':'';
-    const seal=showSeal?sbSeal(B,22,'right:8mm;top:-10mm'):'';
+    }).join(''):'<tr><td colspan="9" style="padding:6mm">No day-wise figures found in the Progress Ledger up to the selected last date.</td></tr>';
+    const grand='<tr class="gt"><td colspan="3">TOTAL</td><td>'+t.am+'</td><td>'+t.af+'</td><td>'+n3(t.am,t.af)+'</td><td>'+t.bm+'</td><td>'+t.bf+'</td><td>'+n3(t.bm,t.bf)+'</td></tr>';
+    const seal=showSeal?sbSeal(B,20,'right:6mm;top:-8mm'):'';
+    const _u={}; D.rows.forEach(function(r){ String(r.sub).split(/,\s*/).forEach(function(s){ if(s&&s!=='\u2014') _u[s]=1; }); }); const nSub=Object.keys(_u).length;
     return '<div class="vr-a4"><div class="vr-doc">'+
-      '<div class="vr-head">'+(c.logo?'<img src="'+c.logo+'" alt="">':'')+'<div class="b1">'+c.body+'</div><div class="b2">'+c.examLine.toUpperCase()+'</div></div>'+
+      '<div class="vr-head">'+(c.logo?'<img src="'+c.logo+'" alt="">':'')+'<div><div class="b1">'+c.body+'</div><div class="b2">'+c.examLine.toUpperCase()+'</div></div></div>'+
       '<div class="vr-title">VENUE SUPERVISOR\u2019S REPORT \u2014 APPEARED &amp; ABSENT</div>'+
-      '<div class="vr-info"><div><b>CENTRE</b>TALDANGRA \u2014 CODE 2206</div><div class="vc"><b>VENUE CODE</b><strong>'+E(V.code)+'</strong></div><div class="wide"><b>VENUE</b>'+E(V.name)+'</div>'+
-      '<div><b>LAST DATE OF EXAM</b>'+E(di.date||'')+(di.day?' ('+E(di.day)+')':'')+'</div><div><b>REPORT DATE</b>'+E(date)+'</div></div>'+
-      '<div class="vr-h">DAY-WISE ATTENDANCE</div>'+
-      '<table class="vr-t"><thead><tr><th rowspan="2" style="width:7mm">Sl.</th><th rowspan="2" style="width:24mm">Date</th><th rowspan="2">Subject(s)</th><th colspan="3" class="ha">APPEARED</th><th colspan="3" class="hx">ABSENT</th></tr><tr><th class="ha">M</th><th class="ha">F</th><th class="ha">Total</th><th class="hx">M</th><th class="hx">F</th><th class="hx">Total</th></tr></thead><tbody>'+trs+grand+'</tbody></table>'+
-      '<div class="vr-kpi"><div class="ka"><small>TOTAL APPEARED</small><strong>'+n3(t.am,t.af)+'</strong></div><div class="kx"><small>TOTAL ABSENT</small><strong>'+n3(t.bm,t.bf)+'</strong></div></div>'+
-      catTbl+subTbl+
-      '<div class="vr-h">REMARKS</div><div class="vr-rem" contenteditable="true" data-vk="'+k+'">'+(E(rem)||'The examination was conducted smoothly and peacefully in this venue. No malpractice / untoward incident was reported.')+'</div>'+
-      '<div class="vr-cert">Certified that the above appeared and absent figures are correct as per the attendance records (OMR / ASR) of this venue.</div>'+
-      '<div class="vr-sg"><div style="position:relative">'+seal+'<div class="ln">Venue Supervisor</div><b>'+E(sup)+'</b><br>'+E(V.name)+'<br>Venue Code: '+E(V.code)+'</div><div><div class="ln">Centre Secretary / Centre-In-Charge</div>Taldangra Centre \u2014 Code 2206</div></div>'+
+      '<table class="vr-t vi"><tr><th>Centre</th><td class="l">TALDANGRA \u2014 2206</td><th>Venue Code</th><td><b style="font-size:13pt">'+E(V.code)+'</b></td></tr>'+
+      '<tr><th>Venue</th><td class="l" colspan="3">'+E(V.name)+'</td></tr>'+
+      '<tr><th>Up to</th><td class="l">'+E(di.date||'')+(di.day?' ('+E(di.day)+')':'')+'</td><th>Report Date</th><td>'+E(date)+'</td></tr></table>'+
+      '<div class="vr-h">EXAM FACTS</div>'+
+      '<div class="vr-fx"><div><small>EXAMINATION</small><b>'+E(c.exam)+'</b></div><div><small>EXAM PERIOD</small><b>'+(D.rows.length?E(D.rows[0].date)+' \u2013 '+E(D.rows[D.rows.length-1].date):'\u2014')+'</b></div><div><small>DAYS HELD</small><b>'+D.rows.length+'</b></div><div><small>SUBJECTS</small><b>'+nSub+'</b></div>'+
+      '<div class="fa"><small>APPEARED (M / F)</small><b>'+t.am+' / '+t.af+'</b></div><div class="fx"><small>ABSENT (M / F)</small><b>'+t.bm+' / '+t.bf+'</b></div></div>'+
+      '<table class="vr-t"><thead><tr><th rowspan="2" style="width:7mm">Sl</th><th rowspan="2" style="width:21mm">Date</th><th rowspan="2">Subject(s)</th><th colspan="3" class="ha">APPEARED</th><th colspan="3" class="hx">ABSENT</th></tr><tr><th class="ha">M</th><th class="ha">F</th><th class="ha">Tot</th><th class="hx">M</th><th class="hx">F</th><th class="hx">Tot</th></tr></thead><tbody>'+trs+grand+'</tbody></table>'+
+      '<table class="vr-t vi"><tr><th class="ha">Total Appeared</th><td class="a b" style="font-size:13pt">'+n3(t.am,t.af)+'</td><th class="hx">Total Absent</th><td class="x b" style="font-size:13pt">'+n3(t.bm,t.bf)+'</td></tr></table>'+
+      '<div class="vr-pc"><b>EXAMINATION HELD PEACEFULLY</b><div class="vr-rem" contenteditable="true" data-vk="'+k+'">'+(E(rem)||'The examination was held peacefully and smoothly on all '+D.rows.length+' days at this venue. No malpractice, unfair means, disputed incident or law &amp; order problem was reported.')+'</div></div>'+
+      '<div class="vr-cert">Certified that the above figures are correct as per attendance records (OMR / ASR) of this venue.</div>'+
+      '<div class="vr-sg"><div style="position:relative">'+seal+'<div class="ln">Venue Supervisor</div><b>'+E(sup)+'</b></div><div><div class="ln">Centre Secretary / Centre-In-Charge</div>Taldangra \u2014 Code 2206</div></div>'+
     '</div></div>';
   }
   /* ---- box letter label ---- */
@@ -7385,16 +7381,18 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
     const c=sbCfg(B), head=get('bl_head',c.examLine.toUpperCase()+'\nTALDANGRA CENTRE');
     const enc=String(get('bl_enc',ENC_DEF)).split(/\n+/).filter(function(x){return x.trim();});
     const nm=get('bl_name','TALDANGRA'), code=get('bl_code','2206');
-    const col=c.color;
-    return '<div class="bl-a4"><div class="bl" style="--pc:'+col+'">'+
+    const manual=get('bl_mode','auto')==='manual', tot=get('bl_total','')||(box?box.total:sbBoxes(B).length||'');
+    const note=get('bl_note','');
+    const bn=manual?'<span class="w">____</span><span> OF </span>'+(get('bl_total','')?E(get('bl_total','')):'<span class="w">____</span>'):((box?box.no:'__')+'<span> OF </span>'+E(tot||'__'));
+    return '<div class="bl-a4"><div class="bl" style="--pc:'+c.color+'">'+
       '<div class="bl-top">'+(c.logo?'<img src="'+c.logo+'" alt="">':'')+'<div class="bl-h">'+sbMl(head)+'</div></div>'+
-      (box?'<div class="bl-box"><small>PARCEL BOX</small><strong>'+box.no+'<span> OF </span>'+box.total+'</strong></div>':'')+
+      '<div class="bl-box"><small>PARCEL BOX</small><strong>'+bn+'</strong><div class="tt">TOTAL BOXES: <b>'+(E(tot)||'______')+'</b></div></div>'+
       '<div class="bl-cn"><div class="r"><b>Centre Name:</b> '+E(nm)+'</div><div class="r cd"><b>Centre Code:</b> <span>'+E(code)+'</span></div></div>'+
-      '<div class="bl-en"><div class="t">Enclosures:</div><ol>'+enc.map(function(x){return '<li>'+E(x)+'</li>';}).join('')+'</ol></div>'+
+      '<div class="bl-en"><div class="t">Enclosures:</div><ol>'+enc.map(function(x){return '<li>'+E(x)+'</li>';}).join('')+'</ol>'+
+      '<div class="nt">'+(E(note)||'&nbsp;')+'</div></div>'+
     '</div></div>';
   }
   const CSSB=`.vr-a4,.bl-a4{width:210mm;height:297mm;padding:7mm;page-break-after:always;break-after:page;overflow:hidden;background:#fff}
-.vr-doc{height:100%;border:1.4mm solid #1e3a8a;border-radius:2.5mm;padding:5mm 7mm;display:flex;flex-direction:column;gap:2.4mm;color:#111;font-size:10pt}
 .vr-head{text-align:center;border-bottom:.7mm solid #1e3a8a;padding-bottom:1.6mm}.vr-head img{width:13mm;height:13mm;object-fit:contain;display:block;margin:0 auto 1mm}.b1{font-size:13pt;font-weight:900;color:#1e3a8a}.b2{font-size:10pt;font-weight:800;color:#334155}
 .vr-title{background:#1e3a8a;color:#fff;text-align:center;font-weight:900;font-size:13.5pt;padding:2mm;border-radius:2mm;letter-spacing:.5px}
 .vr-info{display:grid;grid-template-columns:1.2fr .8fr 1fr;gap:1.6mm}.vr-info>div{border:.4mm solid #94a3b8;border-radius:1.5mm;padding:1.4mm 2.2mm;font-weight:800;font-size:10pt}.vr-info b{display:block;font-size:7pt;letter-spacing:1px;color:#1e3a8a}.vr-info .wide{grid-column:1/-1;grid-row:2}.vr-info .vc{background:#e0f2fe;text-align:center}.vr-info .vc strong{font-size:17pt;letter-spacing:2px}
@@ -7411,6 +7409,17 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
 .bl-box{border:1.2mm solid var(--pc);border-radius:3mm;text-align:center;padding:3mm}.bl-box small{display:block;font-size:15pt;font-weight:800;letter-spacing:4px;color:#334155}.bl-box strong{font-size:60pt;line-height:1.05;font-weight:900;color:var(--pc)}.bl-box strong span{font-size:24pt;color:#111}
 .bl-cn{background:var(--pc);color:#fff;border-radius:3mm;padding:5mm 7mm;text-align:center}.bl-cn .r{font-size:30pt;font-weight:900}.bl-cn .cd span{font-size:64pt;letter-spacing:6px;line-height:1.1}
 .bl-en{flex:1;border:1mm solid var(--pc);border-radius:3mm;padding:6mm 8mm}.bl-en .t{font-size:26pt;font-weight:900;color:var(--pc);text-decoration:underline;margin-bottom:3mm}.bl-en ol{margin:0;padding-left:11mm;font-size:21pt;font-weight:800;line-height:1.4}.bl-en li{margin-bottom:3mm}
+
+.vr-doc{border:1.2mm solid #1e3a8a;border-radius:2.5mm;padding:4mm 6mm;display:flex;flex-direction:column;gap:2.2mm;color:#111;font-size:9.5pt;height:100%}
+.vr-head{display:flex;align-items:center;justify-content:center;gap:4mm;text-align:center;border-bottom:.6mm solid #1e3a8a;padding-bottom:1.4mm}.vr-head img{width:12mm;height:12mm;margin:0}
+.vr-t.vi th{width:16%;text-align:left;font-size:8.5pt}.vr-t.vi td{font-size:10pt}.vr-t td.l{text-align:left}
+.vr-rem{font-weight:600!important;font-size:8.5pt!important}
+.bl-box .tt{font-size:13pt;font-weight:800;color:#334155}.bl-box .w{letter-spacing:2px}.bl-box strong{font-size:54pt}
+.bl-en .nt{margin-top:3mm;border-top:.4mm dashed #94a3b8;padding-top:2mm;font-size:16pt;font-weight:800;min-height:12mm}
+
+.vr-fx{display:grid;grid-template-columns:1.5fr 1.3fr .6fr .6fr 1fr 1fr;gap:1.4mm}.vr-fx>div{border:.35mm solid #94a3b8;border-radius:1.5mm;padding:1mm 1.6mm;text-align:center;background:#f8fafc}.vr-fx small{display:block;font-size:6pt;font-weight:800;letter-spacing:.6px;color:#1e3a8a}.vr-fx b{font-size:8.5pt;font-weight:900}.vr-fx .fa{background:#dcfce7;border-color:#16a34a}.vr-fx .fa b{color:#166534}.vr-fx .fx{background:#fee2e2;border-color:#dc2626}.vr-fx .fx b{color:#991b1b}
+
+.vr-pc{border:.6mm solid #16a34a;background:#f0fdf4;border-radius:2mm;padding:1.6mm 3mm;text-align:center}.vr-pc>b{display:block;font-size:10pt;letter-spacing:1px;color:#166534}.vr-pc .vr-rem{border:0;padding:.8mm 0 0;min-height:0;font-size:9pt;font-weight:700;line-height:1.3}
 `;
   const CSS=`@page{size:A4 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#fff;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 `+CSSB+`@media screen{body{background:#d7dce2}.vr-a4,.bl-a4{margin:10px auto;box-shadow:0 3px 16px #777}}
@@ -7420,10 +7429,20 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
     if(what==='both') return VK.map(reportPage).join('');
     return reportPage(what);
   }
+  function FIT(){
+    window.onload=function(){
+      document.querySelectorAll(".vr-a4>div,.bl-a4>div").forEach(function(el){
+        var pg=el.parentNode, max=pg.clientHeight-parseFloat(getComputedStyle(pg).paddingTop)*2;
+        el.style.height="auto"; var h=el.offsetHeight;
+        if(h>max){ el.style.zoom=(max/h)*0.99; } else { el.style.height=max+"px"; }
+      });
+      setTimeout(function(){ window.print(); },400);
+    };
+  }
   window.vsrPrint=function(what){
     sbLoad(); const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
     const ed=pagesFor(what).replace(/\scontenteditable="true"/g,'');
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+(what==='lbl'?'Submission Box Letter Labels':'Venue Supervisor Report')+' \u2014 Centre 2206</title><style>'+CSS+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+ed+'<script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>');
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+(what==='lbl'?'Submission Box Letter Labels':'Venue Supervisor Report')+' \u2014 Centre 2206</title><style>'+CSS+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+ed+'<script>('+FIT.toString()+')()<\/script></body></html>');
     w.document.close();
   };
   function paint(){
@@ -7446,6 +7465,9 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
     '<div class="form-group"><label>Centre Name</label><input id="bl_name" type="text"></div>'+
     '<div class="form-group"><label>Centre Code</label><input id="bl_code" type="text"></div>'+
     '<div class="form-group span-2"><label>Enclosures (one per line)</label><textarea id="bl_enc" rows="6" style="width:100%"></textarea></div>'+
+    '<div class="form-group"><label>Box number</label><select id="bl_mode"><option value="auto">AUTO (Box 1 OF N)</option><option value="manual">MANUAL (write by hand)</option></select></div>'+
+    '<div class="form-group"><label>Total boxes (blank = auto)</label><input id="bl_total" type="text"></div>'+
+    '<div class="form-group span-2"><label>Extra manual line on label</label><input id="bl_note" type="text"></div>'+
     '<div class="form-group"><label>Print labels (one A4 per box)</label><button class="btn btn-success" style="width:100%" onclick="vsrPrint(\'lbl\')">BOX LETTER LABELS</button></div></div>'+
     '<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>Preview report for:</b><select id="vsr_pick"><option value="TFHS">114071 \u2014 FULMATI HS</option><option value="TGHS">114200 \u2014 GIRLS\u2019 HS</option></select><span style="font-size:9pt;color:#475569">Report covers all exam dates up to the \u201cLast date of examination\u201d chosen above; figures come from the Progress Ledger (Enrolled is not shown).</span></div>'+
     '<div style="overflow:auto;max-height:560px;margin-top:8px;background:#d7dce2;padding:8px"><div id="vsr_pv" style="transform-origin:top left;zoom:.6"></div></div>'+
@@ -7458,8 +7480,9 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
     document.getElementById('bl_head').value=get('bl_head',sbCfg(B).examLine.toUpperCase()+'\nTALDANGRA CENTRE');
     document.getElementById('bl_name').value=get('bl_name','TALDANGRA'); document.getElementById('bl_code').value=get('bl_code','2206');
     document.getElementById('bl_enc').value=get('bl_enc',ENC_DEF);
+    document.getElementById('bl_mode').value=get('bl_mode','auto'); document.getElementById('bl_total').value=get('bl_total',''); document.getElementById('bl_note').value=get('bl_note','');
     set('vsr_s1',function(v){put('vsr_sup_TFHS',v);}); set('vsr_s2',function(v){put('vsr_sup_TGHS',v);}); set('vsr_seal',function(v){put('vsr_seal',v);});
-    set('bl_head',function(v){put('bl_head',v);}); set('bl_name',function(v){put('bl_name',v);}); set('bl_code',function(v){put('bl_code',v);}); set('bl_enc',function(v){put('bl_enc',v);});
+    set('bl_head',function(v){put('bl_head',v);}); set('bl_name',function(v){put('bl_name',v);}); set('bl_code',function(v){put('bl_code',v);}); set('bl_enc',function(v){put('bl_enc',v);}); set('bl_mode',function(v){put('bl_mode',v);}); set('bl_total',function(v){put('bl_total',v);}); set('bl_note',function(v){put('bl_note',v);});
     document.getElementById('vsr_pick').onchange=paint;
     paint();
   }
