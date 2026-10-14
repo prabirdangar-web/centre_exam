@@ -7407,6 +7407,28 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
       '<div class="el-v">'+vs+'</div>'+
     '</div></div>';
   }
+  function confPage(i){
+    const c=sbCfg(B), di=sbDateInfo(B), date=sbRaw(B,'date')||sbToday();
+    const tag=get('bl_ctag','CONFIDENTIAL REPORT');
+    const cols=['#1e3a8a','#7c2d12','#b91c1c'];
+    let who,frm,sub;
+    if(i<2){ const k=['TFHS','TGHS'][i], V=vInfo(k);
+      who='VENUE SUPERVISOR \u2014 '+V.code; sub=E(V.name)+'<br>Venue Code: <b>'+E(V.code)+'</b> &nbsp;|&nbsp; Centre Code: <b>2206</b>';
+      frm='<b>'+E(get('vsr_sup_'+k,defSup())||'Venue Supervisor')+'</b><br>Venue Supervisor<br>'+E(V.name)+'<br>Venue Code: '+E(V.code)+'<br>Centre: TALDANGRA (2206)';
+    } else {
+      who='CENTRE-IN-CHARGE (O.I.C.) \u2014 2206'; sub='TALDANGRA H.S. EXAMINATION CENTRE<br>Centre Code: <b>2206</b>';
+      frm='<b>'+E(sbF(B,'cic'))+'</b><br>Centre-In-Charge / Officer-In-Charge<br>Taldangra H.S. Examination Centre<br>Centre Code: 2206';
+    }
+    frm+='<br>P.O. &amp; Block: Taldangra, Sub-Div: Khatra<br>Dist: Bankura, PIN-722152<br>'+E(c.mob.replace(/Mob No\.-?/,'Mob: '));
+    return '<div class="bl-a4"><div class="bl el" style="--pc:'+cols[i]+'">'+
+      '<div class="bl-top">'+(c.logo?'<img src="'+c.logo+'" alt="">':'')+'<div class="bl-h" style="font-size:19pt">'+E(c.examLine.toUpperCase())+'</div></div>'+
+      '<div class="cf-tag">'+E(tag)+'</div>'+
+      '<div class="cf-who"><small>ENVELOPE '+(i+1)+' OF 3</small><strong>'+who+'</strong><div>'+sub+'</div></div>'+
+      '<div class="bl-cn"><div class="r" style="font-size:22pt"><b>Centre Code:</b> <span style="font-size:44pt;letter-spacing:4px">2206</span> TALDANGRA</div></div>'+
+      '<div class="cf-ad"><div class="to"><span class="h">TO</span><br>'+sbMl(sbF(B,'to'))+'</div><div class="fr"><span class="h">FROM</span><br>'+frm+'</div></div>'+
+      '<div class="cf-ft"><span>DATE: <b>'+E(date)+'</b></span><span>SEALED BY: ____________</span><span>\u26A0 CONFIDENTIAL \u2014 OPEN BY ADDRESSEE ONLY</span></div>'+
+    '</div></div>';
+  }
   const CSSB=`.vr-a4,.bl-a4{width:210mm;height:297mm;padding:7mm;page-break-after:always;break-after:page;overflow:hidden;background:#fff}
 .vr-head{text-align:center;border-bottom:.7mm solid #1e3a8a;padding-bottom:1.6mm}.vr-head img{width:13mm;height:13mm;object-fit:contain;display:block;margin:0 auto 1mm}.b1{font-size:13pt;font-weight:900;color:#1e3a8a}.b2{font-size:10pt;font-weight:800;color:#334155}
 .vr-title{background:#1e3a8a;color:#fff;text-align:center;font-weight:900;font-size:13.5pt;padding:2mm;border-radius:2mm;letter-spacing:.5px}
@@ -7440,11 +7462,17 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
 .el-t{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;border:1.2mm solid var(--pc);background:#f8fafc;border-radius:3mm;padding:6mm;font-size:38pt;font-weight:900;line-height:1.2;color:var(--pc)}
 .el-f>div{border:.9mm solid var(--pc);border-radius:2mm;text-align:center;padding:2mm}.el-f b{display:block;font-size:12pt;letter-spacing:2px;color:var(--pc)}.el-f strong{font-size:26pt;font-weight:900}
 .el-v{border:.6mm solid #94a3b8;border-radius:2mm;padding:3mm;font-size:13pt;font-weight:800;line-height:1.5}.el-v div{display:flex;gap:3mm}.el-v b{flex:none;width:30mm;color:var(--pc)}
+
+.cf-tag{background:var(--pc);color:#fff;text-align:center;font-size:36pt;font-weight:900;letter-spacing:3px;padding:4mm;border-radius:3mm}
+.cf-who{border:1.2mm solid var(--pc);border-radius:3mm;text-align:center;padding:4mm;background:#f8fafc}.cf-who small{display:block;font-size:13pt;font-weight:800;letter-spacing:3px;color:#334155}.cf-who strong{display:block;font-size:25pt;font-weight:900;color:var(--pc);margin:1mm 0}.cf-who div{font-size:15pt;font-weight:800;line-height:1.35}
+.cf-ad{flex:1;display:grid;grid-template-rows:1fr 1fr;gap:5mm}.cf-ad>div{border:.9mm solid var(--pc);border-radius:3mm;padding:5mm 7mm;font-size:17pt;font-weight:700;line-height:1.4}.cf-ad .to{font-size:21pt;font-weight:800}.cf-ad .h{display:inline-block;background:var(--pc);color:#fff;font-size:13pt;font-weight:900;letter-spacing:3px;padding:.5mm 4mm;border-radius:1.5mm;margin-bottom:1.5mm}
+.cf-ft{display:flex;justify-content:space-between;gap:4mm;font-size:11pt;font-weight:700;border-top:.5mm solid #94a3b8;padding-top:2mm}
 `;
   const CSS=`@page{size:A4 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#fff;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 `+CSSB+`@media screen{body{background:#d7dce2}.vr-a4,.bl-a4{margin:10px auto;box-shadow:0 3px 16px #777}}
 @media print{.vr-a4:last-child,.bl-a4:last-child{page-break-after:auto}}`;
   function pagesFor(what){
+    if(what==='conf') return [0,1,2].map(confPage).join('');
     if(what==='enc'){ const L=String(get('bl_enc',ENC_DEF)).split(/\n+/).filter(function(x){return x.trim();}); return L.map(function(t,i){return encPage(t,i,L.length);}).join(''); }
     if(what==='lbl'){ const bx=sbBoxes(B); return bx.length?bx.map(labelPage).join(''):labelPage(null); }
     if(what==='both') return VK.map(reportPage).join('');
@@ -7463,7 +7491,7 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
   window.vsrPrint=function(what){
     sbLoad(); const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
     const ed=pagesFor(what).replace(/\scontenteditable="true"/g,'');
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+(what==='lbl'?'Submission Box Letter Labels':what==='enc'?'Enclosure Labels':'Venue Supervisor Report')+' \u2014 Centre 2206</title><style>'+CSS+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+ed+'<script>('+FIT.toString()+')()<\/script></body></html>');
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+(what==='lbl'?'Submission Box Letter Labels':what==='conf'?'Confidential Report Envelopes':what==='enc'?'Enclosure Labels':'Venue Supervisor Report')+' \u2014 Centre 2206</title><style>'+CSS+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+ed+'<script>('+FIT.toString()+')()<\/script></body></html>');
     w.document.close();
   };
   function paint(){
@@ -7490,6 +7518,8 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
     '<div class="form-group"><label>Total boxes (blank = auto)</label><input id="bl_total" type="text"></div>'+
     '<div class="form-group span-2"><label>Extra manual line on label</label><input id="bl_note" type="text"></div>'+
     '<div class="form-group"><label>Print labels (one A4 per box)</label><button class="btn btn-success" style="width:100%" onclick="vsrPrint(\'lbl\')">BOX LETTER LABELS</button></div>'+
+    '<div class="form-group"><label>Confidential envelope tag</label><input id="bl_ctag" type="text"></div>'+
+    '<div class="form-group"><label>Confidential Report envelopes (3)</label><button class="btn btn-success" style="width:100%" onclick="vsrPrint(\'conf\')">3 ENVELOPE LABELS</button></div>'+
     '<div class="form-group"><label>Print enclosure labels (one A4 per item)</label><button class="btn btn-success" style="width:100%" onclick="vsrPrint(\'enc\')">ENCLOSURE LABELS</button></div></div>'+
     '<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>Preview report for:</b><select id="vsr_pick"><option value="TFHS">114071 \u2014 FULMATI HS</option><option value="TGHS">114200 \u2014 GIRLS\u2019 HS</option></select><span style="font-size:9pt;color:#475569">Report covers all exam dates up to the \u201cLast date of examination\u201d chosen above; figures come from the Progress Ledger (Enrolled is not shown).</span></div>'+
     '<div style="overflow:auto;max-height:560px;margin-top:8px;background:#d7dce2;padding:8px"><div id="vsr_pv" style="transform-origin:top left;zoom:.6"></div></div>'+
@@ -7502,9 +7532,9 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
     document.getElementById('bl_head').value=get('bl_head',sbCfg(B).examLine.toUpperCase()+'\nTALDANGRA CENTRE');
     document.getElementById('bl_name').value=get('bl_name','TALDANGRA'); document.getElementById('bl_code').value=get('bl_code','2206');
     document.getElementById('bl_enc').value=get('bl_enc',ENC_DEF);
-    document.getElementById('bl_mode').value=get('bl_mode','auto'); document.getElementById('bl_total').value=get('bl_total',''); document.getElementById('bl_note').value=get('bl_note','');
+    document.getElementById('bl_ctag').value=get('bl_ctag','CONFIDENTIAL REPORT'); document.getElementById('bl_mode').value=get('bl_mode','auto'); document.getElementById('bl_total').value=get('bl_total',''); document.getElementById('bl_note').value=get('bl_note','');
     set('vsr_s1',function(v){put('vsr_sup_TFHS',v);}); set('vsr_s2',function(v){put('vsr_sup_TGHS',v);}); set('vsr_seal',function(v){put('vsr_seal',v);});
-    set('bl_head',function(v){put('bl_head',v);}); set('bl_name',function(v){put('bl_name',v);}); set('bl_code',function(v){put('bl_code',v);}); set('bl_enc',function(v){put('bl_enc',v);}); set('bl_mode',function(v){put('bl_mode',v);}); set('bl_total',function(v){put('bl_total',v);}); set('bl_note',function(v){put('bl_note',v);});
+    set('bl_head',function(v){put('bl_head',v);}); set('bl_name',function(v){put('bl_name',v);}); set('bl_code',function(v){put('bl_code',v);}); set('bl_enc',function(v){put('bl_enc',v);}); set('bl_ctag',function(v){put('bl_ctag',v);}); set('bl_mode',function(v){put('bl_mode',v);}); set('bl_total',function(v){put('bl_total',v);}); set('bl_note',function(v){put('bl_note',v);});
     document.getElementById('vsr_pick').onchange=paint;
     paint();
   }
