@@ -107,7 +107,7 @@ table.reporting-table td{padding:6px; border:1px solid #e2e8f0;}
 table.reporting-table tr:nth-child(even){background:#f8fafc;}
 table.reporting-table input{width:88%; padding:4px; border:1px solid var(--border-color); border-radius:4px; text-align:center;}
 /* HS dashboard: keep every student-entry / attendance number box fully visible */
-#hs-ledger .student-count-table{table-layout:fixed; min-width:1120px;}
+#hs-ledger .student-count-table{table-layout:fixed; min-width:1500px;}
 #hs-ledger .student-count-table th,#hs-ledger .student-count-table td{padding:5px 3px; white-space:normal;}
 #hs-ledger .student-count-table input[type="number"]{width:100%; min-width:46px; height:32px; padding:4px 2px; font-size:10pt; font-weight:700; text-align:center; background:#fff; color:#111827; box-sizing:border-box;}
 #hs-ledger .student-count-table td:nth-child(n+5){width:4.33%;}
@@ -788,6 +788,17 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <input type="text" id="hs_examYear" value="2027 [SEM-III]" oninput="hsUpdateYearSync(this.value)">
       </div>
       <div class="form-group">
+        <label>Programme &amp; Exam Type</label>
+        <select id="hs_examType" onchange="hsSetExamType(this.value)">
+          <option value="SEM-I">H.S. &mdash; SEM-I</option><option value="SEM-II">H.S. &mdash; SEM-II</option>
+          <option value="SEM-III" selected>H.S. &mdash; SEM-III</option><option value="SEM-IV">H.S. &mdash; SEM-IV</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Next Year / New Exam</label>
+        <button class="btn btn-danger" style="width:100%; justify-content:center;" onclick="hsStartNewLedger()">Archive &amp; Start New Ledger</button>
+      </div>
+      <div class="form-group">
         <label>Select Operational Working Date</label>
         <select id="hs_activeDayFocus" onchange="hsHighlightAndPrepareDualSlips(this.value)"></select>
       </div>
@@ -835,6 +846,11 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       <div class="kpi-card"><div class="value" id="hs_kpiYield">0.00%</div><div class="label">Average Yield Attendance Rate</div></div>
     </div>
 
+    <details class="no-print" style="margin:0 0 10px 0;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;">
+      <summary style="cursor:pointer;font-weight:700;color:#1e3a8a;">Ledger Archive &amp; New Year Ledger — H.S.</summary>
+      <div style="margin-top:8px;font-size:9pt;color:#475569;">Press <b>Archive &amp; Start New Ledger</b> to keep this year's figures safely in the archive below and begin a blank ledger (all enrolled / absent = 0). Archived ledgers can be restored or downloaded any time.</div>
+      <div id="hs_archiveList" style="margin-top:8px;"></div>
+    </details>
     <div class="table-container no-print">
       <table class="reporting-table student-count-table">
         <thead>
@@ -843,7 +859,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
             <th rowspan="2" style="width:9%;">Date of Exam</th>
             <th rowspan="2" style="width:7%;">Day</th>
             <th rowspan="2" style="width:20%;">Subject Schedule Mapping</th>
-            <th colspan="3" style="background:#e2e8f0;color:#0f172a;">S-III M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">S-III F</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">S-() M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">S-() F</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Old M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Old F</th>
+            <th colspan="3" class="hs-catlbl" data-base="S-III M" style="background:#e2e8f0;color:#0f172a;">S-III M</th><th colspan="3" class="hs-catlbl" data-base="S-III F" style="background:#e2e8f0;color:#0f172a;">S-III F</th><th colspan="3" class="hs-catlbl" data-base="S-() M" style="background:#e2e8f0;color:#0f172a;">S-() M</th><th colspan="3" class="hs-catlbl" data-base="S-() F" style="background:#e2e8f0;color:#0f172a;">S-() F</th><th colspan="3" class="hs-catlbl" data-base="Old M" style="background:#e2e8f0;color:#0f172a;">Old M</th><th colspan="3" class="hs-catlbl" data-base="Old F" style="background:#e2e8f0;color:#0f172a;">Old F</th>
           </tr>
           <tr><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th></tr>
         </thead>
@@ -1116,6 +1132,14 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <input type="text" id="mp_examYear" value="2027" oninput="mpUpdateYearSync(this.value)">
       </div>
       <div class="form-group">
+        <label>Programme &amp; Exam Type</label>
+        <select id="mp_examType" disabled><option>Madhyamik (Class X)</option></select>
+      </div>
+      <div class="form-group">
+        <label>Next Year / New Exam</label>
+        <button class="btn btn-danger" style="width:100%; justify-content:center;" onclick="mpStartNewLedger()">Archive &amp; Start New Ledger</button>
+      </div>
+      <div class="form-group">
         <label>Select Operational Working Date</label>
         <select id="mp_activeDayFocus" onchange="mpHighlightAndPrepareDualSlips(this.value)"></select>
       </div>
@@ -1143,6 +1167,11 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       <div class="kpi-card"><div class="value" id="mp_kpiYield">0.00%</div><div class="label">Average Yield Attendance Rate</div></div>
     </div>
 
+    <details class="no-print" style="margin:0 0 10px 0;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;">
+      <summary style="cursor:pointer;font-weight:700;color:#1e3a8a;">Ledger Archive &amp; New Year Ledger — Madhyamik</summary>
+      <div style="margin-top:8px;font-size:9pt;color:#475569;">Press <b>Archive &amp; Start New Ledger</b> to keep this year's figures safely in the archive below and begin a blank ledger (all enrolled / absent = 0). Archived ledgers can be restored or downloaded any time.</div>
+      <div id="mp_archiveList" style="margin-top:8px;"></div>
+    </details>
     <div class="table-container no-print">
       <table class="reporting-table">
         <thead>
@@ -2915,13 +2944,14 @@ function hsInitDataEngine(){
         return { date: session.date, day: session.day, sub: session.sub, vals: Array.isArray(prior.vals) && prior.vals.length===12 ? prior.vals : [0,0,0,0,0,0,0,0,0,0,0,0], subVals: prior.subVals||undefined, subWise: !!prior.subWise };
       });
     });
-    hsTrackingStateDatabase["year"] = "2027 [SEM-III]";
+    if(!hsTrackingStateDatabase.examType) hsTrackingStateDatabase["year"] = "2027 [SEM-III]";
     if(hsTrackingStateDatabase.absV!==1) hsApplyAbsentInjection(hsTrackingStateDatabase);
     localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
   } else { hsResetToDefaults(); }
   document.getElementById("hs_examYear").value = hsTrackingStateDatabase["year"] || "2027 [SEM-III]";
   hsPopulateDateDropdown();
   hsRenderReportingMatrixTable();
+  hsApplyExamTypeLabels(); ledgerRenderArchive('hs');
 }
 function hsResetToDefaults(){
   hsTrackingStateDatabase = {};
@@ -3126,7 +3156,7 @@ function hsBuildMemoHtmlSegment(typeTag, rowData, examYear){
       <tr><td colspan="2" style="font-size:9pt; color:#334155; padding-top:2px;"><strong>Subject:</strong> ${memoSubTxt}</td></tr></table>
     <table class="memo-data-table"><thead><tr><th>Stream Details Class Category</th><th>Enrolled (M)</th><th>Enrolled (F)</th><th>Appeared (M)</th><th>Appeared (F)</th><th>Absent (M)</th><th>Absent (F)</th></tr></thead>
       <tbody>
-        <tr><td>Semester-III (Regular)</td><td>${v[0]}</td><td>${v[1]}</td><td>${v[6]}</td><td>${v[7]}</td><td>${v[0]-v[6]}</td><td>${v[1]-v[7]}</td></tr>
+        <tr><td>Semester-${hsExamTypeRoman()} (Regular)</td><td>${v[0]}</td><td>${v[1]}</td><td>${v[6]}</td><td>${v[7]}</td><td>${v[0]-v[6]}</td><td>${v[1]-v[7]}</td></tr>
         <tr><td>Semester-() (Supplementary)</td><td>${v[2]}</td><td>${v[3]}</td><td>${v[8]}</td><td>${v[9]}</td><td>${v[2]-v[8]}</td><td>${v[3]-v[9]}</td></tr>
         <tr><td>Old Syllabus Stream</td><td>${v[4]}</td><td>${v[5]}</td><td>${v[10]}</td><td>${v[11]}</td><td>${v[4]-v[10]}</td><td>${v[5]-v[11]}</td></tr>
         <tr style="font-weight:bold; background:#f1f5f9;"><td>TOTALS</td><td>${v[0]+v[2]+v[4]}</td><td>${v[1]+v[3]+v[5]}</td><td>${v[6]+v[8]+v[10]}</td><td>${v[7]+v[9]+v[11]}</td><td>${(v[0]+v[2]+v[4])-(v[6]+v[8]+v[10])}</td><td>${(v[1]+v[3]+v[5])-(v[7]+v[9]+v[11])}</td></tr>
@@ -3171,6 +3201,77 @@ function hsImportDatabaseFile(inputElement){
     }catch(err){ alert("Error: File format corrupt or unreadable."); }
   };
   reader.readAsText(inputElement.files[0]);
+}
+/* ================= LEDGER ARCHIVE / NEW-YEAR LEDGER ================= */
+const LEDGER_ARCHIVE_KEY='ExamLedgerArchive_v1';
+function ledgerArchiveList(){ try{ return JSON.parse(localStorage.getItem(LEDGER_ARCHIVE_KEY)||'[]'); }catch(e){ return []; } }
+function ledgerArchiveSave(l){ try{ localStorage.setItem(LEDGER_ARCHIVE_KEY, JSON.stringify(l)); }catch(e){ alert('Browser storage is full — use "Download" on old archives and delete them.'); } }
+function ledgerArchivePush(board,label,data){ const l=ledgerArchiveList(); l.unshift({id:Date.now(),board:board,label:label,savedAt:new Date().toLocaleString(),data:data}); ledgerArchiveSave(l); }
+function ledgerRenderArchive(board){
+  const box=document.getElementById(board+'_archiveList'); if(!box) return;
+  const items=ledgerArchiveList().filter(x=>x.board===board.toUpperCase());
+  if(!items.length){ box.innerHTML='<i style="color:#64748b;font-size:9pt;">No archived ledgers yet.</i>'; return; }
+  box.innerHTML='<table style="width:100%;font-size:9pt;border-collapse:collapse;">'+items.map(x=>'<tr style="border-top:1px solid #e2e8f0;"><td style="padding:4px 6px;"><b>'+String(x.label).replace(/</g,'&lt;')+'</b></td><td style="padding:4px 6px;color:#64748b;">saved '+x.savedAt+'</td><td style="padding:4px 6px;text-align:right;white-space:nowrap;"><button class="btn btn-primary" style="padding:3px 8px;font-size:8pt;" onclick="ledgerArchiveRestore(\''+board+'\','+x.id+')">Restore</button> <button class="btn btn-success" style="padding:3px 8px;font-size:8pt;" onclick="ledgerArchiveDownload('+x.id+')">Download</button> <button class="btn btn-danger" style="padding:3px 8px;font-size:8pt;" onclick="ledgerArchiveDelete(\''+board+'\','+x.id+')">Delete</button></td></tr>').join('')+'</table>';
+}
+function ledgerArchiveDownload(id){
+  const x=ledgerArchiveList().find(y=>y.id===id); if(!x) return;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(x.data,null,1)],{type:'application/json'}));
+  a.download='ledger_'+x.board+'_'+String(x.label).replace(/[^\w\-]+/g,'_')+'.json'; a.click();
+}
+function ledgerArchiveDelete(board,id){
+  if(!confirm('Delete this archived ledger permanently?')) return;
+  ledgerArchiveSave(ledgerArchiveList().filter(y=>y.id!==id)); ledgerRenderArchive(board);
+}
+function ledgerArchiveRestore(board,id){
+  const x=ledgerArchiveList().find(y=>y.id===id); if(!x) return;
+  if(!confirm('Restore "'+x.label+'"?\nThe ledger now on screen is archived first, so nothing is lost.')) return;
+  const data=JSON.parse(JSON.stringify(x.data));
+  if(board==='hs'){
+    ledgerArchivePush('HS',(hsTrackingStateDatabase.year||'H.S. ledger')+' (before restore)',JSON.parse(JSON.stringify(hsTrackingStateDatabase)));
+    localStorage.setItem('ExamReportingLedgerCache_HS',JSON.stringify(data)); hsInitDataEngine();
+  } else {
+    ledgerArchivePush('MP',(mpTrackingStateDatabase.year||'Madhyamik ledger')+' (before restore)',JSON.parse(JSON.stringify(mpTrackingStateDatabase)));
+    localStorage.setItem('ExamReportingLedgerCache_MP',JSON.stringify(data)); mpInitDataEngine();
+  }
+  ledgerRenderArchive(board);
+}
+function hsExamTypeRoman(){ return String((hsTrackingStateDatabase&&hsTrackingStateDatabase.examType)||'SEM-III').replace(/^SEM-/,''); }
+function hsApplyExamTypeLabels(){
+  const t=(hsTrackingStateDatabase&&hsTrackingStateDatabase.examType)||'SEM-III', r=hsExamTypeRoman();
+  document.querySelectorAll('#hs-ledger .hs-catlbl').forEach(e=>{ e.textContent=e.dataset.base.replace('S-III','S-'+r); });
+  const sel=document.getElementById('hs_examType'); if(sel) sel.value=t;
+}
+function hsSetExamType(t){
+  hsTrackingStateDatabase.examType=t;
+  hsTrackingStateDatabase.year=String(hsTrackingStateDatabase.year||'2027').replace(/\s*\[SEM-[IV]+\]/,'')+' ['+t+']';
+  localStorage.setItem('ExamReportingLedgerCache_HS',JSON.stringify(hsTrackingStateDatabase));
+  document.getElementById('hs_examYear').value=hsTrackingStateDatabase.year;
+  hsApplyExamTypeLabels(); hsRenderReportingMatrixTable();
+}
+function hsStartNewLedger(){
+  const t=document.getElementById('hs_examType').value;
+  const cur=parseInt((String(hsTrackingStateDatabase.year||'').match(/\d{4}/)||[2027])[0]);
+  const yr=prompt('Exam year for the NEW blank ledger ('+t+'):',String(cur+1)); if(!yr||!yr.trim()) return;
+  if(!confirm('Archive the current ledger ('+(hsTrackingStateDatabase.year||'')+') and start a BLANK H.S. ledger for '+yr.trim()+' ['+t+']?')) return;
+  ledgerArchivePush('HS',hsTrackingStateDatabase.year||'H.S. ledger',JSON.parse(JSON.stringify(hsTrackingStateDatabase)));
+  const blank={};
+  ['TFHS','TGHS'].forEach(v=>{ blank[v]=hsOfficialExamRoutineTimeline.map(se=>({date:se.date,day:se.day,sub:se.sub,vals:[0,0,0,0,0,0,0,0,0,0,0,0]})); });
+  blank.year=yr.trim()+' ['+t+']'; blank.examType=t; blank.absV=1;
+  localStorage.setItem('ExamReportingLedgerCache_HS',JSON.stringify(blank));
+  hsInitDataEngine();
+  alert('New blank '+blank.year+' ledger started. The previous ledger is in the Archive.');
+}
+function mpStartNewLedger(){
+  const cur=parseInt((String(mpTrackingStateDatabase.year||'').match(/\d{4}/)||[2027])[0]);
+  const yr=prompt('Exam year for the NEW blank Madhyamik ledger:',String(cur+1)); if(!yr||!yr.trim()) return;
+  if(!confirm('Archive the current Madhyamik ledger ('+(mpTrackingStateDatabase.year||'')+') and start a BLANK ledger for '+yr.trim()+'?')) return;
+  ledgerArchivePush('MP','Madhyamik '+(mpTrackingStateDatabase.year||''),JSON.parse(JSON.stringify(mpTrackingStateDatabase)));
+  const blank={};
+  ['TFHS','TGHS'].forEach(v=>{ blank[v]=mpOfficialExamRoutineTimeline.map(se=>({date:se.date,day:se.day,sub:se.sub,vals:[0,0,0,0,0,0,0,0]})); });
+  blank.year=yr.trim();
+  localStorage.setItem('ExamReportingLedgerCache_MP',JSON.stringify(blank));
+  mpInitDataEngine(); ledgerRenderArchive('mp');
+  alert('New blank Madhyamik '+blank.year+' ledger started. The previous ledger is in the Archive.');
 }
 function hsClearStoredLedger(){
   if(confirm("Flush all HS ledger fields down to factory presets?")){
@@ -3886,6 +3987,7 @@ function mpInitDataEngine(){
   document.getElementById("mp_examYear").value = mpTrackingStateDatabase["year"] || "2027";
   mpPopulateDateDropdown();
   mpRenderReportingMatrixTable();
+  ledgerRenderArchive('mp');
 }
 function mpResetToDefaults(){
   mpTrackingStateDatabase = {};
