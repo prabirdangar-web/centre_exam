@@ -844,7 +844,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
             <th rowspan="2" style="width:8%;">Day</th>
             <th rowspan="2" style="width:25%;">Subject Schedule Mapping</th>
             <th colspan="6" style="background:#ffe4e6; color:#991b1b;">ENROLLED CANDIDATES COUNTS</th>
-            <th colspan="6" style="background:#dcfce7; color:#166534;">APPEARED PRESENT CANDIDATES</th>
+            <th colspan="6" style="background:#fef3c7; color:#92400e;">ABSENT CANDIDATES (enter absentees &mdash; Appeared = Enrolled &minus; Absent)</th>
           </tr>
           <tr>
             <th class="sub" style="background:#cbd5e1;">S-III M</th><th class="sub" style="background:#cbd5e1;">S-III F</th>
@@ -2595,6 +2595,37 @@ const hsOfficialExamRoutineTimeline = [
 
 cloudRunWhenReady(()=>{hsLoadSubjectAllocation(); hsRenderFormDays(); hsRenderDaySubjectSelector();});
 
+/* ABSENTEE LIST — venue 114071 (TALDANGRA FULMATI HIGH SCHOOL), from the WBCHSE "Absentee List" screen
+   (6 candidates, all male => entered under Regular Male). Keyed by exam date -> subject code -> absentees.
+   Venue 114200 (TALDANGRA GIRLS' HIGH SCHOOL): no absentees, default 0 (Appeared = Enrolled). */
+const HS_ABSENT_LIST_114071 = {
+  "21.09.2026":{BNGA:4}, "24.09.2026":{ENGB:4}, "28.09.2026":{EDCN:1}, "29.09.2026":{COMA:2,HPED:2},
+  "30.09.2026":{HIST:3}, "01.10.2026":{GEGR:1}, "03.10.2026":{PHIL:2}, "12.10.2026":{SNSK:4}
+};
+function hsAbsentInjectedTotal(code){ let n=0; Object.keys(HS_ABSENT_LIST_114071).forEach(d=>{ n+=HS_ABSENT_LIST_114071[d][code]||0; }); return n; }
+function hsDistributeAbsent(arr,n){
+  for(let i=0;i<6;i++) arr[6+i]=Number(arr[i])||0;            /* default: nobody absent */
+  for(let i=0;i<6&&n>0;i++){ const take=Math.min(n,Number(arr[i])||0); arr[6+i]=(Number(arr[i])||0)-take; n-=take; }
+}
+function hsApplyAbsentInjection(db){
+  ["TFHS","TGHS"].forEach(v=>{
+    (db[v]||[]).forEach(row=>{
+      const map=(v==="TFHS"&&HS_ABSENT_LIST_114071[row.date])||{};
+      if(row.subWise&&row.subVals){
+        Object.keys(row.subVals).forEach(sub=>{
+          if(!Array.isArray(row.subVals[sub])||row.subVals[sub].length<12) row.subVals[sub]=[0,0,0,0,0,0,0,0,0,0,0,0];
+          hsDistributeAbsent(row.subVals[sub], map[hsSubjectCode4(sub)]||0);
+        });
+        hsRecalcRowValsFromSub(row);
+      } else {
+        if(!Array.isArray(row.vals)||row.vals.length!==12) row.vals=[0,0,0,0,0,0,0,0,0,0,0,0];
+        hsDistributeAbsent(row.vals, Object.keys(map).reduce((a,k)=>a+map[k],0));
+      }
+    });
+  });
+  db.absV=1;
+}
+
 // Values are transcribed from the supplied workbook DATA sheet:
 // [Regular M, Regular F, Supplementary M, Supplementary F, Old M, Old F,
 //  Appeared Regular M, Appeared Regular F, Appeared Supplementary M, Appeared Supplementary F, Old M, Old F]
@@ -2893,6 +2924,7 @@ function hsInitDataEngine(){
       });
     });
     hsTrackingStateDatabase["year"] = "2027 [SEM-III]";
+    if(hsTrackingStateDatabase.absV!==1) hsApplyAbsentInjection(hsTrackingStateDatabase);
     localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
   } else { hsResetToDefaults(); }
   document.getElementById("hs_examYear").value = hsTrackingStateDatabase["year"] || "2027 [SEM-III]";
@@ -2920,6 +2952,7 @@ function hsResetToDefaults(){
     return { date:session.date, day:session.day, sub:session.sub, vals, subVals: any?subVals:undefined, subWise: any };
   });
   hsTrackingStateDatabase["year"] = "2027 [SEM-III]";
+  hsApplyAbsentInjection(hsTrackingStateDatabase);
 }
 function hsPopulateDateDropdown(){
   const dropdown = document.getElementById("hs_activeDayFocus");
@@ -2958,9 +2991,10 @@ function hsRenderReportingMatrixTable(){
       : '';
     let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${hsSubjectListWithCodes(row.sub)}<br>${toggleBtn}${hsLedgerSubTickHtml(rowIndex,row)}</td>`;
     for(let v=0; v<12; v++){
+      const shown=hsAbsShown(row.vals,v), fn=v<6?'hsUpdateValueNode':'hsUpdateAbsentNode';
       rowHtml += row.subWise
-        ? `<td><div class="hs-auto-box" style="min-height:26px;">${row.vals[v]}</div></td>`
-        : `<td><input type="number" min="0" value="${row.vals[v]}" oninput="hsUpdateValueNode(${rowIndex}, ${v}, this.value)"></td>`;
+        ? `<td><div class="hs-auto-box" style="min-height:26px;">${shown}</div></td>`
+        : `<td><input type="number" min="0" value="${shown}" oninput="${fn}(${rowIndex}, ${v}, this.value)"></td>`;
     }
     tr.innerHTML = rowHtml;
     tbody.appendChild(tr);
@@ -2972,7 +3006,7 @@ function hsRenderReportingMatrixTable(){
         subTr.style.background="#f8fafc";
         const safe=sub.replace(/'/g,"\\'");
         let subHtml=`<td></td><td></td><td></td><td style="text-align:left;font-size:8.5pt;color:#334155;padding-left:16px;">&#8627; ${hsSubjectWithCode(sub)}</td>`;
-        for(let v=0; v<12; v++){ subHtml += `<td><input type="number" min="0" value="${arr[v]||0}" oninput="hsUpdateSubjectValueNode(${rowIndex}, '${safe}', ${v}, this.value)"></td>`; }
+        for(let v=0; v<12; v++){ subHtml += `<td><input type="number" min="0" value="${hsAbsShown(arr,v)}" oninput="${v<6?'hsUpdateSubjectValueNode':'hsUpdateSubjectAbsentNode'}(${rowIndex}, '${safe}', ${v}, this.value)"></td>`; }
         subTr.innerHTML=subHtml;
         tbody.appendChild(subTr);
       });
@@ -3004,18 +3038,34 @@ function hsUpdateSubjectValueNode(rowIndex, subject, col, value){
   const row=hsTrackingStateDatabase[hsActiveSchool][rowIndex];
   row.subVals=row.subVals||{};
   row.subVals[subject]=row.subVals[subject]||[0,0,0,0,0,0,0,0,0,0,0,0];
-  row.subVals[subject][col]=parseInt(value)||0;
+  { const a=row.subVals[subject], nv=parseInt(value)||0;
+    if(col<6){ const ab=Math.max(0,(a[col]||0)-(a[col+6]||0)); a[col]=nv; a[col+6]=Math.max(0,nv-ab); } else a[col]=nv; }
   hsRecalcRowValsFromSub(row);
   localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
   // Refresh just the auto-sum boxes on the parent row rather than a full
   // re-render, so focus/scroll position in the subject sub-rows isn't lost.
   const parentTr=document.getElementById("hs-row-idx-"+rowIndex);
-  if(parentTr){ const boxes=parentTr.querySelectorAll('.hs-auto-box'); boxes.forEach((b,i)=>{ b.textContent=row.vals[i]; }); }
+  if(parentTr){ const boxes=parentTr.querySelectorAll('.hs-auto-box'); boxes.forEach((b,i)=>{ b.textContent=hsAbsShown(row.vals,i); }); }
   hsCalculateTotalsMathEngine();
   if(document.getElementById("hs_activeDayFocus").value == rowIndex){ hsHighlightAndPrepareDualSlips(rowIndex); }
 }
+/* Absentee-driven ledger: columns 7-12 show/accept ABSENT; Appeared (vals[6..11]) is stored as Enrolled - Absent. */
+function hsAbsShown(arr,i){ arr=arr||[]; return i<6 ? (arr[i]||0) : Math.max(0,(arr[i-6]||0)-(arr[i]||0)); }
+function hsUpdateAbsentNode(rowIndex, col, value){
+  const v=hsTrackingStateDatabase[hsActiveSchool][rowIndex].vals, ab=Math.max(0,parseInt(value)||0);
+  v[col]=Math.max(0,(v[col-6]||0)-ab);
+  localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
+  hsCalculateTotalsMathEngine();
+  if(document.getElementById("hs_activeDayFocus").value == rowIndex){ hsHighlightAndPrepareDualSlips(rowIndex); }
+}
+function hsUpdateSubjectAbsentNode(rowIndex, subject, col, value){
+  const row=hsTrackingStateDatabase[hsActiveSchool][rowIndex];
+  const a=(row.subVals&&row.subVals[subject])||[0,0,0,0,0,0,0,0,0,0,0,0], ab=Math.max(0,parseInt(value)||0);
+  hsUpdateSubjectValueNode(rowIndex, subject, col, Math.max(0,(a[col-6]||0)-ab));
+}
 function hsUpdateValueNode(row, col, value){
-  hsTrackingStateDatabase[hsActiveSchool][row].vals[col] = parseInt(value) || 0;
+  { const v=hsTrackingStateDatabase[hsActiveSchool][row].vals, nv=parseInt(value)||0;
+    if(col<6){ const ab=Math.max(0,(v[col]||0)-(v[col+6]||0)); v[col]=nv; v[col+6]=Math.max(0,nv-ab); } else v[col]=nv; }
   localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
   hsCalculateTotalsMathEngine();
   if(document.getElementById("hs_activeDayFocus").value == row){ hsHighlightAndPrepareDualSlips(row); }
@@ -6437,6 +6487,9 @@ function hsConfCell(venue,code,med,kind,S){
   if(st && ((med==='san')===(code==='SANT'))){
     if(kind==='app') v=st.app>0?String(st.app):'';
     else v=(st.app>0&&st.enr-st.app>0)?String(st.enr-st.app):'';
+  } else if(!st && kind!=='app' && venue==='TFHS' && med==='ben' && code!=='SANT'){
+    /* No subject-wise ledger figures for this subject: fall back to the venue-114071 absentee list. */
+    const n=hsAbsentInjectedTotal(code); if(n>0) v=String(n);
   }
   return {key,val:v};
 }
@@ -7294,257 +7347,5 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
   },100);
 })();
 </script>
-<script id="vsReportAndBoxLetterPatch">
-/* ================================================================
-   ADD-ON (H.S. Submission tab)
-   1) VENUE SUPERVISOR REPORT — printed separately for 114071 and 114200.
-      Shows ONLY Appeared / Absent figures (no Enrolled column), day-wise
-      up to the selected last date of examination, read from the Progress Ledger.
-   2) SUBMISSION BOX LETTER LABELS — one A4 label per parcel box:
-      exam heading, centre name & code, enclosure list (as in the Final Doc).
-================================================================ */
-(function(){
-  const B='hs', E=function(s){ return sbEsc(s); };
-  const VK=['TFHS','TGHS'];
-  function db(){ sbDB[B]=sbDB[B]||{}; return sbDB[B]; }
-  function put(k,v){ db()[k]=v; sbSave(); clearTimeout(put._t); put._t=setTimeout(paint,250); }
-  function get(k,d){ const v=db()[k]; return (v===undefined||v===null||v==='')?d:v; }
-  function pd(s){ const m=String(s||'').match(/(\d+)\.(\d+)\.(\d+)/); return m?new Date(+m[3],+m[2]-1,+m[1]).getTime():NaN; }
-  function vInfo(k){ const V=(typeof HS_VENUE_INFO!=='undefined')?HS_VENUE_INFO:{TFHS:{name:'TALDANGRA FULMATI HIGH SCHOOL [H.S.]',code:'114071'},TGHS:{name:"TALDANGRA GIRLS' HIGH SCHOOL [H.S.]",code:'114200'}}; return V[k]; }
-  function sum(a,f,t){ let x=0; for(let i=f;i<t;i++) x+=Number((a||[])[i])||0; return x; }
-  function defSup(){ try{ return HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor||''; }catch(e){ return ''; } }
-  function subjText(k,row){
-    try{
-      let s=(typeof hsRowEnrolledSubjects==='function')?hsRowEnrolledSubjects(row):null;
-      if(s===null||s===undefined){ try{ s=hsGetAllocatedSubjects(k,row.date)||[]; }catch(e){ s=[]; } if(!s.length) s=hsSubjectOptions(row); }
-      return s.length?s.map(hsSubjectCode4).join(', '):'\u2014';
-    }catch(e){ return '\u2014'; }
-  }
-  /* ---- data: appeared / absent only ---- */
-  function venueData(k){
-    const last=pd(sbF(B,'lastDate')), rows=[], tot={am:0,af:0,bm:0,bf:0};
-    const cat={reg:{am:0,af:0,bm:0,bf:0},sup:{am:0,af:0,bm:0,bf:0},old:{am:0,af:0,bm:0,bf:0}};
-    let items=[]; try{ items=hsConfExamDates(); }catch(e){ items=[]; }
-    items.forEach(function(it){
-      if(!isNaN(last) && pd(it.date)>last) return;
-      const r=(hsConfRows(k)||[]).find(function(x){ return x.date===it.date; }); if(!r||!r.vals) return;
-      const v=r.vals, en=sum(v,0,6); if(en<=0) return;
-      const g=function(i){ return Number(v[i])||0; };
-      const ab=function(i){ return Math.max(0,g(i)-g(i+6)); };
-      let st=subjText(k,it); if(st==='\u2014'&&it.sub&&it.sub.length<60) st=it.sub;
-      const row={date:it.date,day:it.day||'',sub:st,
-        am:g(6)+g(8)+g(10), af:g(7)+g(9)+g(11),
-        bm:ab(0)+ab(2)+ab(4), bf:ab(1)+ab(3)+ab(5)};
-      rows.push(row);
-      tot.am+=row.am; tot.af+=row.af; tot.bm+=row.bm; tot.bf+=row.bf;
-      [['reg',0],['sup',2],['old',4]].forEach(function(c){ const o=cat[c[0]], i=c[1];
-        o.am+=g(i+6); o.af+=g(i+7); o.bm+=ab(i); o.bf+=ab(i+1); });
-    });
-    let S=null; try{ S=hsConfStats(k); }catch(e){ S=null; }
-    const subs=[];
-    if(S&&S.known) S.order.forEach(function(c){ const s=S.stats[c]; if(s&&s.enr>0) subs.push({code:c,app:s.app,abs:Math.max(0,s.enr-s.app)}); });
-    return {rows:rows,tot:tot,cat:cat,subs:subs};
-  }
-  const n3=function(a,b){ return (a||0)+(b||0); };
-  /* ---- report page ---- */
-  function reportPage(k){
-    const V=vInfo(k), D=venueData(k), c=sbCfg(B), date=sbRaw(B,'date')||sbToday(), t=D.tot;
-    const sup=get('vsr_sup_'+k,defSup()), rem=get('vsr_rem_'+k,'');
-    const showSeal=get('vsr_seal','1')!=='0', di=sbDateInfo(B);
-    const trs=D.rows.length?D.rows.map(function(r,i){
-      return '<tr><td>'+(i+1)+'</td><td class="l">'+E(r.date)+'</td><td class="l s">'+E(r.sub)+'</td>'+
-        '<td class="a">'+r.am+'</td><td class="a">'+r.af+'</td><td class="a b">'+n3(r.am,r.af)+'</td>'+
-        '<td class="x">'+r.bm+'</td><td class="x">'+r.bf+'</td><td class="x b">'+n3(r.bm,r.bf)+'</td></tr>';
-    }).join(''):'<tr><td colspan="9" style="padding:6mm">No day-wise figures found in the Progress Ledger up to the selected last date.</td></tr>';
-    const grand='<tr class="gt"><td colspan="3">TOTAL</td><td>'+t.am+'</td><td>'+t.af+'</td><td>'+n3(t.am,t.af)+'</td><td>'+t.bm+'</td><td>'+t.bf+'</td><td>'+n3(t.bm,t.bf)+'</td></tr>';
-    const seal=showSeal?sbSeal(B,20,'right:6mm;top:-8mm'):'';
-    const _u={}; D.rows.forEach(function(r){ String(r.sub).split(/,\s*/).forEach(function(s){ if(s&&s!=='\u2014') _u[s]=1; }); }); const nSub=Object.keys(_u).length;
-    return '<div class="vr-a4"><div class="vr-doc">'+
-      '<div class="vr-head">'+(c.logo?'<img src="'+c.logo+'" alt="">':'')+'<div><div class="b1">'+c.body+'</div><div class="b2">'+c.examLine.toUpperCase()+'</div></div></div>'+
-      '<div class="vr-title">VENUE SUPERVISOR\u2019S REPORT \u2014 APPEARED &amp; ABSENT</div>'+
-      '<table class="vr-t vi"><tr><th>Centre</th><td class="l">TALDANGRA \u2014 2206</td><th>Venue Code</th><td><b style="font-size:13pt">'+E(V.code)+'</b></td></tr>'+
-      '<tr><th>Venue</th><td class="l" colspan="3">'+E(V.name)+'</td></tr>'+
-      '<tr><th>Up to</th><td class="l">'+E(di.date||'')+(di.day?' ('+E(di.day)+')':'')+'</td><th>Report Date</th><td>'+E(date)+'</td></tr></table>'+
-      '<div class="vr-h">EXAM FACTS</div>'+
-      '<div class="vr-fx"><div><small>EXAMINATION</small><b>'+E(c.exam)+'</b></div><div><small>EXAM PERIOD</small><b>'+(D.rows.length?E(D.rows[0].date)+' \u2013 '+E(D.rows[D.rows.length-1].date):'\u2014')+'</b></div><div><small>DAYS HELD</small><b>'+D.rows.length+'</b></div><div><small>SUBJECTS</small><b>'+nSub+'</b></div>'+
-      '<div class="fa"><small>APPEARED (M / F)</small><b>'+t.am+' / '+t.af+'</b></div><div class="fx"><small>ABSENT (M / F)</small><b>'+t.bm+' / '+t.bf+'</b></div></div>'+
-      '<table class="vr-t"><thead><tr><th rowspan="2" style="width:7mm">Sl</th><th rowspan="2" style="width:21mm">Date</th><th rowspan="2">Subject(s)</th><th colspan="3" class="ha">APPEARED</th><th colspan="3" class="hx">ABSENT</th></tr><tr><th class="ha">M</th><th class="ha">F</th><th class="ha">Tot</th><th class="hx">M</th><th class="hx">F</th><th class="hx">Tot</th></tr></thead><tbody>'+trs+grand+'</tbody></table>'+
-      '<table class="vr-t vi"><tr><th class="ha">Total Appeared</th><td class="a b" style="font-size:13pt">'+n3(t.am,t.af)+'</td><th class="hx">Total Absent</th><td class="x b" style="font-size:13pt">'+n3(t.bm,t.bf)+'</td></tr></table>'+
-      '<div class="vr-pc"><b>EXAMINATION HELD PEACEFULLY</b><div class="vr-rem" contenteditable="true" data-vk="'+k+'">'+(E(rem)||'The examination was held peacefully and smoothly on all '+D.rows.length+' days at this venue. No malpractice, unfair means, disputed incident or law &amp; order problem was reported.')+'</div></div>'+
-      '<div class="vr-cert">Certified that the above figures are correct as per attendance records (OMR / ASR) of this venue.</div>'+
-      '<div class="vr-sg"><div style="position:relative">'+seal+'<div class="ln">Venue Supervisor</div><b>'+E(sup)+'</b></div><div><div class="ln">Centre Secretary / Centre-In-Charge</div>Taldangra \u2014 Code 2206</div></div>'+
-    '</div></div>';
-  }
-  /* ---- box letter label ---- */
-  const ENC_DEF="Sealed Packets of all written Answer Scripts & OMRs of Last day's Exam\nASR\nDespatch Report of Last days Exam\nSpecimen Signature of the Invigilators\nConfidential Report\nReport of any disputed incident if any [N.A.]";
-  function labelPage(box){
-    const c=sbCfg(B), head=get('bl_head',c.examLine.toUpperCase()+'\nTALDANGRA CENTRE');
-    const enc=String(get('bl_enc',ENC_DEF)).split(/\n+/).filter(function(x){return x.trim();});
-    const nm=get('bl_name','TALDANGRA'), code=get('bl_code','2206');
-    const manual=get('bl_mode','auto')==='manual', tot=get('bl_total','')||(box?box.total:sbBoxes(B).length||'');
-    const note=get('bl_note','');
-    const bn=manual?'<span class="w">____</span><span> OF </span>'+(get('bl_total','')?E(get('bl_total','')):'<span class="w">____</span>'):((box?box.no:'__')+'<span> OF </span>'+E(tot||'__'));
-    return '<div class="bl-a4"><div class="bl" style="--pc:'+c.color+'">'+
-      '<div class="bl-top">'+(c.logo?'<img src="'+c.logo+'" alt="">':'')+'<div class="bl-h">'+sbMl(head)+'</div></div>'+
-      '<div class="bl-box"><small>PARCEL BOX</small><strong>'+bn+'</strong><div class="tt">TOTAL BOXES: <b>'+(E(tot)||'______')+'</b></div></div>'+
-      '<div class="bl-cn"><div class="r"><b>Centre Name:</b> '+E(nm)+'</div><div class="r cd"><b>Centre Code:</b> <span>'+E(code)+'</span></div></div>'+
-      '<div class="bl-en"><div class="t">Enclosures:</div><ol>'+enc.map(function(x){return '<li>'+E(x)+'</li>';}).join('')+'</ol>'+
-      '<div class="nt">'+(E(note)||'&nbsp;')+'</div></div>'+
-    '</div></div>';
-  }
-  const ECOL=['#075985','#b45309','#047857','#6d28d9','#b91c1c','#334155'];
-  function encPage(txt,i,n){
-    const c=sbCfg(B), di=sbDateInfo(B), col=ECOL[i%ECOL.length];
-    const nm=get('bl_name','TALDANGRA'), code=get('bl_code','2206');
-    const head=get('bl_head',c.examLine.toUpperCase()+'\nTALDANGRA CENTRE');
-    const vs=(c.venues||[]).map(function(v,j){return '<div><b>VENUE '+(j+1)+'</b><span>'+E(v.name)+(v.code?' \u2014 '+E(v.code):'')+'</span></div>';}).join('');
-    return '<div class="bl-a4"><div class="bl el" style="--pc:'+col+'">'+
-      '<div class="bl-top">'+(c.logo?'<img src="'+c.logo+'" alt="">':'')+'<div class="bl-h" style="font-size:20pt">'+sbMl(head)+'</div></div>'+
-      '<div class="bl-cn"><div class="r" style="font-size:24pt"><b>Centre:</b> '+E(nm)+' &nbsp; <b>Code:</b> <span style="font-size:40pt;letter-spacing:4px">'+E(code)+'</span></div></div>'+
-      '<div class="el-n"><small>ENCLOSURE</small><strong>'+(i+1)+'<span> OF </span>'+n+'</strong></div>'+
-      '<div class="el-t">'+E(txt)+'</div>'+
-      '<div class="el-f"><div><b>EXAM DATE</b><strong>'+E(di.date||'________')+'</strong></div></div>'+
-      '<div class="el-v">'+vs+'</div>'+
-    '</div></div>';
-  }
-  function confPage(i){
-    const c=sbCfg(B), di=sbDateInfo(B), date=sbRaw(B,'date')||sbToday();
-    const tag=get('bl_ctag','CONFIDENTIAL REPORT');
-    const cols=['#1e3a8a','#7c2d12','#b91c1c'];
-    let who,frm,sub;
-    if(i<2){ const k=['TFHS','TGHS'][i], V=vInfo(k);
-      who='VENUE SUPERVISOR \u2014 '+V.code; sub=E(V.name)+'<br>Venue Code: <b>'+E(V.code)+'</b> &nbsp;|&nbsp; Centre Code: <b>2206</b>';
-      frm='<b>'+E(get('vsr_sup_'+k,defSup())||'Venue Supervisor')+'</b><br>Venue Supervisor<br>'+E(V.name)+'<br>Venue Code: '+E(V.code)+'<br>Centre: TALDANGRA (2206)';
-    } else {
-      who='CENTRE-IN-CHARGE (O.I.C.) \u2014 2206'; sub='TALDANGRA H.S. EXAMINATION CENTRE<br>Centre Code: <b>2206</b>';
-      frm='<b>'+E(sbF(B,'cic'))+'</b><br>Centre-In-Charge / Officer-In-Charge<br>Taldangra H.S. Examination Centre<br>Centre Code: 2206';
-    }
-    frm+='<br>P.O. &amp; Block: Taldangra, Sub-Div: Khatra<br>Dist: Bankura, PIN-722152<br>'+E(c.mob.replace(/Mob No\.-?/,'Mob: '));
-    return '<div class="bl-a4"><div class="bl el" style="--pc:'+cols[i]+'">'+
-      '<div class="bl-top">'+(c.logo?'<img src="'+c.logo+'" alt="">':'')+'<div class="bl-h" style="font-size:19pt">'+E(c.examLine.toUpperCase())+'</div></div>'+
-      '<div class="cf-tag">'+E(tag)+'</div>'+
-      '<div class="cf-who"><small>ENVELOPE '+(i+1)+' OF 3</small><strong>'+who+'</strong><div>'+sub+'</div></div>'+
-      '<div class="bl-cn"><div class="r" style="font-size:22pt"><b>Centre Code:</b> <span style="font-size:44pt;letter-spacing:4px">2206</span> TALDANGRA</div></div>'+
-      '<div class="cf-ad"><div class="to"><span class="h">TO</span><br>'+sbMl(sbF(B,'to'))+'</div><div class="fr"><span class="h">FROM</span><br>'+frm+'</div></div>'+
-      '<div class="cf-ft"><span>DATE: <b>'+E(date)+'</b></span><span>SEALED BY: ____________</span><span>\u26A0 CONFIDENTIAL \u2014 OPEN BY ADDRESSEE ONLY</span></div>'+
-    '</div></div>';
-  }
-  const CSSB=`.vr-a4,.bl-a4{width:210mm;height:297mm;padding:7mm;page-break-after:always;break-after:page;overflow:hidden;background:#fff}
-.vr-head{text-align:center;border-bottom:.7mm solid #1e3a8a;padding-bottom:1.6mm}.vr-head img{width:13mm;height:13mm;object-fit:contain;display:block;margin:0 auto 1mm}.b1{font-size:13pt;font-weight:900;color:#1e3a8a}.b2{font-size:10pt;font-weight:800;color:#334155}
-.vr-title{background:#1e3a8a;color:#fff;text-align:center;font-weight:900;font-size:13.5pt;padding:2mm;border-radius:2mm;letter-spacing:.5px}
-.vr-info{display:grid;grid-template-columns:1.2fr .8fr 1fr;gap:1.6mm}.vr-info>div{border:.4mm solid #94a3b8;border-radius:1.5mm;padding:1.4mm 2.2mm;font-weight:800;font-size:10pt}.vr-info b{display:block;font-size:7pt;letter-spacing:1px;color:#1e3a8a}.vr-info .wide{grid-column:1/-1;grid-row:2}.vr-info .vc{background:#e0f2fe;text-align:center}.vr-info .vc strong{font-size:17pt;letter-spacing:2px}
-.vr-h{font-weight:900;font-size:9.5pt;color:#1e3a8a;border-bottom:.4mm solid #1e3a8a;letter-spacing:.8px}
-.vr-t{width:100%;border-collapse:collapse;font-size:9.5pt}.vr-t th,.vr-t td{border:.35mm solid #475569;padding:1.1mm 1.6mm;text-align:center;font-weight:700}.vr-t th{background:#f1f5f9;font-size:9pt}
-.vr-t .ha{background:#dcfce7;color:#166534}.vr-t .hx{background:#fee2e2;color:#991b1b}.vr-t td.a{color:#166534}.vr-t td.x{color:#991b1b}.vr-t .b{font-weight:900;font-size:10.5pt}.vr-t .l{text-align:left}.vr-t td.s{font-size:8pt;word-break:break-word}.vr-t small{font-weight:600;color:#475569}
-.vr-t tr.gt td{background:#e2e8f0;font-weight:900;font-size:10.5pt}.vr-t.sj td,.vr-t.sj th{font-size:8.5pt;padding:1mm .8mm}
-.vr-kpi{display:grid;grid-template-columns:1fr 1fr;gap:3mm}.vr-kpi>div{border:.8mm solid;border-radius:2mm;text-align:center;padding:1.5mm}.vr-kpi small{display:block;font-size:8pt;font-weight:800;letter-spacing:1.5px}.vr-kpi strong{font-size:22pt;font-weight:900}.ka{border-color:#16a34a;background:#f0fdf4;color:#166534}.kx{border-color:#dc2626;background:#fef2f2;color:#991b1b}
-.vr-rem{min-height:15mm;border:.35mm solid #94a3b8;border-radius:1.5mm;padding:2mm;font-size:9.5pt;line-height:1.35}
-.vr-cert{font-size:9pt;font-weight:700}
-.vr-sg{display:flex;justify-content:space-between;margin-top:auto;padding:0 4mm;font-size:9pt;text-align:center}.vr-sg>div{min-width:70mm;padding-top:14mm}.vr-sg .ln{border-top:.4mm solid #111;padding-top:1mm;font-weight:900;font-size:10pt}
-.bl{height:100%;border:2.4mm solid var(--pc);border-radius:4mm;padding:9mm;display:flex;flex-direction:column;gap:7mm}
-.bl-top{text-align:center}.bl-top img{width:22mm;height:22mm;object-fit:contain;display:block;margin:0 auto 3mm}.bl-h{font-size:24pt;font-weight:900;line-height:1.25;color:var(--pc)}
-.bl-box{border:1.2mm solid var(--pc);border-radius:3mm;text-align:center;padding:3mm}.bl-box small{display:block;font-size:15pt;font-weight:800;letter-spacing:4px;color:#334155}.bl-box strong{font-size:60pt;line-height:1.05;font-weight:900;color:var(--pc)}.bl-box strong span{font-size:24pt;color:#111}
-.bl-cn{background:var(--pc);color:#fff;border-radius:3mm;padding:5mm 7mm;text-align:center}.bl-cn .r{font-size:30pt;font-weight:900}.bl-cn .cd span{font-size:64pt;letter-spacing:6px;line-height:1.1}
-.bl-en{flex:1;border:1mm solid var(--pc);border-radius:3mm;padding:6mm 8mm}.bl-en .t{font-size:26pt;font-weight:900;color:var(--pc);text-decoration:underline;margin-bottom:3mm}.bl-en ol{margin:0;padding-left:11mm;font-size:21pt;font-weight:800;line-height:1.4}.bl-en li{margin-bottom:3mm}
-
-.vr-doc{border:1.2mm solid #1e3a8a;border-radius:2.5mm;padding:4mm 6mm;display:flex;flex-direction:column;gap:2.2mm;color:#111;font-size:9.5pt;height:100%}
-.vr-head{display:flex;align-items:center;justify-content:center;gap:4mm;text-align:center;border-bottom:.6mm solid #1e3a8a;padding-bottom:1.4mm}.vr-head img{width:12mm;height:12mm;margin:0}
-.vr-t.vi th{width:16%;text-align:left;font-size:8.5pt}.vr-t.vi td{font-size:10pt}.vr-t td.l{text-align:left}
-.vr-rem{font-weight:600!important;font-size:8.5pt!important}
-.bl-box .tt{font-size:13pt;font-weight:800;color:#334155}.bl-box .w{letter-spacing:2px}.bl-box strong{font-size:54pt}
-.bl-en .nt{margin-top:3mm;border-top:.4mm dashed #94a3b8;padding-top:2mm;font-size:16pt;font-weight:800;min-height:12mm}
-
-.vr-fx{display:grid;grid-template-columns:1.5fr 1.3fr .6fr .6fr 1fr 1fr;gap:1.4mm}.vr-fx>div{border:.35mm solid #94a3b8;border-radius:1.5mm;padding:1mm 1.6mm;text-align:center;background:#f8fafc}.vr-fx small{display:block;font-size:6pt;font-weight:800;letter-spacing:.6px;color:#1e3a8a}.vr-fx b{font-size:8.5pt;font-weight:900}.vr-fx .fa{background:#dcfce7;border-color:#16a34a}.vr-fx .fa b{color:#166534}.vr-fx .fx{background:#fee2e2;border-color:#dc2626}.vr-fx .fx b{color:#991b1b}
-
-.vr-pc{border:.6mm solid #16a34a;background:#f0fdf4;border-radius:2mm;padding:1.6mm 3mm;text-align:center}.vr-pc>b{display:block;font-size:10pt;letter-spacing:1px;color:#166534}.vr-pc .vr-rem{border:0;padding:.8mm 0 0;min-height:0;font-size:9pt;font-weight:700;line-height:1.3}
-
-.el-n{border:1mm solid var(--pc);border-radius:3mm;text-align:center;padding:2mm}.el-n small{display:block;font-size:14pt;font-weight:800;letter-spacing:4px;color:#334155}.el-n strong{font-size:44pt;line-height:1.05;font-weight:900;color:var(--pc)}.el-n strong span{font-size:20pt;color:#111}
-.el-t{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;border:1.2mm solid var(--pc);background:#f8fafc;border-radius:3mm;padding:6mm;font-size:38pt;font-weight:900;line-height:1.2;color:var(--pc)}
-.el-f>div{border:.9mm solid var(--pc);border-radius:2mm;text-align:center;padding:2mm}.el-f b{display:block;font-size:12pt;letter-spacing:2px;color:var(--pc)}.el-f strong{font-size:26pt;font-weight:900}
-.el-v{border:.6mm solid #94a3b8;border-radius:2mm;padding:3mm;font-size:13pt;font-weight:800;line-height:1.5}.el-v div{display:flex;gap:3mm}.el-v b{flex:none;width:30mm;color:var(--pc)}
-
-.cf-tag{background:var(--pc);color:#fff;text-align:center;font-size:36pt;font-weight:900;letter-spacing:3px;padding:4mm;border-radius:3mm}
-.cf-who{border:1.2mm solid var(--pc);border-radius:3mm;text-align:center;padding:4mm;background:#f8fafc}.cf-who small{display:block;font-size:13pt;font-weight:800;letter-spacing:3px;color:#334155}.cf-who strong{display:block;font-size:25pt;font-weight:900;color:var(--pc);margin:1mm 0}.cf-who div{font-size:15pt;font-weight:800;line-height:1.35}
-.cf-ad{flex:1;display:grid;grid-template-rows:1fr 1fr;gap:5mm}.cf-ad>div{border:.9mm solid var(--pc);border-radius:3mm;padding:5mm 7mm;font-size:17pt;font-weight:700;line-height:1.4}.cf-ad .to{font-size:21pt;font-weight:800}.cf-ad .h{display:inline-block;background:var(--pc);color:#fff;font-size:13pt;font-weight:900;letter-spacing:3px;padding:.5mm 4mm;border-radius:1.5mm;margin-bottom:1.5mm}
-.cf-ft{display:flex;justify-content:space-between;gap:4mm;font-size:11pt;font-weight:700;border-top:.5mm solid #94a3b8;padding-top:2mm}
-`;
-  const CSS=`@page{size:A4 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#fff;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-`+CSSB+`@media screen{body{background:#d7dce2}.vr-a4,.bl-a4{margin:10px auto;box-shadow:0 3px 16px #777}}
-@media print{.vr-a4:last-child,.bl-a4:last-child{page-break-after:auto}}`;
-  function pagesFor(what){
-    if(what==='conf') return [0,1,2].map(confPage).join('');
-    if(what==='enc'){ const L=String(get('bl_enc',ENC_DEF)).split(/\n+/).filter(function(x){return x.trim();}); return L.map(function(t,i){return encPage(t,i,L.length);}).join(''); }
-    if(what==='lbl'){ const bx=sbBoxes(B); return bx.length?bx.map(labelPage).join(''):labelPage(null); }
-    if(what==='both') return VK.map(reportPage).join('');
-    return reportPage(what);
-  }
-  function FIT(){
-    window.onload=function(){
-      document.querySelectorAll(".vr-a4>div,.bl-a4>div").forEach(function(el){
-        var pg=el.parentNode, max=pg.clientHeight-parseFloat(getComputedStyle(pg).paddingTop)*2;
-        el.style.height="auto"; var h=el.offsetHeight;
-        if(h>max){ el.style.zoom=(max/h)*0.99; } else { el.style.height=max+"px"; }
-      });
-      setTimeout(function(){ window.print(); },400);
-    };
-  }
-  window.vsrPrint=function(what){
-    sbLoad(); const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
-    const ed=pagesFor(what).replace(/\scontenteditable="true"/g,'');
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+(what==='lbl'?'Submission Box Letter Labels':what==='conf'?'Confidential Report Envelopes':what==='enc'?'Enclosure Labels':'Venue Supervisor Report')+' \u2014 Centre 2206</title><style>'+CSS+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+ed+'<script>('+FIT.toString()+')()<\/script></body></html>');
-    w.document.close();
-  };
-  function paint(){
-    const pv=document.getElementById('vsr_pv'); if(!pv) return;
-    pv.innerHTML=reportPage(document.getElementById('vsr_pick').value||'TFHS');
-    const lv=document.getElementById('bl_pv'); if(lv) lv.innerHTML=labelPage(sbBoxes(B)[0]||null);
-  }
-  function controls(){
-    const p=document.getElementById(B+'-submission'); if(!p||document.getElementById('vsr_controls')) return;
-    const x=document.createElement('div'); x.id='vsr_controls'; x.className='control-panel no-print';
-    x.innerHTML='<div class="panel-title">VENUE SUPERVISOR REPORT (APPEARED &amp; ABSENT ONLY) &amp; SUBMISSION BOX LETTER LABELS</div>'+
-    '<div class="form-grid">'+
-    '<div class="form-group"><label>Venue Supervisor \u2014 114071</label><input id="vsr_s1" type="text"></div>'+
-    '<div class="form-group"><label>Venue Supervisor \u2014 114200</label><input id="vsr_s2" type="text"></div>'+
-    '<div class="form-group"><label>Round seal on report</label><select id="vsr_seal"><option value="1">WITH SEAL</option><option value="0">WITHOUT SEAL</option></select></div>'+
-    '<div class="form-group"><label>Print report</label><button class="btn btn-success" style="width:100%" onclick="vsrPrint(\'TFHS\')">114071 \u2014 FULMATI HS</button></div>'+
-    '<div class="form-group"><label>Print report</label><button class="btn btn-success" style="width:100%" onclick="vsrPrint(\'TGHS\')">114200 \u2014 GIRLS\u2019 HS</button></div>'+
-    '<div class="form-group"><label>Print both (separate A4 each)</label><button class="btn btn-primary" style="width:100%" onclick="vsrPrint(\'both\')">BOTH REPORTS</button></div>'+
-    '<div class="form-group span-2"><label>Box letter label \u2014 heading (top lines)</label><textarea id="bl_head" rows="2" style="width:100%"></textarea></div>'+
-    '<div class="form-group"><label>Centre Name</label><input id="bl_name" type="text"></div>'+
-    '<div class="form-group"><label>Centre Code</label><input id="bl_code" type="text"></div>'+
-    '<div class="form-group span-2"><label>Enclosures (one per line)</label><textarea id="bl_enc" rows="6" style="width:100%"></textarea></div>'+
-    '<div class="form-group"><label>Box number</label><select id="bl_mode"><option value="auto">AUTO (Box 1 OF N)</option><option value="manual">MANUAL (write by hand)</option></select></div>'+
-    '<div class="form-group"><label>Total boxes (blank = auto)</label><input id="bl_total" type="text"></div>'+
-    '<div class="form-group span-2"><label>Extra manual line on label</label><input id="bl_note" type="text"></div>'+
-    '<div class="form-group"><label>Print labels (one A4 per box)</label><button class="btn btn-success" style="width:100%" onclick="vsrPrint(\'lbl\')">BOX LETTER LABELS</button></div>'+
-    '<div class="form-group"><label>Confidential envelope tag</label><input id="bl_ctag" type="text"></div>'+
-    '<div class="form-group"><label>Confidential Report envelopes (3)</label><button class="btn btn-success" style="width:100%" onclick="vsrPrint(\'conf\')">3 ENVELOPE LABELS</button></div>'+
-    '<div class="form-group"><label>Print enclosure labels (one A4 per item)</label><button class="btn btn-success" style="width:100%" onclick="vsrPrint(\'enc\')">ENCLOSURE LABELS</button></div></div>'+
-    '<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>Preview report for:</b><select id="vsr_pick"><option value="TFHS">114071 \u2014 FULMATI HS</option><option value="TGHS">114200 \u2014 GIRLS\u2019 HS</option></select><span style="font-size:9pt;color:#475569">Report covers all exam dates up to the \u201cLast date of examination\u201d chosen above; figures come from the Progress Ledger (Enrolled is not shown).</span></div>'+
-    '<div style="overflow:auto;max-height:560px;margin-top:8px;background:#d7dce2;padding:8px"><div id="vsr_pv" style="transform-origin:top left;zoom:.6"></div></div>'+
-    '<div style="overflow:auto;max-height:420px;margin-top:8px;background:#d7dce2;padding:8px"><div id="bl_pv" style="zoom:.45"></div></div>'+
-    '<style>'+CSSB+'</style>';
-    p.insertBefore(x,p.querySelector('.sb-prev')||null);
-    const set=function(id,fn){ const e=document.getElementById(id); if(e){ e.oninput=e.onchange=function(){ fn(e.value); }; } return e; };
-    document.getElementById('vsr_s1').value=get('vsr_sup_TFHS',defSup()); document.getElementById('vsr_s2').value=get('vsr_sup_TGHS',defSup());
-    document.getElementById('vsr_seal').value=get('vsr_seal','1');
-    document.getElementById('bl_head').value=get('bl_head',sbCfg(B).examLine.toUpperCase()+'\nTALDANGRA CENTRE');
-    document.getElementById('bl_name').value=get('bl_name','TALDANGRA'); document.getElementById('bl_code').value=get('bl_code','2206');
-    document.getElementById('bl_enc').value=get('bl_enc',ENC_DEF);
-    document.getElementById('bl_ctag').value=get('bl_ctag','CONFIDENTIAL REPORT'); document.getElementById('bl_mode').value=get('bl_mode','auto'); document.getElementById('bl_total').value=get('bl_total',''); document.getElementById('bl_note').value=get('bl_note','');
-    set('vsr_s1',function(v){put('vsr_sup_TFHS',v);}); set('vsr_s2',function(v){put('vsr_sup_TGHS',v);}); set('vsr_seal',function(v){put('vsr_seal',v);});
-    set('bl_head',function(v){put('bl_head',v);}); set('bl_name',function(v){put('bl_name',v);}); set('bl_code',function(v){put('bl_code',v);}); set('bl_enc',function(v){put('bl_enc',v);}); set('bl_ctag',function(v){put('bl_ctag',v);}); set('bl_mode',function(v){put('bl_mode',v);}); set('bl_total',function(v){put('bl_total',v);}); set('bl_note',function(v){put('bl_note',v);});
-    document.getElementById('vsr_pick').onchange=paint;
-    paint();
-  }
-  function TFSEALSAFE(){ return ''; }
-  document.addEventListener('input',function(ev){ const t=ev.target; if(t&&t.dataset&&t.dataset.vk&&t.classList.contains('vr-rem')){ db()['vsr_rem_'+t.dataset.vk]=t.textContent; sbSave(); } });
-  const oldPaint=window.sbPaint; window.sbPaint=function(b){ oldPaint(b); if(b===B) setTimeout(function(){ controls(); paint(); },30); };
-  const oldRender=window.sbRender; window.sbRender=function(){ oldRender(); setTimeout(function(){ controls(); paint(); },60); };
-  setTimeout(function(){ try{ sbLoad(); controls(); }catch(e){ console.error('vsr',e); } },200);
-})();
-</script>
-
 </body>
 </html>
