@@ -840,20 +840,12 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <thead>
           <tr>
             <th rowspan="2" style="width:3%;">SL</th>
-            <th rowspan="2" style="width:12%;">Date of Exam</th>
-            <th rowspan="2" style="width:8%;">Day</th>
-            <th rowspan="2" style="width:25%;">Subject Schedule Mapping</th>
-            <th colspan="6" style="background:#ffe4e6; color:#991b1b;">ENROLLED CANDIDATES COUNTS</th>
-            <th colspan="6" style="background:#fef3c7; color:#92400e;">ABSENT CANDIDATES (enter absentees &mdash; Appeared = Enrolled &minus; Absent)</th>
+            <th rowspan="2" style="width:9%;">Date of Exam</th>
+            <th rowspan="2" style="width:7%;">Day</th>
+            <th rowspan="2" style="width:20%;">Subject Schedule Mapping</th>
+            <th colspan="3" style="background:#e2e8f0;color:#0f172a;">S-III M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">S-III F</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">S-() M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">S-() F</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Old M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Old F</th>
           </tr>
-          <tr>
-            <th class="sub" style="background:#cbd5e1;">S-III M</th><th class="sub" style="background:#cbd5e1;">S-III F</th>
-            <th class="sub" style="background:#cbd5e1;">S-() M</th><th class="sub" style="background:#cbd5e1;">S-() F</th>
-            <th class="sub" style="background:#cbd5e1;">Old M</th><th class="sub" style="background:#cbd5e1;">Old F</th>
-            <th class="sub" style="background:#cbd5e1;">S-III M</th><th class="sub" style="background:#cbd5e1;">S-III F</th>
-            <th class="sub" style="background:#cbd5e1;">S-() M</th><th class="sub" style="background:#cbd5e1;">S-() F</th>
-            <th class="sub" style="background:#cbd5e1;">Old M</th><th class="sub" style="background:#cbd5e1;">Old F</th>
-          </tr>
+          <tr><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th></tr>
         </thead>
         <tbody id="hs_matrixTableBody"></tbody>
       </table>
@@ -2990,11 +2982,15 @@ function hsRenderReportingMatrixTable(){
       ? `<button class="btn btn-primary" style="padding:3px 7px;font-size:8pt;margin-top:5px;" onclick="hsToggleSubjectWise(${rowIndex})">${row.subWise?'Hide Subject-wise Entry':'Subject-wise Entry ('+subjects.length+')'}</button>`
       : '';
     let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${hsSubjectListWithCodes(row.sub)}<br>${toggleBtn}${hsLedgerSubTickHtml(rowIndex,row)}</td>`;
-    for(let v=0; v<12; v++){
-      const shown=hsAbsShown(row.vals,v), fn=v<6?'hsUpdateValueNode':'hsUpdateAbsentNode';
+    for(let c=0; c<6; c++){
+      const en=row.vals[c]||0, pr=row.vals[c+6]||0, ab=hsAbsShown(row.vals,c+6);
       rowHtml += row.subWise
-        ? `<td><div class="hs-auto-box" style="min-height:26px;">${shown}</div></td>`
-        : `<td><input type="number" min="0" value="${shown}" oninput="${fn}(${rowIndex}, ${v}, this.value)"></td>`;
+        ? `<td><div class="hs-auto-box" data-v="${c}" style="min-height:26px;">${en}</div></td>`
+        : `<td><input type="number" min="0" value="${en}" oninput="hsUpdateValueNode(${rowIndex}, ${c}, this.value)"></td>`;
+      rowHtml += `<td style="background:#f0fdf4;"><div class="hs-pres" data-p="${c}" style="min-height:26px;font-weight:700;color:#166534;">${pr}</div></td>`;
+      rowHtml += row.subWise
+        ? `<td style="background:#fffbeb;"><div class="hs-auto-box" data-a="${c}" style="min-height:26px;">${ab}</div></td>`
+        : `<td style="background:#fffbeb;"><input type="number" min="0" value="${ab}" oninput="hsUpdateAbsentNode(${rowIndex}, ${c+6}, this.value)"></td>`;
     }
     tr.innerHTML = rowHtml;
     tbody.appendChild(tr);
@@ -3003,10 +2999,15 @@ function hsRenderReportingMatrixTable(){
       subjects.forEach(sub=>{
         const arr=(row.subVals && row.subVals[sub]) || [0,0,0,0,0,0,0,0,0,0,0,0];
         const subTr=document.createElement("tr");
+        subTr.dataset.subrow=rowIndex; subTr.dataset.sub=sub;
         subTr.style.background="#f8fafc";
         const safe=sub.replace(/'/g,"\\'");
         let subHtml=`<td></td><td></td><td></td><td style="text-align:left;font-size:8.5pt;color:#334155;padding-left:16px;">&#8627; ${hsSubjectWithCode(sub)}</td>`;
-        for(let v=0; v<12; v++){ subHtml += `<td><input type="number" min="0" value="${hsAbsShown(arr,v)}" oninput="${v<6?'hsUpdateSubjectValueNode':'hsUpdateSubjectAbsentNode'}(${rowIndex}, '${safe}', ${v}, this.value)"></td>`; }
+        for(let c=0; c<6; c++){
+          subHtml += `<td><input type="number" min="0" value="${arr[c]||0}" oninput="hsUpdateSubjectValueNode(${rowIndex}, '${safe}', ${c}, this.value)"></td>`;
+          subHtml += `<td style="background:#f0fdf4;"><div class="hs-pres" data-p="${c}" style="font-weight:700;color:#166534;">${arr[c+6]||0}</div></td>`;
+          subHtml += `<td style="background:#fffbeb;"><input type="number" min="0" value="${hsAbsShown(arr,c+6)}" oninput="hsUpdateSubjectAbsentNode(${rowIndex}, '${safe}', ${c+6}, this.value)"></td>`;
+        }
         subTr.innerHTML=subHtml;
         tbody.appendChild(subTr);
       });
@@ -3044,17 +3045,29 @@ function hsUpdateSubjectValueNode(rowIndex, subject, col, value){
   localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
   // Refresh just the auto-sum boxes on the parent row rather than a full
   // re-render, so focus/scroll position in the subject sub-rows isn't lost.
-  const parentTr=document.getElementById("hs-row-idx-"+rowIndex);
-  if(parentTr){ const boxes=parentTr.querySelectorAll('.hs-auto-box'); boxes.forEach((b,i)=>{ b.textContent=hsAbsShown(row.vals,i); }); }
+  hsRefreshRowDisplay(rowIndex);
   hsCalculateTotalsMathEngine();
   if(document.getElementById("hs_activeDayFocus").value == rowIndex){ hsHighlightAndPrepareDualSlips(rowIndex); }
 }
 /* Absentee-driven ledger: columns 7-12 show/accept ABSENT; Appeared (vals[6..11]) is stored as Enrolled - Absent. */
+function hsRefreshRowDisplay(rowIndex){
+  const row=hsTrackingStateDatabase[hsActiveSchool][rowIndex], tr=document.getElementById("hs-row-idx-"+rowIndex);
+  if(tr){
+    tr.querySelectorAll('[data-p]').forEach(e=>{ e.textContent=row.vals[+e.dataset.p+6]||0; });
+    tr.querySelectorAll('div[data-v]').forEach(e=>{ e.textContent=row.vals[+e.dataset.v]||0; });
+    tr.querySelectorAll('div[data-a]').forEach(e=>{ e.textContent=hsAbsShown(row.vals,+e.dataset.a+6); });
+  }
+  document.querySelectorAll('tr[data-subrow="'+rowIndex+'"]').forEach(str=>{
+    const arr=(row.subVals&&row.subVals[str.dataset.sub])||[];
+    str.querySelectorAll('[data-p]').forEach(e=>{ e.textContent=arr[+e.dataset.p+6]||0; });
+  });
+}
 function hsAbsShown(arr,i){ arr=arr||[]; return i<6 ? (arr[i]||0) : Math.max(0,(arr[i-6]||0)-(arr[i]||0)); }
 function hsUpdateAbsentNode(rowIndex, col, value){
   const v=hsTrackingStateDatabase[hsActiveSchool][rowIndex].vals, ab=Math.max(0,parseInt(value)||0);
   v[col]=Math.max(0,(v[col-6]||0)-ab);
   localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
+  hsRefreshRowDisplay(rowIndex);
   hsCalculateTotalsMathEngine();
   if(document.getElementById("hs_activeDayFocus").value == rowIndex){ hsHighlightAndPrepareDualSlips(rowIndex); }
 }
@@ -3066,6 +3079,7 @@ function hsUpdateSubjectAbsentNode(rowIndex, subject, col, value){
 function hsUpdateValueNode(row, col, value){
   { const v=hsTrackingStateDatabase[hsActiveSchool][row].vals, nv=parseInt(value)||0;
     if(col<6){ const ab=Math.max(0,(v[col]||0)-(v[col+6]||0)); v[col]=nv; v[col+6]=Math.max(0,nv-ab); } else v[col]=nv; }
+  hsRefreshRowDisplay(row);
   localStorage.setItem("ExamReportingLedgerCache_HS", JSON.stringify(hsTrackingStateDatabase));
   hsCalculateTotalsMathEngine();
   if(document.getElementById("hs_activeDayFocus").value == row){ hsHighlightAndPrepareDualSlips(row); }
