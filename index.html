@@ -791,7 +791,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <label>Programme &amp; Exam Type</label>
         <select id="hs_examType" onchange="hsSetExamType(this.value)">
           <option value="SEM-I">H.S. &mdash; SEM-I</option><option value="SEM-II">H.S. &mdash; SEM-II</option>
-          <option value="SEM-III" selected>H.S. &mdash; SEM-III</option><option value="SEM-IV">H.S. &mdash; SEM-IV</option>
+          <option value="SEM-III" selected>H.S. &mdash; SEM-III</option><option value="SEM-IV">H.S. &mdash; SEM-IV</option><option value="__custom__">+ New programme / exam type (type name)&hellip;</option>
         </select>
       </div>
       <div class="form-group">
@@ -3156,7 +3156,7 @@ function hsBuildMemoHtmlSegment(typeTag, rowData, examYear){
       <tr><td colspan="2" style="font-size:9pt; color:#334155; padding-top:2px;"><strong>Subject:</strong> ${memoSubTxt}</td></tr></table>
     <table class="memo-data-table"><thead><tr><th>Stream Details Class Category</th><th>Enrolled (M)</th><th>Enrolled (F)</th><th>Appeared (M)</th><th>Appeared (F)</th><th>Absent (M)</th><th>Absent (F)</th></tr></thead>
       <tbody>
-        <tr><td>Semester-${hsExamTypeRoman()} (Regular)</td><td>${v[0]}</td><td>${v[1]}</td><td>${v[6]}</td><td>${v[7]}</td><td>${v[0]-v[6]}</td><td>${v[1]-v[7]}</td></tr>
+        <tr><td>${hsExamTypeSemLabel()} (Regular)</td><td>${v[0]}</td><td>${v[1]}</td><td>${v[6]}</td><td>${v[7]}</td><td>${v[0]-v[6]}</td><td>${v[1]-v[7]}</td></tr>
         <tr><td>Semester-() (Supplementary)</td><td>${v[2]}</td><td>${v[3]}</td><td>${v[8]}</td><td>${v[9]}</td><td>${v[2]-v[8]}</td><td>${v[3]-v[9]}</td></tr>
         <tr><td>Old Syllabus Stream</td><td>${v[4]}</td><td>${v[5]}</td><td>${v[10]}</td><td>${v[11]}</td><td>${v[4]-v[10]}</td><td>${v[5]-v[11]}</td></tr>
         <tr style="font-weight:bold; background:#f1f5f9;"><td>TOTALS</td><td>${v[0]+v[2]+v[4]}</td><td>${v[1]+v[3]+v[5]}</td><td>${v[6]+v[8]+v[10]}</td><td>${v[7]+v[9]+v[11]}</td><td>${(v[0]+v[2]+v[4])-(v[6]+v[8]+v[10])}</td><td>${(v[1]+v[3]+v[5])-(v[7]+v[9]+v[11])}</td></tr>
@@ -3236,14 +3236,21 @@ function ledgerArchiveRestore(board,id){
   ledgerRenderArchive(board);
 }
 function hsExamTypeRoman(){ return String((hsTrackingStateDatabase&&hsTrackingStateDatabase.examType)||'SEM-III').replace(/^SEM-/,''); }
+function hsExamTypeSemLabel(){ const t=String((hsTrackingStateDatabase&&hsTrackingStateDatabase.examType)||'SEM-III'); return /^SEM-/.test(t)?('Semester-'+t.slice(4)):t; }
 function hsApplyExamTypeLabels(){
   const t=(hsTrackingStateDatabase&&hsTrackingStateDatabase.examType)||'SEM-III', r=hsExamTypeRoman();
-  document.querySelectorAll('#hs-ledger .hs-catlbl').forEach(e=>{ e.textContent=e.dataset.base.replace('S-III','S-'+r); });
-  const sel=document.getElementById('hs_examType'); if(sel) sel.value=t;
+  document.querySelectorAll('#hs-ledger .hs-catlbl').forEach(e=>{ e.textContent=e.dataset.base.replace('S-III',/^SEM-/.test(t)?('S-'+r):t); });
+  const sel=document.getElementById('hs_examType');
+  if(sel){ if(![].some.call(sel.options,o=>o.value===t)){ const o=document.createElement('option'); o.value=t; o.textContent='H.S. \u2014 '+t; sel.insertBefore(o,sel.lastElementChild); } sel.value=t; }
 }
 function hsSetExamType(t){
+  if(t==='__custom__'){
+    const n=prompt('Type the new programme / exam type name (e.g. SEM-IV, H.S. ANNUAL, MP-2028):','');
+    if(!n||!n.trim()){ hsApplyExamTypeLabels(); return; }
+    t=n.trim().toUpperCase();
+  }
   hsTrackingStateDatabase.examType=t;
-  hsTrackingStateDatabase.year=String(hsTrackingStateDatabase.year||'2027').replace(/\s*\[SEM-[IV]+\]/,'')+' ['+t+']';
+  hsTrackingStateDatabase.year=String(hsTrackingStateDatabase.year||'2027').replace(/\s*\[[^\]]*\]\s*$/,'')+' ['+t+']';
   localStorage.setItem('ExamReportingLedgerCache_HS',JSON.stringify(hsTrackingStateDatabase));
   document.getElementById('hs_examYear').value=hsTrackingStateDatabase.year;
   hsApplyExamTypeLabels(); hsRenderReportingMatrixTable();
