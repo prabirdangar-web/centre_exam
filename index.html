@@ -1453,19 +1453,12 @@ Storage.prototype.setItem = function(key,value){
 };
 
 function cloudHydrateAndBoot(bootFn){
-  let bootAlreadyRun = false;
-  const safeBoot = () => { if (bootAlreadyRun) return; bootAlreadyRun = true; try { bootFn(); } catch (e) { console.error('Application startup failed', e); } };
-  if(!cloudDB){ safeBoot(); return; } // Firebase not available — run purely on local storage
+  if(!cloudDB){ bootFn(); return; } // Firebase not available — run purely on local storage
   cloudShowBanner('Connecting to cloud database…','info',true);
-  // Do not let a blocked Firebase/auth request leave every panel uninitialized.
-  const authWait = Promise.race([
-    cloudAuthReadyPromise,
-    new Promise(resolve => setTimeout(() => resolve(null), 6500))
-  ]);
-  authWait.then(user=>{
+  cloudAuthReadyPromise.then(user=>{
     if(!user){
-      cloudShowBanner('Cloud sign-in unavailable — opening local data. Sign in when online to sync cloud records.','error',true);
-      safeBoot();
+      cloudShowBanner('Not signed in — working on this device only. Changes will NOT be saved to the cloud. Reload and sign in to sync.','error',true);
+      bootFn();
       return;
     }
     let cloudDenied=false;
@@ -1488,7 +1481,7 @@ function cloudHydrateAndBoot(bootFn){
         if(bb&&cu){ bb.style.cursor='pointer'; bb.onclick=()=>{ try{navigator.clipboard.writeText(cu.uid);}catch(e){} bb.textContent='UID copied: '+cu.uid+'  (Firestore > users > Add document, Document ID = this UID, field role = admin)'; }; }
       }
       else cloudShowBanner('Cloud data loaded','ok');
-      safeBoot();
+      bootFn();
       cloudPostReadyQueue.splice(0).forEach(fn=>fn());
       cloudAttachLiveListeners();
     });
@@ -2285,58 +2278,67 @@ function hsPrintCentreForm(type,venueOverride,dateOverride){
   } else { title='R. A. FORMAT'; body=`<h3>R. A. FORMAT</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><table><tr><th>Centre Name / Code</th><td>${esc(c.centre)} / ${esc(c.centreCode)}</td><th>Venue Code</th><td>${esc(c.venueCode)}</td></tr><tr><th>Venue</th><td colspan="3">${esc(c.venue)}</td></tr><tr><th>Date / Day</th><td>${esc(c.date)} / ${esc(c.day)}</td><th>Subject(s)</th><td>${esc(c.subject)}</td></tr></table><table><tr><th>Sl.</th><th>Candidate / Roll / Registration</th><th>Reason / R.A. Details</th><th>Action Taken</th><th>Signature</th></tr>${Array.from({length:12},(_,i)=>`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td></tr>`).join('')}</table><p>Signature of Venue Supervisor: __________________________ &nbsp;&nbsp; Centre Secretary / Centre-in-Charge: __________________________</p>`; }
   const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
   w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.official-form-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0;border-bottom:1px solid #333}.official-top-table{margin:0!important}.official-top-table .blank-col{width:11%}.official-top-table th{width:31%;font-size:14px}.official-top-table td{font-size:14px}.official-detail-table{margin-top:0!important}.official-section-note{font-weight:700;margin:12px 0 4px}h3{text-align:center;margin:0 0 10px}.small{font-size:9pt}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top;min-height:22px}th{background:#f1f5f9}.lines{border-bottom:1px solid #333;line-height:28px}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script>
-<script id="hsStartupAndMenuRepair">
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
 (function(){
-  function repairMenus(){
-    try {
-      const boardButtons = Array.from(document.querySelectorAll('.board-btn'));
-      const toolButtons = Array.from(document.querySelectorAll('.tool-btn'));
-      boardButtons.forEach(function(btn){
-        btn.onclick = function(ev){
-          if(ev) ev.preventDefault();
-          const board = btn.dataset.board || 'hs';
-          if(typeof window.switchBoard === 'function') window.switchBoard(board);
-          else {
-            boardButtons.forEach(b=>b.classList.toggle('active',b===btn));
-            document.querySelectorAll('.board-pane').forEach(p=>p.style.display=p.dataset.board===board?'block':'none');
-          }
-        };
-      });
-      toolButtons.forEach(function(btn){
-        btn.onclick = function(ev){
-          if(ev) ev.preventDefault();
-          const tool = btn.dataset.tool || 'ledger';
-          if(typeof window.switchTool === 'function') window.switchTool(tool);
-          else {
-            toolButtons.forEach(b=>b.classList.toggle('active',b===btn));
-            document.querySelectorAll('.board-pane').forEach(pane=>pane.querySelectorAll('.tool-panel').forEach(panel=>panel.classList.toggle('active',panel.dataset.tool===tool)));
-          }
-        };
-      });
-      // Ensure all tool panels exist in both boards; only the selected panel is visible.
-      const activeBoard = document.querySelector('.board-btn.active')?.dataset.board || 'hs';
-      const activeTool = document.querySelector('.tool-btn.active')?.dataset.tool || 'ledger';
-      if(typeof window.switchBoard === 'function') window.switchBoard(activeBoard);
-      if(typeof window.switchTool === 'function') window.switchTool(activeTool);
-    } catch(e){ console.error('Menu repair failed',e); }
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
   }
-  function showHS(){
-    try {
-      if(typeof window.switchBoard==='function') window.switchBoard('hs');
-      else {
-        document.querySelectorAll('.board-pane').forEach(p=>p.style.display=p.dataset.board==='hs'?'block':'none');
-        document.querySelectorAll('.board-btn').forEach(b=>b.classList.toggle('active',b.dataset.board==='hs'));
-      }
-      if(typeof window.switchTool==='function') window.switchTool('ledger');
-      else {
-        document.querySelectorAll('.tool-btn').forEach(b=>b.classList.toggle('active',b.dataset.tool==='ledger'));
-        document.querySelectorAll('#board-hs .tool-panel').forEach(p=>p.classList.toggle('active',p.dataset.tool==='ledger'));
-      }
-    } catch(e){ console.error('H.S. startup display failed',e); }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
   }
-  function run(){ repairMenus(); showHS(); }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run,{once:true}); else run();
-  window.addEventListener('load',function(){ setTimeout(run,250); });
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
 })();
 </script>
 
@@ -2461,7 +2463,72 @@ function hsPrintTeacherDutyDeclaration(){
   const c={venue:'TALDANGRA Examination Centre',venueCode:'2206',date:'',day:''};
   const body=`<h3>ON DUTY DECLARATION</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><p>I, Sri / Smt. <b>${esc(rec.name)}</b> of <b>${esc(school)}</b> was engaged with examination duty related to Semester-III of H.S. Examination, 2027 on the following date(s):</p><table><tr><th>Sl.</th><th>Date</th><th>Day</th><th>Venue</th><th>Subject(s)</th></tr>${rows}</table><p>Signature of the applicant with date: __________________________________</p><p>Mobile No.: ______________________________</p><p>The above mentioned day(s) may be treated as &ldquo;ON DUTY&rdquo; in respect of Sri/Smt. <b>${esc(rec.name)}</b> of <b>${esc(school)}</b>.</p><p>Signature of Convenor / DI of Schools (SE) with date: ______________________________</p>`;
   const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
-  w.document.write(`<!doctype html><html><head><title>ON DUTY DECLARATION — ${esc(rec.name)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.write(`<!doctype html><html><head><title>ON DUTY DECLARATION — ${esc(rec.name)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 /* ================================================================
@@ -2575,7 +2642,72 @@ function hsCertMetaTableHtml(refSuffix){
 function hsCertOpenWindow(title,school,bodyHtml){
   const esc=hsEscapeFormText;
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for form printing.');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)} — ${esc(school)}</title><style>${hsCertLetterCss()}</style></head><body><div class="cert-wrap">${bodyHtml}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)} — ${esc(school)}</title><style>${hsCertLetterCss()}</style></head><body><div class="cert-wrap">${bodyHtml}</div><script>window.onload=()=>window.print();<\/script>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 function hsPrintCheckedTeachersDutyCertificate(){
@@ -2645,7 +2777,72 @@ function hsOpenMultiFormWindow(venue,dates,types){
 @page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#222;background:#fff}.page{page-break-after:always;min-height:100vh;position:relative}.venue-official-page{width:100%;padding:15mm 11mm 10mm}.venue-logo-wrap{text-align:center;margin:0 0 4mm}.venue-logo{width:25mm;height:25mm;object-fit:contain}.venue-main-title{text-align:center;font-size:16pt;font-weight:700;text-decoration:underline;margin:0 0 4mm}.venue-subtitle{text-align:center;font-size:9pt;font-weight:700;line-height:1.3;margin-bottom:5mm}.venue-meta{display:flex;justify-content:space-between;font-size:10.5pt;font-weight:600;margin:0 0 3mm}.venue-meta>div{width:48%;white-space:nowrap}.venue-data-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.2pt}.venue-data-table th,.venue-data-table td{border:1px solid #555;padding:1.5mm 1mm;text-align:center;vertical-align:middle}.venue-data-table th{font-weight:700}.venue-data-table .hall-col{width:5%}.venue-data-table .inv-col{width:13%}.venue-data-table .sig-col{width:11%}.venue-data-table tbody td{height:10mm}.venue-notes{font-size:8pt;line-height:1.45;margin-top:2.5mm}.venue-signature{text-align:right;margin-top:7mm;margin-right:4mm;font-size:8.5pt;line-height:1.4}.seal-official-page{width:100%;padding:15mm 20mm 12mm}.seal-logo-wrap{text-align:center;margin-bottom:2mm}.seal-logo{width:22mm;height:22mm;object-fit:contain}.seal-title{text-align:center;font-size:15pt;font-weight:700;margin-bottom:5mm}.seal-subtitle{text-align:center;font-size:11pt;font-weight:700;margin-bottom:4mm}.seal-box{border:1px solid #555;padding:4mm 5mm 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;line-height:1.65}.seal-box p{margin:0 0 5mm}.write-line{display:inline-block;min-width:105mm;border-bottom:1px solid #777;vertical-align:bottom}.short-line{display:inline-block;min-width:32mm;border-bottom:1px solid #777;text-align:center}.seal-person-table{width:100%;border-collapse:collapse;margin-top:2mm;font-size:10pt;line-height:1.1}.seal-person-table th,.seal-person-table td{border:1px solid #555;padding:1.7mm;text-align:left;height:11mm}.seal-person-table th{text-align:center;font-weight:700}.seal-person-table th:first-child,.seal-person-table td:first-child{width:8%}.seal-person-table th:nth-child(2){width:43%}.seal-person-table th:nth-child(3){width:18%}.seal-person-table th:nth-child(4){width:31%}.seal-meta{display:flex;justify-content:space-between;margin:8mm 0 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt}.seal-meta.single{display:block;margin-top:6mm}.seal-signature{text-align:center;margin-top:20mm;font-family:Georgia,'Times New Roman',serif;font-size:10pt}.generic-page{padding:12mm}.generic-page .official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.generic-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #555;padding:6px;vertical-align:top}th{font-weight:700}.sig{margin-top:35px;display:flex;justify-content:space-between}
 ${HS_VS_LAND_CSS}
 ${typeof HS_OFFICIAL_CSS==='string'?HS_OFFICIAL_CSS:''}
-</style></head><body>${typeof hsFormsToolbar==='function'?hsFormsToolbar(types):hsVsToolbar()}${pages.join('')}</body></html>`); w.document.close();
+</style></head><body>${typeof hsFormsToolbar==='function'?hsFormsToolbar(types):hsVsToolbar()}${pages.join('')}
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`); w.document.close();
 }
 
 
@@ -3929,7 +4126,72 @@ function hsCertOpenMulti(title,bodies){
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for form printing.');
   const pages=bodies.map(b=>`<div class="cert-wrap">${b}</div>`).join('');
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${hsCertLetterCss()}
-@media print{.cert-wrap{margin:0!important;min-height:274mm!important;page-break-after:always}.cert-wrap:last-child{page-break-after:auto}}</style></head><body>${pages}<script>window.onload=()=>window.print();<\/script></body></html>`);
+@media print{.cert-wrap{margin:0!important;min-height:274mm!important;page-break-after:always}.cert-wrap:last-child{page-break-after:auto}}</style></head><body>${pages}<script>window.onload=()=>window.print();<\/script>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 function hsEntryPrintSchoolCert(all){
@@ -5263,7 +5525,72 @@ td.l{text-align:left;font-weight:600}td.rn{font-weight:700;font-size:8pt}
 [contenteditable]{outline:none}
 @media screen{body{background:#e5e7eb}.grp{background:#fff;padding:6mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>Room-wise Allotment of Invigilator — A4 Landscape. Heading lines are editable; edit R.N. / names in the tool itself.</span><button onclick="window.print()">Print</button></div>${body}</body></html>`);
+</style></head><body><div class="tb no-print"><span>Room-wise Allotment of Invigilator — A4 Landscape. Heading lines are editable; edit R.N. / names in the tool itself.</span><button onclick="window.print()">Print</button></div>${body}
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5436,7 +5763,72 @@ tbody tr{height:var(--rh,6.4mm);page-break-inside:avoid;break-inside:avoid}
 [contenteditable]{outline:none}
 @media screen{body{background:#e5e7eb}.pg{background:#fff;padding:10mm;margin:10px auto;max-width:210mm;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>${esc(note)}</span><button onclick="window.print()">Print</button></div>${body}</body></html>`);
+</style></head><body><div class="tb no-print"><span>${esc(note)}</span><button onclick="window.print()">Print</button></div>${body}
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5479,7 +5871,72 @@ tbody tr{height:7.5mm;page-break-inside:avoid;break-inside:avoid}
 <div class="vl" contenteditable="true">${venueLine}</div>
 <table><colgroup><col style="width:6%"><col style="width:29%"><col style="width:31%"><col style="width:34%"></colgroup>
 <thead><tr><th>Sl.No</th><th>Name of the Invigilator(s)</th><th>Invigilator's School Name</th><th>Signature</th></tr></thead>
-<tbody>${trs}</tbody></table></div></body></html>`);
+<tbody>${trs}</tbody></table></div>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5634,7 +6091,72 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff}
       <div class="seal">With Official seal</div>
     </div>
   </div>
-</div></body></html>`);
+</div>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5748,7 +6270,72 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
 [contenteditable]{outline:none}
 @media screen{body{background:#cbd5e1}.sheet{margin:10px auto;box-shadow:0 2px 10px rgba(0,0,0,.3)}[contenteditable]:hover{background:#fef9c3}[contenteditable]:focus{background:#dbeafe}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>Insured Speed Post covers — ${dates.length} page(s), A4 colour. <u>Click any line to edit</u>. Parcel limit 10 kg (8–10 kg): print one copy per parcel and fill PARCEL NO. Then</span><button onclick="window.print()">Print</button></div>${pages}</body></html>`);
+</style></head><body><div class="tb no-print"><span>Insured Speed Post covers — ${dates.length} page(s), A4 colour. <u>Click any line to edit</u>. Parcel limit 10 kg (8–10 kg): print one copy per parcel and fill PARCEL NO. Then</span><button onclick="window.print()">Print</button></div>${pages}
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5895,7 +6482,72 @@ body.no-seal .doc-seal{display:none}
 @media screen{body{background:#cbd5e1}.sheet{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 10px rgba(0,0,0,.3);height:auto;min-height:271mm;width:210mm}[contenteditable]:hover{background:#fef9c3}[contenteditable]:focus{background:#dbeafe}.sigw{margin-top:8mm}}
 @media print{.no-print{display:none!important}}
 ${typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:''}
-</style></head><body><div class="tb no-print"><span>Despatch Report Form 3A (AP) [SEM-III] &mdash; ${pageCount} page(s) for ${dates.length} day(s), A4. Centre, dates, post office and SUBJECT CODES are auto-filled; type packets, top-sheet numbers, boxes and receipt in the boxes (large font). <u>Click any line to edit</u>.</span><label><input type="checkbox" checked onchange="document.body.classList.toggle('no-seal',!this.checked)"> Round Centre seal</label><button onclick="window.print()">Print</button></div>${pages}</body></html>`);
+</style></head><body><div class="tb no-print"><span>Despatch Report Form 3A (AP) [SEM-III] &mdash; ${pageCount} page(s) for ${dates.length} day(s), A4. Centre, dates, post office and SUBJECT CODES are auto-filled; type packets, top-sheet numbers, boxes and receipt in the boxes (large font). <u>Click any line to edit</u>.</span><label><input type="checkbox" checked onchange="document.body.classList.toggle('no-seal',!this.checked)"> Round Centre seal</label><button onclick="window.print()">Print</button></div>${pages}
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -6046,7 +6698,72 @@ tr.tot td{background:var(--t);font-weight:700;border-top:.5mm solid var(--a)}
 <tr class="tot"><td colspan="2" style="text-align:right">TOTAL &nbsp;(${E(cand)} candidates @ Rs. ${rate}/- per head)</td><td class="n">${rows.reduce((x,r)=>x+r.m,0)}</td><td class="n">${rows.reduce((x,r)=>x+r.f,0)}</td><td class="n">${E(cand)}</td><td class="n">${E(amt)}.00</td></tr></tbody></table>
 <div class="ft"><div class="sl"><div class="sline">Depositor Signature</div></div><div class="sealbox"><img src="${seal}" alt=""></div><div class="sg">${signBlk}${signOn?'':'<div style="font-weight:700">Officer-In-Charge / Centre Secretary</div>'}</div></div>
 <div class="note">This is a computer-generated receipt, valid with the Centre seal and signature.</div></div>
-</div></div></div></body></html>`);
+</div></div></div>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -6410,7 +7127,72 @@ var SZ=${sizesJson};
 function setShow(v){var b=document.body;b.classList.remove('only-env','only-sp');if(v==='env')b.classList.add('only-env');if(v==='sp')b.classList.add('only-sp');}
 function setSize(k){var s=SZ[k];document.getElementById('envPage').textContent='@page env{size:'+s.w+'mm '+s.h+'mm;margin:0}';var r=document.documentElement.style;r.setProperty('--ew',s.w+'mm');r.setProperty('--eh',s.h+'mm');r.setProperty('--u',(s.w/220).toFixed(3));}
 document.getElementById('showSel').value='${which==='env'?'env':which==='sp'?'sp':'both'}';
-<\/script></body></html>`);
+<\/script>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 hsPrintSpeedPost=function(mode){ hsPrintCovers(mode,'sp'); };
@@ -6781,7 +7563,72 @@ function hsConfPrint(){
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
   const html=pg.outerHTML.replace(/\scontenteditable="true"/g,'');
   const css=document.getElementById('confReportCss').textContent;
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Confidential Report \u2014 H.S. 2027 [SEM-III] \u2014 Centre 2206</title><style>@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}body{margin:0;background:#fff}.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}.tb label{font-weight:600;cursor:pointer}</style><style>'+css+TF_DOC_SEAL_CSS+'</style><style>.cr-page{width:194mm;max-width:none;margin:0 auto;padding:6mm;border:1mm double #1e3a8a;box-shadow:none}body.no-seal .doc-seal{display:none}@media screen{body{background:#e5e7eb}.cr-page{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}}@media print{.no-print{display:none!important}}</style></head><body><div class="tb no-print"><span>Confidential Report \u2014 A4 portrait. Use the tool to change wording or figures.</span><label><input type="checkbox" checked onchange="document.body.classList.toggle(\'no-seal\',!this.checked)"> Round Centre seal</label><label><input type="checkbox" onchange="document.getElementById(\'hs_confPage\').classList.toggle(\'office-compact\',this.checked)"> Office view (compact, single-page share)</label><button onclick="window.print()">Print</button></div>'+html+'</body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Confidential Report \u2014 H.S. 2027 [SEM-III] \u2014 Centre 2206</title><style>@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}body{margin:0;background:#fff}.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}.tb label{font-weight:600;cursor:pointer}</style><style>'+css+TF_DOC_SEAL_CSS+'</style><style>.cr-page{width:194mm;max-width:none;margin:0 auto;padding:6mm;border:1mm double #1e3a8a;box-shadow:none}body.no-seal .doc-seal{display:none}@media screen{body{background:#e5e7eb}.cr-page{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}}@media print{.no-print{display:none!important}}</style></head><body><div class="tb no-print"><span>Confidential Report \u2014 A4 portrait. Use the tool to change wording or figures.</span><label><input type="checkbox" checked onchange="document.body.classList.toggle(\'no-seal\',!this.checked)"> Round Centre seal</label><label><input type="checkbox" onchange="document.getElementById(\'hs_confPage\').classList.toggle(\'office-compact\',this.checked)"> Office view (compact, single-page share)</label><button onclick="window.print()">Print</button></div>'+html+'
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 document.addEventListener('input',function(ev){
@@ -6792,7 +7639,72 @@ document.addEventListener('input',function(ev){
 </script>
 <!-- ============================================================
      RECEIPT PATCH  —  paste this whole block into your index.html
-     just BEFORE the final </body> tag (after the last </script>).
+     just BEFORE the final 
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body> tag (after the last </script>).
      1) Adds "Signature of Depositor" to the COUNTERFOIL (H.S. + Madhyamik)
      2) Rebuilds "Print Receipt — A4 Landscape" so nothing is cut off:
         real 6 mm page margin, one page only, each half auto-shrinks to fit.
@@ -6880,7 +7792,72 @@ hsPrintReceiptLandscape=function(pfx){
   ' });'+
   '}'+
   'window.addEventListener("load",fit); window.addEventListener("beforeprint",fit);'+
-  '<\/script></body></html>');
+  '<\/script>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 };
 </script>
@@ -7257,7 +8234,72 @@ function sbPrint(b,what){
     '@media print{.no-print{display:none!important}.sb-sheet{margin:0;box-shadow:none}.sb-letter{margin:0;box-shadow:none;width:auto;padding:0}}'+
     '</style></head><body><div class="tb no-print"><span>'+ttl+' \u2014 A4. Print on plain / sticker paper (scale 100%).</span>'+
     '<label><input type="checkbox" checked onchange="document.body.classList.toggle(\'no-seal\',!this.checked)"> Round Centre seal</label>'+
-    '<button onclick="window.print()">Print</button></div>'+body+'</body></html>');
+    '<button onclick="window.print()">Print</button></div>'+body+'
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 
@@ -7512,7 +8554,72 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
   window.cwPrint=function(b,mode){
     sbLoad();let body=allPages(b,mode);const w=window.open('','_blank');if(!w)return alert('Please allow pop-ups for printing.');
     const title='TALDANGRA CENTRE 2206 — '+mode.toUpperCase();
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>'+CSS+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+body+'</body></html>');w.document.close();
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>'+CSS+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+body+'
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');w.document.close();
   };
   const oldRender=window.sbRender;window.sbRender=function(){oldRender();setTimeout(()=>{controls('hs');controls('mp');cwSync('hs');cwSync('mp');},20)};
   const oldPaint=window.sbPaint;window.sbPaint=function(b){oldPaint(b);setTimeout(()=>{controls(b);cwSync(b)},0)};
@@ -7665,7 +8772,72 @@ window.mpPrintCentreForm = function(type){
             '<b>( Signature of Venue Supervisor with Date &amp; Seal )</b>' +
           '</div>' +
         '</div>' +
-      '</div></body></html>');
+      '</div>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
     w.document.close();
     return;
   }
@@ -7744,7 +8916,72 @@ window.mpPrintCentreForm = function(type){
       '<span>Signature of Venue Supervisor (' + esc(venueCode) + ')</span>' +
       '<span>Centre Secretary / Officer-in-Charge (2206)</span>' +
     '</div>' +
-  '</body></html>');
+  '
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w2.document.close();
 };
 
@@ -7816,7 +9053,72 @@ window.mpPrintSpeedPost = function(scope){
   var w = window.open('','_blank'); if(!w) return;
   w.document.write('<!doctype html><html><head><title>WBBSE Insured Speed Post Covers</title><style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;margin:0}@media print{.no-print{display:none!important}}</style></head><body>' +
     '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;align-items:center;"><span><b>WBBSE Answer Script Parcel Covers</b> (Editable before printing)</span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:6px 14px;border-radius:4px;font-weight:700;cursor:pointer;">Print Cover(s)</button></div>' +
-    pagesHtml + '</body></html>');
+    pagesHtml + '
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 };
 
@@ -7876,7 +9178,72 @@ window.mpPrintDespatch = function(scope){
   var w = window.open('','_blank'); if(!w) return;
   w.document.write('<!doctype html><html><head><title>WBBSE Despatch Report Form</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;margin:0}@media print{.no-print{display:none!important}}</style></head><body>' +
     '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;align-items:center;"><span><b>WBBSE Despatch Report Form</b></span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:6px 14px;border-radius:4px;font-weight:700;cursor:pointer;">Print Despatch Report</button></div>' +
-    pagesHtml + '</body></html>');
+    pagesHtml + '
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 };
 
@@ -7905,7 +9272,72 @@ window.mpRdPrintDeclaration = function(){
     '</tbody></table>' +
     '<div style="display:flex;justify-content:space-between;margin-top:14mm;font-weight:700;position:relative;">' + mpSealHtml(22, 'left:44%;top:-8mm;') +
       '<span>Venue Supervisor (' + hsEscapeFormText(info.code) + ')</span><span>Centre Secretary / Officer-in-Charge (2206)</span>' +
-    '</div></body></html>');
+    '</div>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 };
 
@@ -7932,7 +9364,72 @@ window.mpRdPrintSpecimenSignature = function(){
     '</tbody></table>' +
     '<div style="display:flex;justify-content:space-between;margin-top:14mm;font-weight:700;position:relative;">' + mpSealHtml(22, 'left:44%;top:-8mm;') +
       '<span>Venue Supervisor (' + hsEscapeFormText(info.code) + ')</span><span>Centre Secretary / Officer-in-Charge (2206)</span>' +
-    '</div></body></html>');
+    '</div>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 };
 
@@ -7982,6 +9479,71 @@ window.mpConfRender = function(){
 
 try{ mpConfRender(); }catch(e){}
 </script>
+
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
 </body>
 </html>
 <script id="mpAutoInjectorAllInOne">
@@ -8726,7 +10288,72 @@ function mpPrintCentreForm(type){
   }
 
   var w = window.open('','_blank'); if(!w) return alert('Allow pop-ups to print.');
-  w.document.write('<!doctype html><html><head><title>'+esc(title)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:10.5pt;color:#111}.head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #222;padding:6px;text-align:left}th{background:#f1f5f9}.sig{margin-top:38px;display:flex;justify-content:space-between;font-weight:700}</style></head><body><div class="head"><div style="font-size:15pt;font-weight:800;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div><div>Nivedita Bhavan, DJ-8, Sector-II, Salt Lake, Kolkata - 700091</div><div style="font-weight:700;margin-top:4px;">Madhyamik Pariksha (Secondary Examination), '+esc(year)+'</div></div>'+body+'<div class="sig"><span>Venue Supervisor ('+esc(venueCode)+')</span><span>Centre Secretary / Officer-in-Charge (2206)</span></div><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>'+esc(title)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:10.5pt;color:#111}.head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #222;padding:6px;text-align:left}th{background:#f1f5f9}.sig{margin-top:38px;display:flex;justify-content:space-between;font-weight:700}</style></head><body><div class="head"><div style="font-size:15pt;font-weight:800;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div><div>Nivedita Bhavan, DJ-8, Sector-II, Salt Lake, Kolkata - 700091</div><div style="font-weight:700;margin-top:4px;">Madhyamik Pariksha (Secondary Examination), '+esc(year)+'</div></div>'+body+'<div class="sig"><span>Venue Supervisor ('+esc(venueCode)+')</span><span>Centre Secretary / Officer-in-Charge (2206)</span></div><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpGenerateSelectedDayForms(){ mpPrintCentreForm('venue'); }
@@ -8739,7 +10366,72 @@ function mpPrintSpeedPost(scope){
   var date = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
   var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>WBBSE Answer Script Packet Cover</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;border:3px double #000;padding:14mm}</style></head><body><h1 style="text-align:center;margin:0;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h1><h2 style="text-align:center;margin:6px 0 18px;">MADHYAMIK PARIKSHA ANSWER SCRIPT PARCEL</h2><p style="font-size:14pt;"><b>Exam Date:</b> '+hsEscapeFormText(item.date)+' ('+hsEscapeFormText(item.day)+') &nbsp;&nbsp;|&nbsp;&nbsp; <b>Subject:</b> '+hsEscapeFormText(item.sub)+'</p><p style="font-size:14pt;"><b>From:</b> Centre Secretary / Venue Supervisor, '+hsEscapeFormText(venue)+' (Venue Code: '+hsEscapeFormText(venueCode)+', Centre Code: 2206), P.O. Taldangra, Dist. Bankura, PIN-722152</p><p style="font-size:14pt;"><b>To:</b> The Deputy Secretary / Regional Officer, W.B.B.S.E. Regional Office</p><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>WBBSE Answer Script Packet Cover</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;border:3px double #000;padding:14mm}</style></head><body><h1 style="text-align:center;margin:0;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h1><h2 style="text-align:center;margin:6px 0 18px;">MADHYAMIK PARIKSHA ANSWER SCRIPT PARCEL</h2><p style="font-size:14pt;"><b>Exam Date:</b> '+hsEscapeFormText(item.date)+' ('+hsEscapeFormText(item.day)+') &nbsp;&nbsp;|&nbsp;&nbsp; <b>Subject:</b> '+hsEscapeFormText(item.sub)+'</p><p style="font-size:14pt;"><b>From:</b> Centre Secretary / Venue Supervisor, '+hsEscapeFormText(venue)+' (Venue Code: '+hsEscapeFormText(venueCode)+', Centre Code: 2206), P.O. Taldangra, Dist. Bankura, PIN-722152</p><p style="font-size:14pt;"><b>To:</b> The Deputy Secretary / Regional Officer, W.B.B.S.E. Regional Office</p><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpPrintDespatch(scope){ mpPrintSpeedPost(scope); }
@@ -8790,7 +10482,72 @@ function mpRdPrint(){
   var rows = order ? hsSchoolWiseSort(mpRdDB[v].rows.slice()) : mpRdDB[v].rows.slice();
   var dates = mpOfficialExamRoutineTimeline;
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Madhyamik Room-wise Invigilator Allotment</title><style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;font-size:9pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #222;padding:4px;text-align:center}th{background:#f1f5f9}</style></head><body><h3 style="text-align:center;margin:0 0 6px;">W.B.B.S.E. MADHYAMIK PARIKSHA — ROOM-WISE ALLOTMENT OF INVIGILATORS — '+hsEscapeFormText(info.name)+' ('+hsEscapeFormText(info.code)+')</h3><table><thead><tr><th>Sl</th><th>Invigilator Name</th><th>School</th>'+dates.map(function(d){return '<th>'+d.date+'<br><small>'+d.day+'</small></th>';}).join('')+'</tr></thead><tbody>'+rows.filter(function(r){return r.n;}).map(function(r,i){return '<tr><td>'+(i+1)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.n)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.s)+'</td>'+dates.map(function(d){return '<td><b>'+hsEscapeFormText((r.d&&r.d[d.date])||'')+'</b></td>';}).join('')+'</tr>';}).join('')+'</tbody></table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Madhyamik Room-wise Invigilator Allotment</title><style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;font-size:9pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #222;padding:4px;text-align:center}th{background:#f1f5f9}</style></head><body><h3 style="text-align:center;margin:0 0 6px;">W.B.B.S.E. MADHYAMIK PARIKSHA — ROOM-WISE ALLOTMENT OF INVIGILATORS — '+hsEscapeFormText(info.name)+' ('+hsEscapeFormText(info.code)+')</h3><table><thead><tr><th>Sl</th><th>Invigilator Name</th><th>School</th>'+dates.map(function(d){return '<th>'+d.date+'<br><small>'+d.day+'</small></th>';}).join('')+'</tr></thead><tbody>'+rows.filter(function(r){return r.n;}).map(function(r,i){return '<tr><td>'+(i+1)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.n)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.s)+'</td>'+dates.map(function(d){return '<td><b>'+hsEscapeFormText((r.d&&r.d[d.date])||'')+'</b></td>';}).join('')+'</tr>';}).join('')+'</tbody></table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpRdPrintDeclaration(){ mpRdPrint(); }
@@ -8930,7 +10687,72 @@ function mpPrintTeacherDutyDeclaration(){
   var rec = (mpCollectFeederSchoolDutyDays()[school]||{})[name.toUpperCase()];
   if(!rec) return;
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>WBBSE On Duty Declaration — '+hsEscapeFormText(rec.name)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h2><h3 style="text-align:center;text-decoration:underline;">ON DUTY DECLARATION — MADHYAMIK PARIKSHA</h3><p>Certified that Sri / Smt. <b>'+hsEscapeFormText(rec.name)+'</b> of <b>'+hsEscapeFormText(school)+'</b> performed invigilation duty at Taldangra Madhyamik Examination Centre (2206) on:</p><table><tr><th>Sl</th><th>Date</th><th>Day</th><th>Subject</th></tr>'+rec.days.map(function(d,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(d.date)+'</td><td>'+hsEscapeFormText(d.day)+'</td><td>'+hsEscapeFormText(d.subject)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>WBBSE On Duty Declaration — '+hsEscapeFormText(rec.name)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h2><h3 style="text-align:center;text-decoration:underline;">ON DUTY DECLARATION — MADHYAMIK PARIKSHA</h3><p>Certified that Sri / Smt. <b>'+hsEscapeFormText(rec.name)+'</b> of <b>'+hsEscapeFormText(school)+'</b> performed invigilation duty at Taldangra Madhyamik Examination Centre (2206) on:</p><table><tr><th>Sl</th><th>Date</th><th>Day</th><th>Subject</th></tr>'+rec.days.map(function(d,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(d.date)+'</td><td>'+hsEscapeFormText(d.day)+'</td><td>'+hsEscapeFormText(d.subject)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpPrintCheckedTeachersDutyCertificate(){
@@ -8940,7 +10762,72 @@ function mpPrintCheckedTeachersDutyCertificate(){
   if(!school || !checked.length) return alert('Select a school and tick at least one teacher.');
   var x = mpOfficialExamRoutineTimeline[idx];
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><p>Certified that the following teacher(s) of your institution performed invigilation duty on <b>'+hsEscapeFormText(x.date)+' ('+hsEscapeFormText(x.day)+')</b>:</p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Date</th></tr>'+checked.map(function(n,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(n)+'</td><td>'+hsEscapeFormText(x.date)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><p>Certified that the following teacher(s) of your institution performed invigilation duty on <b>'+hsEscapeFormText(x.date)+' ('+hsEscapeFormText(x.day)+')</b>:</p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Date</th></tr>'+checked.map(function(n,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(n)+'</td><td>'+hsEscapeFormText(x.date)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpPrintSchoolWiseHOICertificate(){
@@ -8950,7 +10837,72 @@ function mpPrintSchoolWiseHOICertificate(){
   var rec = mpCollectFeederSchoolDutyDays()[school];
   if(!rec) return alert('No teachers entered for this school in the Madhyamik Entry Sheet.');
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Consolidated Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">CONSOLIDATED PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Dates Served</th><th>Total Days</th></tr>'+Object.keys(rec).map(function(k,i){var t=rec[k]; return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(t.name)+'</td><td>'+t.days.map(function(d){return d.date;}).join(', ')+'</td><td>'+t.days.length+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Consolidated Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">CONSOLIDATED PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Dates Served</th><th>Total Days</th></tr>'+Object.keys(rec).map(function(k,i){var t=rec[k]; return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(t.name)+'</td><td>'+t.days.map(function(d){return d.date;}).join(', ')+'</td><td>'+t.days.length+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpEntryPrintSchoolCert(){ mpPrintSchoolWiseHOICertificate(); }
@@ -8972,7 +10924,72 @@ function mpConfPrint(){
   mpConfRender();
   var html = document.getElementById('mp_confPreview').innerHTML || '';
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Madhyamik Confidential Report</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;font-size:9.5pt}table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #000;padding:5px;text-align:center}th{background:#f1f5f9}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Madhyamik Confidential Report</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;font-size:9.5pt}table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #000;padding:5px;text-align:center}th{background:#f1f5f9}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpConfReset(){ mpConfRender(); }
@@ -8991,7 +11008,72 @@ function mpSbRender(){
 function mpSbPrintLetter(){
   mpSbRender();
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Madhyamik Submission Letter</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body>'+document.getElementById('mp_sbPreview').innerHTML+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Madhyamik Submission Letter</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body>'+document.getElementById('mp_sbPreview').innerHTML+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpSbPrintBoxLabels(){
@@ -8999,7 +11081,72 @@ function mpSbPrintBoxLabels(){
   var w = window.open('','_blank'); if(!w) return;
   w.document.write('<!doctype html><html><head><title>Madhyamik Box Labels</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif}.lbl{border:3px solid #000;padding:12mm;margin-bottom:10mm;page-break-inside:avoid}</style></head><body>' +
     ['VENUE-1: TALDANGRA FULMATI HIGH SCHOOL [H.S.] (114071)','VENUE-2: TALDANGRA GIRLS\' HIGH SCHOOL [H.S.] (114200)'].map(function(v){return '<div class="lbl"><h2 style="margin:0;text-align:center;">W.B.B.S.E. MADHYAMIK PARIKSHA — '+hsEscapeFormText(year)+'</h2><h3 style="text-align:center;margin:8px 0;">CENTRE: TALDANGRA &bull; CENTRE CODE: 2206</h3><p style="font-size:14pt;text-align:center;font-weight:700;">'+v+'</p></div>';}).join('') +
-    '<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+    '<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FINAL UI RECOVERY PATCH: reliable board/tool buttons and H.S. first view -->
+<script id="tfhs-ui-recovery-patch">
+(function(){
+  function activateBoard(board){
+    if(!['hs','mp'].includes(board)) board='hs';
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board===board);
+      b.setAttribute('aria-pressed', b.dataset.board===board ? 'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      var show=p.dataset.board===board;
+      p.style.display=show?'block':'none';
+      p.classList.toggle('active-board',show);
+    });
+    var current=document.querySelector('.tool-btn.active');
+    var tool=current && current.dataset.tool ? current.dataset.tool : 'ledger';
+    activateTool(tool);
+    var lbl=document.querySelector('.tool-btn[data-tool="forms"]');
+    if(lbl) lbl.innerHTML='<span class="dot"></span>'+(board==='mp'?'WBBSE Centre Forms':'WBCHSE Centre Forms');
+  }
+  function activateTool(tool){
+    if(!tool) tool='ledger';
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.tool===tool);
+      b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
+    });
+    document.querySelectorAll('.board-pane').forEach(function(pane){
+      pane.querySelectorAll('.tool-panel').forEach(function(panel){
+        panel.classList.toggle('active',panel.dataset.tool===tool);
+      });
+    });
+  }
+  // Replace global functions so both inline onclick and delegated clicks use the same code.
+  window.switchBoard=activateBoard;
+  window.switchTool=activateTool;
+  // Backup click delegation: repairs cases where inline handlers were blocked/overridden.
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest && ev.target.closest('.board-btn');
+    if(b && b.dataset.board){ ev.preventDefault(); activateBoard(b.dataset.board); return; }
+    var t=ev.target.closest && ev.target.closest('.tool-btn');
+    if(t && t.dataset.tool){ ev.preventDefault(); activateTool(t.dataset.tool);
+      try{
+        if(t.dataset.tool==='roomduty'){ if(typeof hsRdRender==='function') hsRdRender(); }
+        if(t.dataset.tool==='confreport'){ if(typeof hsConfRender==='function') hsConfRender(); }
+        if(t.dataset.tool==='submission'){ if(typeof sbRender==='function') sbRender(); }
+        if(t.dataset.tool==='forms'){ if(typeof hsRenderDaySubjectSelector==='function') hsRenderDaySubjectSelector(); if(typeof mpRenderDaySubjectSelector==='function' && document.getElementById('board-mp').style.display!=='none') mpRenderDaySubjectSelector(); }
+      }catch(e){ console.warn('Panel refresh:',e); }
+    }
+  },true);
+  function init(){
+    activateBoard('hs');
+    activateTool('ledger');
+    // Re-apply after the app's cloud hydration/startup has had a chance to finish.
+    setTimeout(function(){
+      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      activateTool('ledger');
+      try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
+      try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
+    },1800);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 
