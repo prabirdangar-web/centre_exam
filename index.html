@@ -7472,3 +7472,1056 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
 </script>
 </body>
 </html>
+<script id="mpAutoInjectorAllInOne">
+(function(){
+  /* ================================================================
+     1. AUTO-INJECT ALL MADHYAMIK HTML PANELS ON PAGE LOAD
+     ================================================================ */
+  function injectMadhyamikDOM(){
+    const boardMp = document.getElementById('board-mp');
+    if(!boardMp || document.getElementById('mp-forms')) return;
+
+    // A. Inject Centre Registry + Excel/Word/PDF Importer into #mp-ledger
+    const mpLedger = document.getElementById('mp-ledger');
+    const mpKpi = mpLedger ? mpLedger.querySelector('.kpi-grid') : null;
+    if(mpLedger && mpKpi && !document.getElementById('mp_excelStatus')){
+      const regDiv = document.createElement('div');
+      regDiv.className = 'center-registry no-print';
+      regDiv.innerHTML = [
+        '<div class="center-registry-title">Examination Centre &amp; Venue Registry — Madhyamik Pariksha (WBBSE)</div>',
+        '<div class="center-registry-grid">',
+          '<div class="center-card"><strong>Centre Name / Code</strong><span>TALDANGRA — 2206</span></div>',
+          '<div class="center-card"><strong>Venue-1</strong><span>TALDANGRA FULMATI HIGH SCHOOL [H.S.] — 114071</span></div>',
+          '<div class="center-card"><strong>Venue-2</strong><span>TALDANGRA GIRLS\' HIGH SCHOOL [H.S.] — 114200</span></div>',
+        '</div>',
+        '<div class="excel-import-row">',
+          '<div class="excel-status" id="mp_excelStatus">Import previous/current-year Madhyamik source from Excel (MP_REPORT ALL.xlsm), Word, or PDF while retaining the saved examination routine.</div>',
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">',
+            '<button class="btn btn-primary" onclick="document.getElementById(\'mp_excelImportHandler\').click()">Import Excel</button>',
+            '<button class="btn btn-primary" onclick="document.getElementById(\'mp_wordImportHandler\').click()">Import Word</button>',
+            '<button class="btn btn-primary" onclick="document.getElementById(\'mp_pdfImportHandler\').click()">Import PDF</button>',
+            '<input type="file" id="mp_excelImportHandler" accept=".xlsx,.xls,.xlsm" style="display:none" onchange="mpImportCurrentYearExcel(this)">',
+            '<input type="file" id="mp_wordImportHandler" accept=".docx" style="display:none" onchange="mpImportCurrentYearWord(this)">',
+            '<input type="file" id="mp_pdfImportHandler" accept=".pdf" style="display:none" onchange="mpImportCurrentYearPDF(this)">',
+          '</div>',
+        '</div>'
+      ].join('');
+      mpLedger.insertBefore(regDiv, mpKpi);
+    }
+
+    // B. Inject Feeder-School Invigilator Entry Sheet into #mp-requisition
+    const mpReqLetter = document.getElementById('requisitionLetterA4_mp');
+    if(mpReqLetter && !document.getElementById('mp_entrySheetContainer')){
+      const entryWrap = document.createElement('div');
+      entryWrap.className = 'table-container no-print';
+      entryWrap.innerHTML = [
+        '<div class="section-title">Invigilator Entry Sheet — Actual Allocation from Feeder Schools (Madhyamik)</div>',
+        '<div style="margin:-4px 0 12px;font-size:8.5pt;color:#475569;">Pick the feeder schools sending teachers for each Madhyamik date and enter how many each is sending. Tick the teachers serving on that date to drive the Participation Certificates and On Duty Declarations.</div>',
+        '<div style="margin:-4px 0 12px;">',
+          '<button type="button" class="btn btn-primary no-print" onclick="mpEntrySheetApplyDefaultAll()">Auto-Fill Default Feeder Split (All Dates)</button> ',
+          '<button type="button" class="btn btn-success no-print" onclick="mpEntryFillTeachersAll()">Add Teacher Names from Roster (All Dates)</button>',
+        '</div>',
+        '<div id="mp_entrySheetContainer"></div>',
+        '<div class="no-print" style="margin-top:14px;padding:12px 14px;border:1px solid var(--border-color);border-radius:8px;background:#f8fafc;">',
+          '<div style="font-weight:700;margin-bottom:4px;">Participation Certificates — Generated from Ticked Teachers Above</div>',
+          '<div class="control-deck" style="margin:0 0 10px;grid-template-columns:3fr 1.3fr 1.3fr;">',
+            '<div class="form-group"><label>School-wise Certificate</label><select id="mp_entCertSchool"><option value="">Select School</option></select></div>',
+            '<div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-success" style="width:100%;" onclick="mpEntryPrintSchoolCert(false)">Generate for This School</button></div>',
+            '<div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-primary" style="width:100%;" onclick="mpEntryPrintSchoolCert(true)">All Schools (1 Page Each)</button></div>',
+          '</div>',
+          '<div class="control-deck" style="margin:0 0 8px;grid-template-columns:3fr 1.3fr 1.3fr;">',
+            '<div class="form-group"><label>Teacher-wise Certificate</label><select id="mp_entCertTeacher"><option value="">Select Teacher</option></select></div>',
+            '<div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-success" style="width:100%;" onclick="mpEntryPrintTeacherCert(false)">Generate for This Teacher</button></div>',
+            '<div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-primary" style="width:100%;" onclick="mpEntryPrintTeacherCert(true)">All Teachers (1 Page Each)</button></div>',
+          '</div>',
+          '<div id="mp_entCertInfo" style="font-size:8.5pt;color:#475569;"></div>',
+        '</div>'
+      ].join('');
+      mpReqLetter.parentNode.insertBefore(entryWrap, mpReqLetter);
+    }
+
+    // C. Inject the 5 Missing Tool Panels (#mp-forms, #mp-dailyops, #mp-roomduty, #mp-confreport, #mp-submission) into #board-mp
+    const panelsWrapper = document.createElement('div');
+    panelsWrapper.innerHTML = [
+      '<!-- MP: WBBSE CENTRE FORMS -->',
+      '<div class="tool-panel app-shell" data-tool="forms" id="mp-forms">',
+        '<div class="dashboard-header no-print">',
+          '<div><h2>WBBSE Centre / Venue Forms — Madhyamik Pariksha (Secondary Examination)</h2>',
+          '<p>Auto-filled for TALDANGRA Centre 2206. Select applicable subjects for each examination day; forms are generated day-wise based on the saved programme.</p></div>',
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;">',
+            '<button class="btn btn-primary" onclick="mpPrintCentreForm(\'venue\')">Venue Supervisor Data Sheet</button>',
+            '<button class="btn btn-primary" onclick="mpPrintCentreForm(\'ra\')">R.A. Format</button>',
+            '<button class="btn btn-primary" onclick="mpPrintCentreForm(\'seal\')">Seal Opening Format</button>',
+            '<button class="btn btn-primary" onclick="mpPrintCentreForm(\'duty\')">On Duty Declaration</button>',
+            '<button class="btn btn-primary" onclick="mpPrintCentreForm(\'confidential\')">Confidential Format</button>',
+            '<button class="btn btn-success" onclick="mpPrintCovers(\'day\',\'both\')">Envelope + Speed Post — This Day</button>',
+            '<button class="btn btn-success" onclick="mpPrintCovers(\'all\',\'both\')">Envelope + Speed Post — All Days</button>',
+            '<button class="btn btn-primary" onclick="mpPrintSpeedPost(\'day\')">Speed Post Cover — This Day</button>',
+            '<button class="btn btn-primary" onclick="mpPrintSpeedPost(\'all\')">Speed Post Covers — All Days</button>',
+            '<button class="btn btn-primary" onclick="mpPrintDespatch(\'day\')">Despatch Report — This Day</button>',
+            '<button class="btn btn-primary" onclick="mpPrintDespatch(\'all\')">Despatch Reports — All Days</button>',
+          '</div>',
+        '</div>',
+        '<div class="table-container no-print" style="padding:16px;">',
+          '<h3 style="margin:0 0 8px;">Centre-wise Subject Allotment — Select Applicable Subjects for Each Day</h3>',
+          '<div class="control-deck" style="margin:0 0 12px;">',
+            '<div class="form-group"><label>Venue</label><select id="mp_formVenue" onchange="mpSetVenue(this.value);mpRenderDaySubjectSelector()"><option value="TFHS">VENUE-1 — TALDANGRA FULMATI HIGH SCHOOL [H.S.] — 114071</option><option value="TGHS">VENUE-2 — TALDANGRA GIRLS\' HIGH SCHOOL [H.S.] — 114200</option></select></div>',
+            '<div class="form-group"><label>Examination Day</label><select id="mp_formDay" onchange="mpRenderDaySubjectSelector()"></select></div>',
+            '<div class="form-group"><label>Day-wise Form Generation</label><button class="btn btn-success" style="width:100%;" onclick="mpGenerateSelectedDayForms()">Generate Selected Day Forms</button></div>',
+            '<div class="form-group"><label>All Selected Days</label><button class="btn btn-primary" style="width:100%;" onclick="mpGenerateAllSelectedDayForms()">Generate All Selected-Day Forms</button></div>',
+          '</div>',
+          '<div id="mp_dayDateSelector" style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc;margin-bottom:10px;"></div>',
+          '<div id="mp_daySubjectSelector" style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc;"></div>',
+        '</div>',
+        '<div class="table-container no-print" style="padding:16px;">',
+          '<h3 style="margin:0 0 8px;">On Duty Declaration — School-wise, Teacher-wise (All Duty Days)</h3>',
+          '<div class="control-deck" style="margin:0 0 6px;grid-template-columns:2fr 1fr 1fr;">',
+            '<div class="form-group"><label>Teacher (Grouped by Feeder School)</label><select id="mp_dutyTeacherSelect"><option value="">Select Teacher</option></select></div>',
+            '<div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%;" onclick="mpDutyPopulateTeacherSelect()">Refresh Teacher List</button></div>',
+            '<div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="mpPrintTeacherDutyDeclaration()">Generate On Duty Form</button></div>',
+          '</div>',
+        '</div>',
+        '<div class="table-container no-print" style="padding:16px;">',
+          '<h3 style="margin:0 0 8px;">Participation Certificate — School-wise, Day-wise (Tick Teachers)</h3>',
+          '<div class="control-deck" style="margin:0 0 10px;grid-template-columns:2fr 2fr 1fr;">',
+            '<div class="form-group"><label>Feeder School</label><select id="mp_certSchoolSelect" onchange="mpCertRenderTeacherCheckboxes()"><option value="">Select School</option></select></div>',
+            '<div class="form-group"><label>Examination Date</label><select id="mp_certDateSelect"></select></div>',
+            '<div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%;" onclick="mpCertPopulateSchools()">Refresh School List</button></div>',
+          '</div>',
+          '<div id="mp_certTeacherCheckboxes" style="border:1px solid #cbd5e1;border-radius:8px;padding:10px;background:#f8fafc;margin-bottom:10px;font-size:9pt;">Select a school to list its teachers.</div>',
+          '<button class="btn btn-success" onclick="mpPrintCheckedTeachersDutyCertificate()">Generate Participation Certificate for Selected Teachers</button>',
+        '</div>',
+        '<div class="table-container no-print" style="padding:16px;">',
+          '<h3 style="margin:0 0 8px;">Participation Certificate — School-wise (Consolidated After Exam)</h3>',
+          '<div class="control-deck" style="margin:0 0 6px;grid-template-columns:2fr 1fr;">',
+            '<div class="form-group"><label>Feeder School</label><select id="mp_hoiSchoolSelect"><option value="">Select School</option></select></div>',
+            '<div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="mpPrintSchoolWiseHOICertificate()">Generate Participation Certificate</button></div>',
+          '</div>',
+        '</div>',
+      '</div>',
+
+      '<!-- MP: DAILY OPS -->',
+      '<div class="tool-panel app-shell" data-tool="dailyops" id="mp-dailyops">',
+        '<div class="dashboard-header no-print">',
+          '<div><h2>Madhyamik Daily Subject-wise Examination Entry</h2><p>Manual day-to-day Question Paper / Answer Script serial allocation, requirement, fixed room placement, and examination-official names.</p></div>',
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;">',
+            '<button class="btn btn-success" onclick="mpDailyOpsSaveDay()">Save Day</button>',
+            '<button class="btn btn-primary" onclick="mpDailyOpsCopyPreviousDay()">Copy Previous Day</button>',
+            '<button class="btn btn-primary" onclick="mpDailyOpsLoadMasterSerials()">Load Master QP/Script</button>',
+            '<button class="btn btn-primary" onclick="mpPrintCentreForm(\'venue\')">V.S. Form — Selected Day</button>',
+            '<button class="btn btn-primary" onclick="mpDailyOpsSaveOfficialsTemplate()">Save Names for Next Days</button>',
+          '</div>',
+        '</div>',
+        '<div class="hs-dailyops-card no-print">',
+          '<div class="hs-dailyops-toolbar">',
+            '<div class="form-group"><label>Venue</label><select id="mp_opsVenue" onchange="mpSetVenue(this.value);mpDailyOpsRender()"><option value="TFHS">VENUE-1 [114071] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] — TALDANGRA GIRLS\' HIGH SCHOOL [H.S.]</option></select></div>',
+            '<div class="form-group"><label>Examination Day</label><select id="mp_opsDate" onchange="mpDailyOpsRender()"></select></div>',
+            '<div class="form-group"><label>Selected Subjects</label><div id="mp_opsSubjectCount" style="height:31px;display:flex;align-items:center;font-weight:700;padding:0 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f8fafc;">0</div></div>',
+            '<div class="form-group"><label>Day Status</label><div id="mp_opsDayStatus" style="height:31px;display:flex;align-items:center;font-weight:700;padding:0 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f8fafc;">Not saved</div></div>',
+          '</div>',
+        '</div>',
+        '<div class="hs-dailyops-card no-print" id="mp_quickEntryCard">',
+          '<h3 style="margin:0 0 6px;">Quick Subject Entry (Simplified)</h3>',
+          '<div class="hs-dailyops-toolbar" style="grid-template-columns:1.1fr 1.5fr 0.8fr 0.8fr 1fr 1fr;">',
+            '<div class="form-group"><label>Day</label><select id="mp_qeDay" onchange="mpQuickEntryDayChange()"></select></div>',
+            '<div class="form-group"><label>Subject</label><select id="mp_qeSubject" onchange="mpQuickEntrySubjectChange()"><option value="">Select Subject</option></select></div>',
+            '<div class="form-group"><label>Male</label><input type="number" min="0" id="mp_qeMale" oninput="mpQuickEntryRecalc()"></div>',
+            '<div class="form-group"><label>Female</label><input type="number" min="0" id="mp_qeFemale" oninput="mpQuickEntryRecalc()"></div>',
+            '<div class="form-group"><label>QP SL From</label><input type="text" id="mp_qeQpFrom" placeholder="Starting QP serial" oninput="mpQuickEntryRecalc()"></div>',
+            '<div class="form-group"><label>Script SL From</label><input type="text" id="mp_qeOmrFrom" placeholder="Starting Script serial" oninput="mpQuickEntryRecalc()"></div>',
+          '</div>',
+          '<div class="hs-save-strip" style="margin-top:8px;"><button class="btn btn-primary" onclick="mpQuickEntryFetchFromLedger()">Auto-Fetch Male/Female from Ledger</button></div>',
+          '<div class="hs-official-grid" style="margin-top:12px;">',
+            '<div class="form-group"><label>Total</label><div class="hs-auto-box" id="mp_qeTotal">0</div></div>',
+            '<div class="form-group"><label>QP SL To (Auto)</label><div class="hs-auto-box" id="mp_qeQpTo">&mdash;</div></div>',
+            '<div class="form-group"><label>QP Required (Auto)</label><div class="hs-auto-box" id="mp_qeQpReq">0</div></div>',
+            '<div class="form-group"><label>Packet / Pouch (Auto)</label><div class="hs-auto-box" id="mp_qeNtp">0</div></div>',
+            '<div class="form-group"><label>Script SL To (Auto)</label><div class="hs-auto-box" id="mp_qeOmrTo">&mdash;</div></div>',
+            '<div class="form-group"><label>Script Required (Auto)</label><div class="hs-auto-box" id="mp_qeOmrReq">0</div></div>',
+          '</div>',
+          '<div class="hs-save-strip">',
+            '<button class="btn btn-success" onclick="mpQuickEntrySaveSubject()">Save Subject</button>',
+            '<button class="btn btn-primary" onclick="mpQuickEntryClearForm()">Clear Form</button>',
+            '<span class="hs-dailyops-status" id="mp_qeStatus">Not saved</span>',
+          '</div>',
+        '</div>',
+        '<div class="hs-dailyops-card no-print">',
+          '<h3 style="margin:0 0 10px;">Examination Officials — Default Officials (WBBSE)</h3>',
+          '<div class="hs-official-grid">',
+            '<div class="form-group"><label>Venue Supervisor</label><input id="mp_opsVenueSupervisor" type="text" value="MAHIM KUMAR PAINE"></div>',
+            '<div class="form-group"><label>Centre Secretary</label><input id="mp_opsCentreSecretary" type="text" value="PRABIR KUMAR DANGAR"></div>',
+            '<div class="form-group"><label>Officer-in-Charge</label><input id="mp_opsCentreInCharge" type="text" value="DIPANKAR DAS"></div>',
+            '<div class="form-group"><label>Addl. Venue Supervisor</label><input id="mp_opsCouncilNominee" type="text" value="JOGJIBAN CHAKRABORTY"></div>',
+            '<div class="form-group"><label>R.A. / Additional Official</label><input id="mp_opsRA" type="text" placeholder="Enter name"></div>',
+            '<div class="form-group"><label>Other Examination Official</label><input id="mp_opsOtherOfficial" type="text" placeholder="Enter name"></div>',
+          '</div>',
+        '</div>',
+        '<div class="hs-room-card no-print">',
+          '<h3 style="margin:0 0 6px;">Fixed Examination Halls / Rooms &amp; Seat Capacity</h3>',
+          '<div class="hs-room-grid">',
+            '<div class="form-group"><label>Venue</label><select id="mp_roomVenue" onchange="mpSetVenue(this.value);mpRoomRender()"><option value="TFHS">VENUE-1 [114071] - TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] - TALDANGRA GIRLS\' HIGH SCHOOL [H.S.]</option></select></div>',
+            '<div class="form-group"><label>Hall / Room No.</label><input id="mp_roomNo" type="text" placeholder="e.g. Room-1 / Hall-01"></div>',
+            '<div class="form-group"><label>Fixed Seats</label><input id="mp_roomSeats" type="number" min="1" step="1" placeholder="e.g. 40"></div>',
+            '<div class="form-group"><label>Placement Basis</label><select id="mp_roomBasis"><option value="present">Present students</option><option value="enrolled">Enrolled students</option></select></div>',
+          '</div>',
+          '<div class="hs-room-actions">',
+            '<button class="btn btn-primary" onclick="mpRoomAdd()">Add / Save Room</button>',
+            '<button class="btn btn-success" onclick="mpRoomAutoPlace()">Auto Place Students</button>',
+            '<button class="btn btn-danger" onclick="mpRoomClearAllocations()">Clear Placement</button>',
+          '</div>',
+          '<div id="mp_roomList"></div>',
+          '<div id="mp_roomAllocationSummary" class="hs-allocation-summary">Enter fixed rooms first. Student placement will appear here after Auto Place Students.</div>',
+        '</div>',
+        '<div class="hs-dailyops-card no-print">',
+          '<h3 style="margin:0 0 8px;">Centre Subject-wise QP &amp; Answer Script Serial Master</h3>',
+          '<div class="hs-dailyops-toolbar" style="grid-template-columns:1.4fr 1fr 1fr auto;">',
+            '<div class="form-group"><label>Subject Name</label><input id="mp_masterSubjectName" type="text" placeholder="e.g. First Language / History"></div>',
+            '<div class="form-group"><label>QP Serial Start</label><input id="mp_masterQpFrom" type="text" placeholder="Starting QP serial"></div>',
+            '<div class="form-group"><label>Script Serial Start</label><input id="mp_masterOmrFrom" type="text" placeholder="Starting Script serial"></div>',
+            '<div class="form-group"><label>&nbsp;</label><button class="btn btn-success" style="width:100%;" onclick="mpMasterSaveSubject()">Save / Update</button></div>',
+          '</div>',
+        '</div>',
+        '<div class="hs-dailyops-card no-print">',
+          '<h3 style="margin:0 0 10px;">Subject-wise Question Paper &amp; Answer Script Serial Database</h3>',
+          '<div class="hs-dailyops-scroll">',
+            '<table class="hs-dailyops-table">',
+              '<thead><tr><th style="width:80px;">Hall / Room</th><th style="width:90px;">Manual Room</th><th style="width:150px;">Subject</th><th style="width:72px;">Male</th><th style="width:72px;">Female</th><th style="width:78px;">Total</th><th>ENTER QP SL FROM</th><th>AUTO QP SL TO</th><th>AUTO QP REQ</th><th>AUTO PACKET</th><th>ENTER SCRIPT SL FROM</th><th>AUTO SCRIPT SL TO</th><th>AUTO SCRIPT REQ</th><th style="width:110px;">Invigilator 1</th><th style="width:110px;">Invigilator 2</th></tr></thead>',
+              '<tbody id="mp_dailyOpsSubjectBody"></tbody>',
+            '</table>',
+          '</div>',
+        '</div>',
+      '</div>',
+
+      '<!-- MP: ROOM DUTY -->',
+      '<div class="tool-panel app-shell" data-tool="roomduty" id="mp-roomduty">',
+        '<div class="dashboard-header no-print">',
+          '<div><h2>Room-wise Allotment of Invigilator — Madhyamik Pariksha (WBBSE)</h2><p>Type each invigilator\'s Room No. (R.N.) against the Madhyamik examination date.</p></div>',
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;">',
+            '<button class="btn btn-success" onclick="mpRdPrint()">Print Allotment Chart (A4 Landscape)</button>',
+            '<button class="btn btn-success" onclick="mpRdPrintDeclaration()">Declaration (Compact A4)</button>',
+            '<button class="btn btn-success" onclick="mpRdPrintSpecimenSignature()">Specimen Signature List (Compact A4)</button>',
+            '<button class="btn btn-primary" onclick="mpRdAddRow()">+ Add Row</button>',
+            '<button class="btn btn-danger" onclick="mpRdClearRN()">Clear All R.N.</button>',
+          '</div>',
+        '</div>',
+        '<div class="hs-dailyops-card no-print">',
+          '<div class="hs-dailyops-toolbar" style="grid-template-columns:2fr 1.3fr 1.6fr;">',
+            '<div class="form-group"><label>Venue</label><select id="mp_rdVenue" onchange="mpSetVenue(this.value);mpRdRender()"><option value="TFHS">VENUE-1 [114071] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] — TALDANGRA GIRLS\' HIGH SCHOOL [H.S.]</option></select></div>',
+            '<div class="form-group"><label>School Order (Print)</label><label style="text-transform:none;font-weight:600;display:flex;gap:6px;align-items:center;height:31px;"><input type="checkbox" id="mp_rdSchoolOrder" style="width:auto;" checked> School-wise, names A&rarr;Z</label></div>',
+            '<div class="form-group"><label>Status</label><div id="mp_rdStatus" style="height:31px;display:flex;align-items:center;font-weight:600;padding:0 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f8fafc;font-size:9pt;">—</div></div>',
+          '</div>',
+        '</div>',
+        '<div class="hs-dailyops-card no-print"><div class="rd-scroll"><table id="mp_rdTable" class="rd-table"></table></div></div>',
+      '</div>',
+
+      '<!-- MP: CONFIDENTIAL REPORT -->',
+      '<div class="tool-panel app-shell" data-tool="confreport" id="mp-confreport">',
+        '<div class="control-panel no-print">',
+          '<div class="panel-title">Confidential Report to the Deputy Secretary, W.B.B.S.E. Regional Office &mdash; Madhyamik Examination</div>',
+          '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center;">',
+            '<button class="btn btn-success" onclick="mpConfPrint()">Print / Save PDF (A4)</button>',
+            '<button class="btn btn-primary" onclick="mpConfReset()">Re-read Ledger</button>',
+            '<button class="btn btn-primary" onclick="cloudForceSaveAll()">Save to Cloud Now</button>',
+          '</div>',
+          '<div id="mp_confPreview" class="cr-preview" style="margin-top:14px;"></div>',
+        '</div>',
+      '</div>',
+
+      '<!-- MP: SUBMISSION LETTER & BOX LABELS -->',
+      '<div class="tool-panel app-shell" data-tool="submission" id="mp-submission">',
+        '<div class="control-panel no-print">',
+          '<div class="panel-title">Madhyamik Submission Letter &amp; Packet / Box Labels (WBBSE)</div>',
+          '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">',
+            '<button class="btn btn-success" onclick="mpSbPrintLetter()">Print Submission Letter (A4)</button>',
+            '<button class="btn btn-primary" onclick="mpSbPrintBoxLabels()">Print Packet / Box Labels (A4)</button>',
+          '</div>',
+          '<div id="mp_sbPreview"></div>',
+        '</div>',
+      '</div>'
+    ].join('');
+
+    while(panelsWrapper.firstElementChild){
+      boardMp.appendChild(panelsWrapper.firstElementChild);
+    }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', injectMadhyamikDOM);
+  } else {
+    injectMadhyamikDOM();
+  }
+})();
+
+/* ================================================================
+   2. MADHYAMIK (WBBSE) COMPLETE JAVASCRIPT ENGINE
+   ================================================================ */
+[
+  'mpFixedRooms2027','mpRoomAllocations2027','mpSubjectQpOmrMaster2027',
+  'mpDailyOpsDB2027','mpDailyOpsOfficialsTemplates2027',
+  'mpCentreSubjectAllocation2027','mpCentreSelectedDates2027','mpRoomDuty2027',
+  'mpConfReport2027','mpExamSubmission2027'
+].forEach(function(k){ if(typeof CLOUD_SYNC_KEYS!=='undefined' && CLOUD_SYNC_KEYS.indexOf(k)===-1) CLOUD_SYNC_KEYS.push(k); });
+
+var MP_VENUE_SELECT_IDS = ['mp_formVenue','mp_opsVenue','mp_roomVenue','mp_schoolToggle','mp_rdVenue'];
+function mpGetVenue(){
+  var v = localStorage.getItem('mpGlobalVenue2027');
+  return (v === 'TGHS') ? 'TGHS' : 'TFHS';
+}
+function mpSyncVenueSelectors(){
+  var v = mpGetVenue();
+  MP_VENUE_SELECT_IDS.forEach(function(id){ var el=document.getElementById(id); if(el && el.value!==v) el.value=v; });
+  return v;
+}
+function mpSetVenue(v){
+  v = (v === 'TGHS') ? 'TGHS' : 'TFHS';
+  localStorage.setItem('mpGlobalVenue2027', v);
+  mpSyncVenueSelectors();
+  if(typeof mpActiveSchool !== 'undefined'){
+    mpActiveSchool = v;
+    var hdr = document.getElementById('mp_headerTitle');
+    if(hdr && typeof mpTrackingStateDatabase !== 'undefined'){
+      hdr.textContent = "MADHYAMIK::" + (mpTrackingStateDatabase["year"]||"2027") + " " + v + " EXAMINATION LEDGER";
+    }
+    try{ if(typeof mpRenderReportingMatrixTable === 'function') mpRenderReportingMatrixTable(); }catch(e){}
+  }
+}
+
+function mpSubjectCode4(name){
+  var raw = String(name||"").trim();
+  var up = raw.toUpperCase();
+  if(up.indexOf("FIRST LANGUAGE")!==-1 || up.indexOf("BENGALI")!==-1) return "FLNG";
+  if(up.indexOf("SECOND LANGUAGE")!==-1 || up.indexOf("ENGLISH")!==-1) return "SLNG";
+  if(up.indexOf("HISTORY")!==-1) return "HIST";
+  if(up.indexOf("GEOGRAPHY")!==-1) return "GEOG";
+  if(up.indexOf("MATHEMATICS")!==-1 || up === "MATH") return "MATH";
+  if(up.indexOf("PHYSICAL SCIENCE")!==-1) return "PHSC";
+  if(up.indexOf("LIFE SCIENCE")!==-1) return "LFSC";
+  if(up.indexOf("OPTIONAL")!==-1 || up.indexOf("ELECTIVE")!==-1) return "OPEL";
+  return up.replace(/[^A-Z]/g,'').slice(0,4) || "SUBJ";
+}
+function mpSubjectWithCode(name){
+  var raw = String(name||"").trim();
+  if(!raw) return "";
+  return raw + " (" + mpSubjectCode4(raw) + ")";
+}
+function mpSubjectOptions(item){
+  return String((item && item.sub)||'').split(',').map(function(x){return x.trim();}).filter(Boolean);
+}
+
+function mpImportCurrentYearExcel(input){
+  var file = input && input.files && input.files[0];
+  if(!file || typeof XLSX === "undefined") return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var wb = XLSX.read(e.target.result,{type:"array",cellDates:true});
+      var ws = wb.Sheets["DATA"] || wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      var matched = 0;
+      for(var i=1; i<rows.length; i++){
+        var r = rows[i]||[];
+        var nums = r.filter(function(x){return typeof x === 'number';});
+        if(nums.length >= 4 && matched < mpOfficialExamRoutineTimeline.length){
+          var v = mpTrackingStateDatabase[mpActiveSchool][matched].vals;
+          v[0] = Number(nums[0]||0); v[1] = Number(nums[1]||0);
+          v[2] = Number(nums[2]||0); v[3] = Number(nums[3]||0);
+          v[4] = Number(nums[4]!=null?nums[4]:v[0]); v[5] = Number(nums[5]!=null?nums[5]:v[1]);
+          v[6] = Number(nums[6]!=null?nums[6]:v[2]); v[7] = Number(nums[7]!=null?nums[7]:v[3]);
+          matched++;
+        }
+      }
+      localStorage.setItem("ExamReportingLedgerCache_MP", JSON.stringify(mpTrackingStateDatabase));
+      mpRenderReportingMatrixTable();
+      var st = document.getElementById("mp_excelStatus");
+      if(st) st.textContent = "Excel imported (" + file.name + "): " + matched + " day(s) updated; saved Madhyamik routine retained.";
+      alert("Madhyamik Excel counts imported successfully! Saved examination programme retained.");
+    }catch(err){ alert("Excel import failed: " + err.message); }
+    finally{ input.value = ""; }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function mpImportCurrentYearWord(input){ alert("Word file read: Saved Madhyamik routine retained."); if(input) input.value = ""; }
+function mpImportCurrentYearPDF(input){ alert("PDF file read: Saved Madhyamik routine retained."); if(input) input.value = ""; }
+
+var mpCentreSubjectAllocation = {};
+function mpLoadSubjectAllocation(){
+  try{ mpCentreSubjectAllocation = JSON.parse(localStorage.getItem('mpCentreSubjectAllocation2027')||'{}')||{}; }catch(e){ mpCentreSubjectAllocation={}; }
+}
+function mpSaveSubjectAllocation(){ localStorage.setItem('mpCentreSubjectAllocation2027', JSON.stringify(mpCentreSubjectAllocation)); }
+function mpGetAllocatedSubjects(venue, date){
+  mpLoadSubjectAllocation();
+  var key = venue + '|' + date;
+  if(mpCentreSubjectAllocation[key] && mpCentreSubjectAllocation[key].length) return mpCentreSubjectAllocation[key];
+  var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
+  return mpSubjectOptions(item);
+}
+function mpRenderFormDays(){
+  var el = document.getElementById('mp_formDay'); if(!el) return;
+  var old = el.value;
+  el.innerHTML = mpOfficialExamRoutineTimeline.map(function(x){return '<option value="'+x.date+'">'+x.date+' — '+x.day+'</option>';}).join('');
+  if(old && mpOfficialExamRoutineTimeline.some(function(x){return x.date===old;})) el.value = old;
+}
+function mpRenderDayDateSelector(){
+  var box = document.getElementById('mp_dayDateSelector'); if(!box) return;
+  var venue = mpGetVenue();
+  var dayEl = document.getElementById('mp_formDay');
+  var active = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  var saved = (JSON.parse(localStorage.getItem('mpCentreSelectedDates2027')||'{}')[venue]) || [active];
+  box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b>Select Madhyamik Examination Dates</b></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px;">' +
+    mpOfficialExamRoutineTimeline.map(function(x){
+      return '<label style="display:flex;gap:8px;align-items:center;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;"><input type="checkbox" class="mp-cover-date" value="'+hsEscapeFormText(x.date)+'" '+(saved.indexOf(x.date)!==-1?'checked':'')+' onchange="mpSaveSelectedFormDates()"><span><b>'+hsEscapeFormText(x.date)+'</b> — '+hsEscapeFormText(x.day)+'</span></label>';
+    }).join('') + '</div>';
+}
+function mpSaveSelectedFormDates(){
+  var venue = mpGetVenue();
+  var dates = Array.prototype.slice.call(document.querySelectorAll('.mp-cover-date:checked')).map(function(x){return x.value;});
+  var db = {}; try{ db = JSON.parse(localStorage.getItem('mpCentreSelectedDates2027')||'{}')||{}; }catch(e){}
+  db[venue] = dates;
+  localStorage.setItem('mpCentreSelectedDates2027', JSON.stringify(db));
+}
+function mpRenderDaySubjectSelector(){
+  mpLoadSubjectAllocation(); mpRenderFormDays(); mpRenderDayDateSelector();
+  var venue = mpSyncVenueSelectors();
+  var dayEl = document.getElementById('mp_formDay');
+  var date = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
+  var selected = mpGetAllocatedSubjects(venue, item.date);
+  var options = mpSubjectOptions(item);
+  var box = document.getElementById('mp_daySubjectSelector'); if(!box) return;
+  box.innerHTML = '<div style="margin-bottom:8px;"><b>'+hsEscapeFormText(item.date)+' — '+hsEscapeFormText(item.day)+'</b></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px;">' +
+    options.map(function(sub){
+      return '<label style="display:flex;gap:8px;align-items:center;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;"><input type="checkbox" class="mp-day-subject" value="'+hsEscapeFormText(sub)+'" '+(selected.indexOf(sub)!==-1?'checked':'')+' onchange="mpSaveCurrentDaySubjects()"><span>'+hsEscapeFormText(mpSubjectWithCode(sub))+'</span></label>';
+    }).join('') + '</div>';
+}
+function mpSaveCurrentDaySubjects(){
+  var venue = mpGetVenue();
+  var dayEl = document.getElementById('mp_formDay');
+  var date = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  mpCentreSubjectAllocation[venue+'|'+date] = Array.prototype.slice.call(document.querySelectorAll('.mp-day-subject:checked')).map(function(x){return x.value;});
+  mpSaveSubjectAllocation();
+}
+
+var mpRoomDB = {}, mpRoomAllocDB = {}, mpDailyOpsDB = {}, mpDailyOpsTemplates = {}, mpSubjectQpOmrMaster = {};
+function mpRoomLoad(){
+  try{ mpRoomDB = JSON.parse(localStorage.getItem('mpFixedRooms2027')||'{}')||{}; }catch(e){ mpRoomDB={}; }
+  try{ mpRoomAllocDB = JSON.parse(localStorage.getItem('mpRoomAllocations2027')||'{}')||{}; }catch(e){ mpRoomAllocDB={}; }
+}
+function mpRoomPersist(){
+  localStorage.setItem('mpFixedRooms2027', JSON.stringify(mpRoomDB));
+  localStorage.setItem('mpRoomAllocations2027', JSON.stringify(mpRoomAllocDB));
+}
+function mpRoomRender(){
+  mpRoomLoad();
+  var venue = mpSyncVenueSelectors();
+  var rooms = mpRoomDB[venue] || (typeof hsRoomDB!=='undefined' && hsRoomDB[venue]) || [];
+  var box = document.getElementById('mp_roomList'); if(!box) return;
+  if(!rooms.length){ box.innerHTML = '<div style="padding:10px;color:#64748b;text-align:center;">No fixed rooms entered for this venue.</div>'; return; }
+  box.innerHTML = '<table class="hs-room-table"><thead><tr><th>Sl.</th><th>Hall / Room No.</th><th>Fixed Seats</th><th>Action</th></tr></thead><tbody>' +
+    rooms.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td><b>'+hsEscapeFormText(r.room)+'</b></td><td>'+(Number(r.seats)||0)+'</td><td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="mpRoomDelete('+i+')">Delete</button></td></tr>';}).join('') + '</tbody></table>';
+}
+function mpRoomAdd(){
+  mpRoomLoad();
+  var venue = mpGetVenue();
+  var room = (document.getElementById('mp_roomNo').value||'').trim();
+  var seats = Math.floor(Number(document.getElementById('mp_roomSeats').value||0));
+  if(!room || seats<1) return alert('Enter Hall / Room No. and Fixed Seats first.');
+  var rooms = mpRoomDB[venue] || (mpRoomDB[venue]=[]);
+  var idx = rooms.findIndex(function(r){return String(r.room).toLowerCase()===room.toLowerCase();});
+  if(idx>=0) rooms[idx].seats = seats; else rooms.push({room:room,seats:seats});
+  mpRoomPersist();
+  document.getElementById('mp_roomNo').value=''; document.getElementById('mp_roomSeats').value='';
+  mpRoomRender();
+}
+function mpRoomDelete(i){
+  mpRoomLoad(); var venue = mpGetVenue();
+  if(mpRoomDB[venue]){ mpRoomDB[venue].splice(i,1); mpRoomPersist(); mpRoomRender(); }
+}
+function mpRoomClearAllocations(){
+  mpRoomLoad(); var venue = mpGetVenue();
+  var dateEl = document.getElementById('mp_opsDate');
+  var date = (dateEl && dateEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  delete mpRoomAllocDB[venue+'|'+date]; mpRoomPersist(); mpDailyOpsRender();
+}
+function mpRoomAutoPlace(){
+  mpRoomLoad();
+  var venue = mpGetVenue();
+  var dateEl = document.getElementById('mp_opsDate');
+  var date = (dateEl && dateEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  var baseRooms = (mpRoomDB[venue]&&mpRoomDB[venue].length) ? mpRoomDB[venue] : ((typeof hsRoomDB!=='undefined'&&hsRoomDB[venue])||[]);
+  var remainingRooms = baseRooms.map(function(r){return {room:r.room,remaining:Number(r.seats)||0};}).filter(function(r){return r.remaining>0;});
+  if(!remainingRooms.length) return alert('Add Fixed Examination Halls / Rooms first.');
+  var rec = mpDailyOpsEnsureRecord(venue, date);
+  var subjects = mpGetAllocatedSubjects(venue, date);
+  var allocations = {};
+  subjects.forEach(function(sub){
+    var d = rec.subjects[sub]||{};
+    var left = (Number(d.male)||0) + (Number(d.female)||0);
+    var arr = [];
+    for(var j=0; j<remainingRooms.length; j++){
+      var r = remainingRooms[j];
+      if(left<=0) break;
+      if(r.remaining<=0) continue;
+      var take = Math.min(left, r.remaining);
+      arr.push({room:r.room, seats:take}); r.remaining -= take; left -= take;
+    }
+    allocations[sub] = {count:(Number(d.male)||0)+(Number(d.female)||0), rooms:arr, unplaced:left};
+    d.roomAllocations = arr; d.hall = arr.map(function(x){return x.room+' ('+x.seats+')';}).join(', ');
+    rec.subjects[sub] = d;
+  });
+  mpRoomAllocDB[venue+'|'+date] = {allocations:allocations, savedAt:new Date().toISOString()};
+  mpRoomPersist(); mpDailyOpsPersist(); mpDailyOpsRender();
+  var sumBox = document.getElementById('mp_roomAllocationSummary');
+  if(sumBox) sumBox.innerHTML = Object.keys(allocations).map(function(s){
+    var x = allocations[s];
+    return '<div><b>'+hsEscapeFormText(s)+'</b> ('+x.count+'): '+((x.rooms||[]).map(function(z){return z.room+' &rarr; '+z.seats;}).join(' | ')||'Not placed')+'</div>';
+  }).join('');
+}
+
+function mpDailyOpsLoad(){
+  try{ mpDailyOpsDB = JSON.parse(localStorage.getItem('mpDailyOpsDB2027')||'{}')||{}; }catch(e){ mpDailyOpsDB={}; }
+  try{ mpDailyOpsTemplates = JSON.parse(localStorage.getItem('mpDailyOpsOfficialsTemplates2027')||'{}')||{}; }catch(e){ mpDailyOpsTemplates={}; }
+  try{ mpSubjectQpOmrMaster = JSON.parse(localStorage.getItem('mpSubjectQpOmrMaster2027')||'{}')||{}; }catch(e){ mpSubjectQpOmrMaster={}; }
+}
+function mpDailyOpsPersist(){
+  localStorage.setItem('mpDailyOpsDB2027', JSON.stringify(mpDailyOpsDB));
+  localStorage.setItem('mpDailyOpsOfficialsTemplates2027', JSON.stringify(mpDailyOpsTemplates));
+  localStorage.setItem('mpSubjectQpOmrMaster2027', JSON.stringify(mpSubjectQpOmrMaster));
+}
+function mpDailyOpsEnsureRecord(venue, date){
+  mpDailyOpsLoad();
+  var key = venue+'|'+date;
+  if(!mpDailyOpsDB[key]){
+    mpDailyOpsDB[key] = {officials:Object.assign({}, HS_DEFAULT_EXAM_OFFICIALS, mpDailyOpsTemplates[venue]||{}), subjects:{}, savedAt:''};
+  }
+  var rec = mpDailyOpsDB[key];
+  mpGetAllocatedSubjects(venue, date).forEach(function(sub,i){
+    if(!rec.subjects[sub]){
+      var m = mpSubjectQpOmrMaster[sub]||{};
+      rec.subjects[sub] = {hall:i+1, male:'', female:'', total:0, qFrom:m.qpFrom||'', qTo:'', qReq:0, qNtp:0, omrFrom:m.omrFrom||'', omrTo:'', omrReq:0, inv1:'', inv2:'', manualRoom:'', roomAllocations:[]};
+    }
+  });
+  return rec;
+}
+function mpDailyOpsRender(){
+  mpDailyOpsLoad(); mpRoomRender();
+  var venue = mpSyncVenueSelectors();
+  var dateEl = document.getElementById('mp_opsDate');
+  if(dateEl && !dateEl.options.length){
+    dateEl.innerHTML = mpOfficialExamRoutineTimeline.map(function(x){return '<option value="'+x.date+'">'+x.date+' — '+x.day+'</option>';}).join('');
+  }
+  var date = (dateEl && dateEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  var rec = mpDailyOpsEnsureRecord(venue, date);
+  var subjects = mpGetAllocatedSubjects(venue, date);
+  var cntEl = document.getElementById('mp_opsSubjectCount'); if(cntEl) cntEl.textContent = subjects.length + ' subject(s)';
+  var stEl = document.getElementById('mp_opsDayStatus'); if(stEl) stEl.textContent = rec.savedAt ? 'Saved ' + new Date(rec.savedAt).toLocaleString() : 'Not saved';
+
+  var qeDay = document.getElementById('mp_qeDay');
+  if(qeDay && !qeDay.options.length){
+    qeDay.innerHTML = mpOfficialExamRoutineTimeline.map(function(x){return '<option value="'+x.date+'">'+x.date+' — '+x.day+'</option>';}).join('');
+  }
+  if(qeDay) qeDay.value = date;
+  var qeSub = document.getElementById('mp_qeSubject');
+  if(qeSub){
+    qeSub.innerHTML = '<option value="">Select Subject</option>' + subjects.map(function(s){return '<option value="'+hsEscapeFormText(s)+'">'+hsEscapeFormText(s)+'</option>';}).join('');
+    if(subjects.length===1) qeSub.value = subjects[0];
+  }
+
+  var tbody = document.getElementById('mp_dailyOpsSubjectBody'); if(!tbody) return;
+  tbody.innerHTML = subjects.map(function(sub,i){
+    var d = rec.subjects[sub]||{};
+    var total = (Number(d.male)||0) + (Number(d.female)||0);
+    var qTo = hsDailySerialEnd(d.qFrom, total);
+    var omrTo = hsDailySerialEnd(d.omrFrom, total);
+    var ntp = total ? Math.ceil(total/10) : 0;
+    var e = hsEscapeFormText;
+    return '<tr>' +
+      '<td><div class="hs-auto-box">'+e(d.hall||i+1)+'</div></td>' +
+      '<td><input type="text" data-sub="'+e(sub)+'" data-f="manualRoom" value="'+e(d.manualRoom||'')+'" placeholder="Auto" oninput="mpDailyOpsInput(this)"></td>' +
+      '<td style="font-weight:700;">'+e(sub)+'</td>' +
+      '<td><input class="hs-edit-box" type="number" data-sub="'+e(sub)+'" data-f="male" value="'+e(d.male)+'" oninput="mpDailyOpsInput(this)"></td>' +
+      '<td><input class="hs-edit-box" type="number" data-sub="'+e(sub)+'" data-f="female" value="'+e(d.female)+'" oninput="mpDailyOpsInput(this)"></td>' +
+      '<td><div class="hs-auto-box">'+total+'</div></td>' +
+      '<td><input class="hs-edit-box" type="text" data-sub="'+e(sub)+'" data-f="qFrom" value="'+e(d.qFrom)+'" oninput="mpDailyOpsInput(this)"></td>' +
+      '<td><div class="hs-auto-box">'+e(qTo||'—')+'</div></td>' +
+      '<td><div class="hs-auto-box">'+total+'</div></td>' +
+      '<td><div class="hs-auto-box">'+ntp+'</div></td>' +
+      '<td><input class="hs-edit-box" type="text" data-sub="'+e(sub)+'" data-f="omrFrom" value="'+e(d.omrFrom)+'" oninput="mpDailyOpsInput(this)"></td>' +
+      '<td><div class="hs-auto-box">'+e(omrTo||'—')+'</div></td>' +
+      '<td><div class="hs-auto-box">'+total+'</div></td>' +
+      '<td><input class="hs-edit-box" type="text" data-sub="'+e(sub)+'" data-f="inv1" value="'+e(d.inv1)+'" oninput="mpDailyOpsInput(this)"></td>' +
+      '<td><input class="hs-edit-box" type="text" data-sub="'+e(sub)+'" data-f="inv2" value="'+e(d.inv2)+'" oninput="mpDailyOpsInput(this)"></td>' +
+    '</tr>';
+  }).join('');
+}
+function mpDailyOpsInput(el){
+  var sub = el.getAttribute('data-sub'), field = el.getAttribute('data-f');
+  var venue = mpGetVenue(), date = document.getElementById('mp_opsDate').value || mpOfficialExamRoutineTimeline[0].date;
+  var rec = mpDailyOpsEnsureRecord(venue, date);
+  rec.subjects[sub][field] = el.value;
+  mpDailyOpsPersist();
+}
+function mpDailyOpsSaveDay(){
+  var venue = mpGetVenue(), date = document.getElementById('mp_opsDate').value || mpOfficialExamRoutineTimeline[0].date;
+  var rec = mpDailyOpsEnsureRecord(venue, date);
+  rec.officials = {
+    venueSupervisor: document.getElementById('mp_opsVenueSupervisor').value || '',
+    centreSecretary: document.getElementById('mp_opsCentreSecretary').value || '',
+    centreInCharge: document.getElementById('mp_opsCentreInCharge').value || '',
+    councilNominee: document.getElementById('mp_opsCouncilNominee').value || '',
+    ra: document.getElementById('mp_opsRA').value || '',
+    other: document.getElementById('mp_opsOtherOfficial').value || ''
+  };
+  rec.savedAt = new Date().toISOString();
+  mpDailyOpsPersist(); mpDailyOpsRender();
+}
+function mpDailyOpsSaveOfficialsTemplate(){
+  mpDailyOpsSaveDay();
+  var venue = mpGetVenue(), date = document.getElementById('mp_opsDate').value || mpOfficialExamRoutineTimeline[0].date;
+  mpDailyOpsTemplates[venue] = Object.assign({}, mpDailyOpsDB[venue+'|'+date].officials);
+  mpDailyOpsPersist();
+  alert('Madhyamik official names saved for next days.');
+}
+function mpDailyOpsCopyPreviousDay(){
+  var venue = mpGetVenue(), date = document.getElementById('mp_opsDate').value;
+  var idx = mpOfficialExamRoutineTimeline.findIndex(function(x){return x.date===date;});
+  if(idx<=0) return alert('No previous day to copy.');
+  var prev = mpDailyOpsDB[venue+'|'+mpOfficialExamRoutineTimeline[idx-1].date];
+  if(!prev) return alert('No saved record on previous day.');
+  var rec = mpDailyOpsEnsureRecord(venue, date);
+  rec.officials = Object.assign({}, prev.officials);
+  mpDailyOpsPersist(); mpDailyOpsRender();
+}
+function mpMasterSaveSubject(){
+  mpDailyOpsLoad();
+  var name = (document.getElementById('mp_masterSubjectName').value||'').trim();
+  if(!name) return alert('Enter a subject name.');
+  mpSubjectQpOmrMaster[name] = {
+    qpFrom: (document.getElementById('mp_masterQpFrom').value||'').trim(),
+    omrFrom: (document.getElementById('mp_masterOmrFrom').value||'').trim()
+  };
+  mpDailyOpsPersist();
+  document.getElementById('mp_masterSubjectName').value='';
+  document.getElementById('mp_masterQpFrom').value='';
+  document.getElementById('mp_masterOmrFrom').value='';
+}
+function mpDailyOpsLoadMasterSerials(){
+  mpDailyOpsLoad();
+  var venue = mpGetVenue(), date = document.getElementById('mp_opsDate').value || mpOfficialExamRoutineTimeline[0].date;
+  var rec = mpDailyOpsEnsureRecord(venue, date);
+  Object.keys(rec.subjects).forEach(function(sub){
+    var m = mpSubjectQpOmrMaster[sub];
+    if(m){ if(m.qpFrom) rec.subjects[sub].qFrom = m.qpFrom; if(m.omrFrom) rec.subjects[sub].omrFrom = m.omrFrom; }
+  });
+  mpDailyOpsPersist(); mpDailyOpsRender();
+}
+function mpQuickEntryDayChange(){
+  var d = document.getElementById('mp_qeDay').value;
+  var main = document.getElementById('mp_opsDate');
+  if(main && d){ main.value = d; mpDailyOpsRender(); }
+}
+function mpQuickEntrySubjectChange(){ mpQuickEntryRecalc(); }
+function mpQuickEntryFetchFromLedger(){
+  var venue = mpGetVenue(), date = document.getElementById('mp_qeDay').value || mpOfficialExamRoutineTimeline[0].date;
+  var row = (mpTrackingStateDatabase[venue]||[]).find(function(r){return r.date===date;});
+  if(!row) return;
+  var m = (Number(row.vals[0])||0) + (Number(row.vals[2])||0);
+  var f = (Number(row.vals[1])||0) + (Number(row.vals[3])||0);
+  document.getElementById('mp_qeMale').value = m;
+  document.getElementById('mp_qeFemale').value = f;
+  mpQuickEntryRecalc();
+}
+function mpQuickEntryRecalc(){
+  var m = Number(document.getElementById('mp_qeMale').value)||0;
+  var f = Number(document.getElementById('mp_qeFemale').value)||0;
+  var tot = m + f;
+  var qf = document.getElementById('mp_qeQpFrom').value||'';
+  var of = document.getElementById('mp_qeOmrFrom').value||'';
+  document.getElementById('mp_qeTotal').textContent = tot;
+  document.getElementById('mp_qeQpReq').textContent = tot;
+  document.getElementById('mp_qeOmrReq').textContent = tot;
+  document.getElementById('mp_qeNtp').textContent = tot ? Math.ceil(tot/10) : 0;
+  document.getElementById('mp_qeQpTo').textContent = hsDailySerialEnd(qf, tot) || '—';
+  document.getElementById('mp_qeOmrTo').textContent = hsDailySerialEnd(of, tot) || '—';
+}
+function mpQuickEntrySaveSubject(){
+  var venue = mpGetVenue(), date = document.getElementById('mp_qeDay').value || mpOfficialExamRoutineTimeline[0].date;
+  var sub = document.getElementById('mp_qeSubject').value || mpGetAllocatedSubjects(venue,date)[0];
+  if(!sub) return alert('Select a subject first.');
+  var rec = mpDailyOpsEnsureRecord(venue, date);
+  rec.subjects[sub].male = document.getElementById('mp_qeMale').value||'0';
+  rec.subjects[sub].female = document.getElementById('mp_qeFemale').value||'0';
+  rec.subjects[sub].qFrom = document.getElementById('mp_qeQpFrom').value||'';
+  rec.subjects[sub].omrFrom = document.getElementById('mp_qeOmrFrom').value||'';
+  rec.savedAt = new Date().toISOString();
+  mpDailyOpsPersist(); mpDailyOpsRender();
+  document.getElementById('mp_qeStatus').textContent = 'Saved ' + sub;
+}
+function mpQuickEntryClearForm(){
+  ['mp_qeMale','mp_qeFemale','mp_qeQpFrom','mp_qeOmrFrom'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  mpQuickEntryRecalc();
+}
+
+function mpPrintCentreForm(type){
+  var venueKey = mpGetVenue();
+  var venue = HS_VENUE_INFO[venueKey].name;
+  var venueCode = HS_VENUE_INFO[venueKey].code;
+  var dayEl = document.getElementById('mp_formDay');
+  var date = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
+  var subs = mpGetAllocatedSubjects(venueKey, item.date);
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  var rec = mpDailyOpsEnsureRecord(venueKey, item.date);
+  var esc = hsEscapeFormText;
+
+  var title = 'WBBSE FORM', body = '';
+  if(type === 'venue'){
+    title = 'VENUE SUPERVISOR FORMAT (DATA SHEET) — WBBSE';
+    body = '<h3 style="text-align:center;text-decoration:underline;">VENUE SUPERVISOR FORMAT (DATA SHEET)</h3>' +
+      '<p style="text-align:center;font-weight:700;">MADHYAMIK PARIKSHA (SECONDARY EXAMINATION), '+esc(year)+'</p>' +
+      '<table><tr><th>Centre / Code</th><td>TALDANGRA / 2206</td><th>Venue / Code</th><td>'+esc(venue)+' / '+esc(venueCode)+'</td></tr>' +
+      '<tr><th>Examination Date</th><td>'+esc(item.date)+' ('+esc(item.day)+')</td><th>Subject(s)</th><td>'+esc(subs.join(', '))+'</td></tr></table>' +
+      '<table><thead><tr><th>Hall/Room</th><th>Invigilator 1</th><th>Invigilator 2</th><th>Subject</th><th>QP From</th><th>QP To</th><th>Total QP</th><th>Script From</th><th>Script To</th><th>Total Script</th><th>Signature</th></tr></thead>' +
+      '<tbody>'+subs.map(function(s,i){
+        var d = rec.subjects[s]||{};
+        var tot = (Number(d.male)||0)+(Number(d.female)||0);
+        return '<tr><td>'+esc(d.hall||i+1)+'</td><td>'+esc(d.inv1||'')+'</td><td>'+esc(d.inv2||'')+'</td><td>'+esc(s)+'</td><td>'+esc(d.qFrom||'')+'</td><td>'+esc(hsDailySerialEnd(d.qFrom,tot))+'</td><td>'+(tot||'')+'</td><td>'+esc(d.omrFrom||'')+'</td><td>'+esc(hsDailySerialEnd(d.omrFrom,tot))+'</td><td>'+(tot||'')+'</td><td></td></tr>';
+      }).join('')+'</tbody></table>';
+  } else if(type === 'seal'){
+    title = 'SEAL OPENING FORMAT — WBBSE';
+    body = '<h3 style="text-align:center;text-decoration:underline;">SEAL OPENING FORMAT (QUESTION PAPER PACKETS)</h3>' +
+      '<p>Question Paper packets of Madhyamik Pariksha (Secondary Examination), '+esc(year)+' for subject(s) <b>'+esc(subs.join(', '))+'</b> are opened on <b>'+esc(item.date)+' ('+esc(item.day)+')</b> in presence of the following officials at <b>'+esc(venue)+' ('+esc(venueCode)+')</b>:</p>' +
+      '<table><tr><th>Sl.</th><th>Name</th><th>Designation</th><th>Signature &amp; Time</th></tr>' +
+      '<tr><td>1</td><td>'+esc(rec.officials.venueSupervisor)+'</td><td>Venue Supervisor</td><td></td></tr>' +
+      '<tr><td>2</td><td>'+esc(rec.officials.centreSecretary)+'</td><td>Centre Secretary</td><td></td></tr>' +
+      '<tr><td>3</td><td>'+esc(rec.officials.centreInCharge)+'</td><td>Officer-in-Charge</td><td></td></tr>' +
+      '<tr><td>4</td><td></td><td>Invigilator Witness</td><td></td></tr></table>';
+  } else if(type === 'duty'){
+    title = 'ON DUTY DECLARATION — WBBSE';
+    body = '<h3 style="text-align:center;text-decoration:underline;">ON DUTY DECLARATION</h3>' +
+      '<p>I, Sri / Smt. __________________________________ was engaged in examination duty for Madhyamik Pariksha (Secondary Examination), '+esc(year)+' on <b>'+esc(item.date)+' ('+esc(item.day)+')</b> at <b>'+esc(venue)+' (Venue Code: '+esc(venueCode)+', Centre Code: 2206)</b>.</p>' +
+      '<p>Signature of Applicant: ___________________________ &nbsp;&nbsp; Mobile: ___________________</p>';
+  } else if(type === 'confidential'){
+    title = 'CONFIDENTIAL REPORT FORMAT — WBBSE';
+    body = '<h3 style="text-align:center;text-decoration:underline;">CONFIDENTIAL FORMAT (INCIDENT / RULE VIOLATION)</h3>' +
+      '<p><b>Venue:</b> '+esc(venue)+' ('+esc(venueCode)+') &nbsp;|&nbsp; <b>Date:</b> '+esc(item.date)+' ('+esc(item.day)+') &nbsp;|&nbsp; <b>Subject:</b> '+esc(subs.join(', '))+'</p>' +
+      '<div style="border:1px solid #000;min-height:90mm;padding:8px;">Nature of incident / report:</div>';
+  } else {
+    title = 'R.A. FORMAT — WBBSE';
+    body = '<h3 style="text-align:center;text-decoration:underline;">REPORTED AGAINST (R.A.) FORMAT</h3>' +
+      '<p><b>Centre:</b> TALDANGRA (2206) &nbsp;|&nbsp; <b>Venue:</b> '+esc(venue)+' ('+esc(venueCode)+') &nbsp;|&nbsp; <b>Date:</b> '+esc(item.date)+' &nbsp;|&nbsp; <b>Subject:</b> '+esc(subs.join(', '))+'</p>' +
+      '<table><tr><th>Sl.</th><th>Roll &amp; No.</th><th>Registration No.</th><th>Nature of Malpractice / R.A.</th><th>Signature</th></tr>' +
+      Array.from({length:10},function(_,i){return '<tr><td>'+(i+1)+'</td><td></td><td></td><td></td><td></td></tr>';}).join('')+'</table>';
+  }
+
+  var w = window.open('','_blank'); if(!w) return alert('Allow pop-ups to print.');
+  w.document.write('<!doctype html><html><head><title>'+esc(title)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:10.5pt;color:#111}.head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #222;padding:6px;text-align:left}th{background:#f1f5f9}.sig{margin-top:38px;display:flex;justify-content:space-between;font-weight:700}</style></head><body><div class="head"><div style="font-size:15pt;font-weight:800;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div><div>Nivedita Bhavan, DJ-8, Sector-II, Salt Lake, Kolkata - 700091</div><div style="font-weight:700;margin-top:4px;">Madhyamik Pariksha (Secondary Examination), '+esc(year)+'</div></div>'+body+'<div class="sig"><span>Venue Supervisor ('+esc(venueCode)+')</span><span>Centre Secretary / Officer-in-Charge (2206)</span></div><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+function mpGenerateSelectedDayForms(){ mpPrintCentreForm('venue'); }
+function mpGenerateAllSelectedDayForms(){ mpPrintCentreForm('venue'); }
+function mpPrintCovers(scope, mode){ mpPrintSpeedPost(scope); }
+function mpPrintSpeedPost(scope){
+  var venueKey = mpGetVenue();
+  var venue = HS_VENUE_INFO[venueKey].name, venueCode = HS_VENUE_INFO[venueKey].code;
+  var dayEl = document.getElementById('mp_formDay');
+  var date = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>WBBSE Answer Script Packet Cover</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;border:3px double #000;padding:14mm}</style></head><body><h1 style="text-align:center;margin:0;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h1><h2 style="text-align:center;margin:6px 0 18px;">MADHYAMIK PARIKSHA ANSWER SCRIPT PARCEL</h2><p style="font-size:14pt;"><b>Exam Date:</b> '+hsEscapeFormText(item.date)+' ('+hsEscapeFormText(item.day)+') &nbsp;&nbsp;|&nbsp;&nbsp; <b>Subject:</b> '+hsEscapeFormText(item.sub)+'</p><p style="font-size:14pt;"><b>From:</b> Centre Secretary / Venue Supervisor, '+hsEscapeFormText(venue)+' (Venue Code: '+hsEscapeFormText(venueCode)+', Centre Code: 2206), P.O. Taldangra, Dist. Bankura, PIN-722152</p><p style="font-size:14pt;"><b>To:</b> The Deputy Secretary / Regional Officer, W.B.B.S.E. Regional Office</p><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+function mpPrintDespatch(scope){ mpPrintSpeedPost(scope); }
+
+var mpRdDB = {};
+function mpRdLoad(){
+  try{ mpRdDB = JSON.parse(localStorage.getItem('mpRoomDuty2027')||'{}')||{}; }catch(e){ mpRdDB={}; }
+  var venue = mpGetVenue();
+  if(!mpRdDB[venue] || !Array.isArray(mpRdDB[venue].rows) || !mpRdDB[venue].rows.length){
+    if(typeof hsRdLoad === 'function') try{ hsRdLoad(); }catch(e){}
+    var seed = (typeof hsRdDB !== 'undefined' && hsRdDB[venue] && hsRdDB[venue].rows)
+      ? hsRdDB[venue].rows.map(function(r){return {n:r.n, s:r.s, d:{}};})
+      : [{n:"TEACHER 1", s:"TALDANGRA FULMOTI H S", d:{}}];
+    mpRdDB[venue] = {rows: seed};
+  }
+}
+function mpRdPersist(){ localStorage.setItem('mpRoomDuty2027', JSON.stringify(mpRdDB)); }
+function mpRdRender(){
+  mpRdLoad();
+  var venue = mpSyncVenueSelectors();
+  var rows = mpRdDB[venue].rows;
+  var dates = mpOfficialExamRoutineTimeline;
+  var tbl = document.getElementById('mp_rdTable'); if(!tbl) return;
+  tbl.innerHTML = '<thead><tr><th style="width:36px;">Sl</th><th style="min-width:180px;">Name of Invigilator</th><th style="min-width:180px;">School</th>' +
+    dates.map(function(d){return '<th>'+hsEscapeFormText(d.date)+'<small>'+hsEscapeFormText(d.day)+'<br>'+hsEscapeFormText(mpSubjectCode4(d.sub))+'</small></th>';}).join('') +
+    '<th style="width:40px;">Del</th></tr></thead><tbody>' +
+    rows.map(function(r,idx){
+      return '<tr><td>'+(idx+1)+'</td><td><input type="text" data-idx="'+idx+'" data-k="n" value="'+hsEscapeFormText(r.n||'')+'" oninput="mpRdInput(this)"></td><td><input type="text" data-idx="'+idx+'" data-k="s" value="'+hsEscapeFormText(r.s||'')+'" oninput="mpRdInput(this)"></td>' +
+      dates.map(function(d){return '<td style="text-align:center;"><input class="rd-rn" type="text" data-idx="'+idx+'" data-dt="'+d.date+'" value="'+hsEscapeFormText((r.d&&r.d[d.date])||'')+'" oninput="mpRdDateInput(this)"></td>';}).join('') +
+      '<td style="text-align:center;"><button class="rd-del" onclick="mpRdDelRow('+idx+')">&times;</button></td></tr>';
+    }).join('') + '</tbody>';
+  var st = document.getElementById('mp_rdStatus');
+  if(st) st.textContent = rows.length + ' invigilators loaded for ' + venue;
+}
+function mpRdInput(el){ var v=mpGetVenue(); mpRdDB[v].rows[+el.getAttribute('data-idx')][el.getAttribute('data-k')]=el.value; mpRdPersist(); }
+function mpRdDateInput(el){ var v=mpGetVenue(), idx=+el.getAttribute('data-idx'), dt=el.getAttribute('data-dt'); mpRdDB[v].rows[idx].d = mpRdDB[v].rows[idx].d||{}; mpRdDB[v].rows[idx].d[dt]=el.value; mpRdPersist(); }
+function mpRdAddRow(){ mpRdLoad(); var v=mpGetVenue(); mpRdDB[v].rows.push({n:'',s:'',d:{}}); mpRdPersist(); mpRdRender(); }
+function mpRdDelRow(idx){ mpRdLoad(); var v=mpGetVenue(); mpRdDB[v].rows.splice(idx,1); mpRdPersist(); mpRdRender(); }
+function mpRdClearRN(){
+  if(!confirm('Clear all Room Numbers for this venue in Madhyamik?')) return;
+  var v=mpGetVenue(); (mpRdDB[v].rows||[]).forEach(function(r){ r.d={}; }); mpRdPersist(); mpRdRender();
+}
+function mpRdPrint(){
+  mpRdLoad();
+  var v = mpGetVenue(), info = HS_VENUE_INFO[v];
+  var orderEl = document.getElementById('mp_rdSchoolOrder');
+  var order = orderEl ? orderEl.checked : true;
+  var rows = order ? hsSchoolWiseSort(mpRdDB[v].rows.slice()) : mpRdDB[v].rows.slice();
+  var dates = mpOfficialExamRoutineTimeline;
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>Madhyamik Room-wise Invigilator Allotment</title><style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;font-size:9pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #222;padding:4px;text-align:center}th{background:#f1f5f9}</style></head><body><h3 style="text-align:center;margin:0 0 6px;">W.B.B.S.E. MADHYAMIK PARIKSHA — ROOM-WISE ALLOTMENT OF INVIGILATORS — '+hsEscapeFormText(info.name)+' ('+hsEscapeFormText(info.code)+')</h3><table><thead><tr><th>Sl</th><th>Invigilator Name</th><th>School</th>'+dates.map(function(d){return '<th>'+d.date+'<br><small>'+d.day+'</small></th>';}).join('')+'</tr></thead><tbody>'+rows.filter(function(r){return r.n;}).map(function(r,i){return '<tr><td>'+(i+1)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.n)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.s)+'</td>'+dates.map(function(d){return '<td><b>'+hsEscapeFormText((r.d&&r.d[d.date])||'')+'</b></td>';}).join('')+'</tr>';}).join('')+'</tbody></table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+function mpRdPrintDeclaration(){ mpRdPrint(); }
+function mpRdPrintSpecimenSignature(){ mpRdPrint(); }
+
+function mpEntrySheetEnsureInit(){
+  if(!mpReqLiveSystemState.entrySheet) mpReqLiveSystemState.entrySheet = {};
+  mpOfficialExamRoutineTimeline.forEach(function(x,i){
+    if(!mpReqLiveSystemState.entrySheet[i]){
+      mpReqLiveSystemState.entrySheet[i] = [{school:"",count:"",teachers:""},{school:"",count:"",teachers:""}];
+    }
+  });
+  localStorage.setItem("ExamRequisitionSystemDataCache_MP", JSON.stringify(mpReqLiveSystemState));
+}
+function mpEntrySheetRender(){
+  mpEntrySheetEnsureInit();
+  var box = document.getElementById("mp_entrySheetContainer"); if(!box) return;
+  var html = "";
+  mpOfficialExamRoutineTimeline.forEach(function(x,i){
+    var sched = (mpReqLiveSystemState.schedule||{})[i] || {};
+    var required = parseInt(sched.count,10) || 0;
+    var rows = mpReqLiveSystemState.entrySheet[i] || [];
+    var total = rows.reduce(function(s,r){return s+(parseInt(r.count,10)||0);}, 0);
+    html += '<div style="padding:10px;border:1px solid var(--border-color);border-radius:6px;margin-bottom:10px;"><div style="font-weight:600;margin-bottom:6px;">'+hsEscapeFormText(x.date)+' ('+hsEscapeFormText(x.day)+') — '+hsEscapeFormText(sched.sub||x.sub)+' <span style="color:#475569;">(Required: '+required+')</span></div>' +
+      rows.map(function(row,r){
+        return '<div style="border:1px dashed #cbd5e1;border-radius:6px;padding:6px;margin-bottom:6px;"><div style="display:flex;gap:8px;align-items:center;"><select style="flex:1;" data-i="'+i+'" data-r="'+r+'" data-f="school" onchange="mpEntryInput(this)">'+hsEntrySheetSchoolOptionsHtml(row.school)+'</select><input type="number" min="0" placeholder="Count" data-i="'+i+'" data-r="'+r+'" data-f="count" value="'+hsEscapeFormText(row.count)+'" style="width:90px;" oninput="mpEntryInput(this)"><button type="button" class="btn btn-danger no-print" style="padding:4px 9px;" onclick="mpEntrySheetRemoveRow('+i+','+r+')">&times;</button></div><input type="text" placeholder="Teacher name(s) comma-separated" data-i="'+i+'" data-r="'+r+'" data-f="teachers" value="'+hsEscapeFormText(row.teachers||'')+'" style="width:100%;margin-top:5px;font-size:9pt;" oninput="mpEntryInput(this)"></div>';
+      }).join('') +
+      '<button type="button" class="btn btn-primary no-print" style="padding:4px 10px;font-size:8.5pt;" onclick="mpEntrySheetAddRow('+i+')">+ Add School</button><span style="margin-left:10px;font-size:9pt;">Total Allocated: <b>'+total+'</b> / '+required+'</span></div>';
+  });
+  box.innerHTML = html;
+  mpDutyPopulateTeacherSelect();
+}
+function mpEntryInput(el){
+  var i = +el.getAttribute('data-i'), r = +el.getAttribute('data-r'), f = el.getAttribute('data-f');
+  mpReqLiveSystemState.entrySheet[i][r][f] = el.value;
+  localStorage.setItem("ExamRequisitionSystemDataCache_MP", JSON.stringify(mpReqLiveSystemState));
+  mpDutyPopulateTeacherSelect();
+}
+function mpEntrySheetAddRow(i){
+  mpReqLiveSystemState.entrySheet[i].push({school:"",count:"",teachers:""});
+  localStorage.setItem("ExamRequisitionSystemDataCache_MP", JSON.stringify(mpReqLiveSystemState));
+  mpEntrySheetRender();
+}
+function mpEntrySheetRemoveRow(i, r){
+  if(mpReqLiveSystemState.entrySheet[i].length<=1) return;
+  mpReqLiveSystemState.entrySheet[i].splice(r,1);
+  localStorage.setItem("ExamRequisitionSystemDataCache_MP", JSON.stringify(mpReqLiveSystemState));
+  mpEntrySheetRender();
+}
+function mpEntrySheetApplyDefaultAll(){
+  mpEntrySheetEnsureInit();
+  mpOfficialExamRoutineTimeline.forEach(function(x,i){
+    var req = parseInt((mpReqLiveSystemState.schedule[i]||{}).count,10) || 0;
+    mpReqLiveSystemState.entrySheet[i] = [{school:"HARMASHRA H S", count:String(req), teachers:""}];
+  });
+  localStorage.setItem("ExamRequisitionSystemDataCache_MP", JSON.stringify(mpReqLiveSystemState));
+  mpEntrySheetRender();
+}
+function mpEntryFillTeachersAll(){
+  mpRdLoad();
+  var v = mpGetVenue();
+  var roster = (mpRdDB[v] && mpRdDB[v].rows) || [];
+  mpOfficialExamRoutineTimeline.forEach(function(x,i){
+    (mpReqLiveSystemState.entrySheet[i]||[]).forEach(function(row){
+      if(!row.school || row.teachers) return;
+      var names = roster.filter(function(t){return String(t.s||'').trim().toUpperCase()===row.school.trim().toUpperCase();}).map(function(t){return t.n;}).filter(Boolean);
+      var cnt = parseInt(row.count,10) || names.length;
+      row.teachers = names.slice(0, cnt).join(', ');
+    });
+  });
+  localStorage.setItem("ExamRequisitionSystemDataCache_MP", JSON.stringify(mpReqLiveSystemState));
+  mpEntrySheetRender();
+}
+
+function mpCollectFeederSchoolDutyDays(){
+  mpEntrySheetEnsureInit();
+  var bySchool = {};
+  mpOfficialExamRoutineTimeline.forEach(function(x,i){
+    var sched = (mpReqLiveSystemState.schedule||{})[i] || {};
+    (mpReqLiveSystemState.entrySheet[i]||[]).forEach(function(row){
+      var school = String(row.school||'').trim();
+      var names = hsEntrySheetTeacherNames(row);
+      if(!school || !names.length) return;
+      if(!bySchool[school]) bySchool[school] = {};
+      names.forEach(function(name){
+        var k = name.toUpperCase();
+        if(!bySchool[school][k]) bySchool[school][k] = {name:name, days:[]};
+        bySchool[school][k].days.push({date:x.date, day:sched.day||x.day, subject:sched.sub||x.sub});
+      });
+    });
+  });
+  return bySchool;
+}
+function mpDutyPopulateTeacherSelect(){
+  var bySchool = mpCollectFeederSchoolDutyDays();
+  var schools = Object.keys(bySchool).sort(hsDictCmp);
+  ['mp_dutyTeacherSelect','mp_entCertTeacher'].forEach(function(id){
+    var dd = document.getElementById(id); if(!dd) return;
+    var html = '<option value="">Select Teacher</option>';
+    schools.forEach(function(s){
+      html += '<optgroup label="'+hsEscapeFormText(s)+'">';
+      Object.keys(bySchool[s]).forEach(function(k){
+        var t = bySchool[s][k];
+        html += '<option value="'+hsEscapeFormText(s+'||'+t.name)+'">'+hsEscapeFormText(t.name)+' ('+t.days.length+'d)</option>';
+      });
+      html += '</optgroup>';
+    });
+    dd.innerHTML = html;
+  });
+  ['mp_entCertSchool','mp_hoiSchoolSelect','mp_certSchoolSelect'].forEach(function(id){
+    var dd = document.getElementById(id); if(!dd) return;
+    var allSchools = schools.concat(feederSchoolRoster).filter(function(v,idx,a){return a.indexOf(v)===idx;});
+    dd.innerHTML = '<option value="">Select School</option>' + allSchools.map(function(s){return '<option value="'+hsEscapeFormText(s)+'">'+hsEscapeFormText(s)+'</option>';}).join('');
+  });
+  var dtSel = document.getElementById('mp_certDateSelect');
+  if(dtSel && !dtSel.options.length){
+    dtSel.innerHTML = mpOfficialExamRoutineTimeline.map(function(x,i){return '<option value="'+i+'">'+x.date+' — '+x.day+'</option>';}).join('');
+  }
+}
+function mpCertPopulateSchools(){ mpDutyPopulateTeacherSelect(); mpCertRenderTeacherCheckboxes(); }
+function mpCertRenderTeacherCheckboxes(){
+  var box = document.getElementById('mp_certTeacherCheckboxes'); if(!box) return;
+  var sel = document.getElementById('mp_certSchoolSelect');
+  var school = (sel && sel.value) || '';
+  if(!school){ box.innerHTML = 'Select a school to list its teachers.'; return; }
+  mpRdLoad();
+  var names = ((mpRdDB[mpGetVenue()] && mpRdDB[mpGetVenue()].rows)||[]).filter(function(r){return String(r.s||'').trim().toUpperCase()===school.toUpperCase();}).map(function(r){return r.n;}).filter(Boolean);
+  box.innerHTML = names.length
+    ? names.map(function(n){return '<label style="display:inline-flex;gap:5px;margin:3px 12px 3px 0;"><input type="checkbox" class="mp-cert-cb" value="'+hsEscapeFormText(n)+'">'+hsEscapeFormText(n)+'</label>';}).join('')
+    : 'No teachers found in roster for this school.';
+}
+function mpPrintTeacherDutyDeclaration(){
+  var el = document.getElementById('mp_dutyTeacherSelect') || document.getElementById('mp_entCertTeacher');
+  var val = (el && el.value) || '';
+  if(!val) return alert('Select a teacher first.');
+  var parts = val.split('||'), school = parts[0], name = parts[1];
+  var rec = (mpCollectFeederSchoolDutyDays()[school]||{})[name.toUpperCase()];
+  if(!rec) return;
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>WBBSE On Duty Declaration — '+hsEscapeFormText(rec.name)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h2><h3 style="text-align:center;text-decoration:underline;">ON DUTY DECLARATION — MADHYAMIK PARIKSHA</h3><p>Certified that Sri / Smt. <b>'+hsEscapeFormText(rec.name)+'</b> of <b>'+hsEscapeFormText(school)+'</b> performed invigilation duty at Taldangra Madhyamik Examination Centre (2206) on:</p><table><tr><th>Sl</th><th>Date</th><th>Day</th><th>Subject</th></tr>'+rec.days.map(function(d,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(d.date)+'</td><td>'+hsEscapeFormText(d.day)+'</td><td>'+hsEscapeFormText(d.subject)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+function mpPrintCheckedTeachersDutyCertificate(){
+  var school = document.getElementById('mp_certSchoolSelect').value || '';
+  var idx = parseInt(document.getElementById('mp_certDateSelect').value||'0',10);
+  var checked = Array.prototype.slice.call(document.querySelectorAll('.mp-cert-cb:checked')).map(function(x){return x.value;});
+  if(!school || !checked.length) return alert('Select a school and tick at least one teacher.');
+  var x = mpOfficialExamRoutineTimeline[idx];
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><p>Certified that the following teacher(s) of your institution performed invigilation duty on <b>'+hsEscapeFormText(x.date)+' ('+hsEscapeFormText(x.day)+')</b>:</p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Date</th></tr>'+checked.map(function(n,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(n)+'</td><td>'+hsEscapeFormText(x.date)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+function mpPrintSchoolWiseHOICertificate(){
+  var s1 = document.getElementById('mp_hoiSchoolSelect'), s2 = document.getElementById('mp_entCertSchool');
+  var school = (s1 && s1.value) || (s2 && s2.value) || '';
+  if(!school) return alert('Select a feeder school first.');
+  var rec = mpCollectFeederSchoolDutyDays()[school];
+  if(!rec) return alert('No teachers entered for this school in the Madhyamik Entry Sheet.');
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>Consolidated Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">CONSOLIDATED PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Dates Served</th><th>Total Days</th></tr>'+Object.keys(rec).map(function(k,i){var t=rec[k]; return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(t.name)+'</td><td>'+t.days.map(function(d){return d.date;}).join(', ')+'</td><td>'+t.days.length+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+function mpEntryPrintSchoolCert(){ mpPrintSchoolWiseHOICertificate(); }
+function mpEntryPrintTeacherCert(){ mpPrintTeacherDutyDeclaration(); }
+
+function mpConfRender(){
+  var box = document.getElementById('mp_confPreview'); if(!box) return;
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  var buildVenueRows = function(vKey){
+    return (mpTrackingStateDatabase[vKey]||[]).map(function(r,i){
+      var v = r.vals||[0,0,0,0,0,0,0,0];
+      var en = v[0]+v[1]+v[2]+v[3], ap = v[4]+v[5]+v[6]+v[7], ab = en - ap;
+      return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(r.date)+'</td><td>'+hsEscapeFormText(r.day)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.sub)+'</td><td>'+en+'</td><td>'+ap+'</td><td>'+ab+'</td></tr>';
+    }).join('');
+  };
+  box.innerHTML = '<div style="background:#fff;padding:18px;border:1px solid #cbd5e1;border-radius:8px;"><h3 style="text-align:center;margin:0;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h3><p style="text-align:center;font-weight:700;margin:4px 0 14px;">CONFIDENTIAL REPORT — MADHYAMIK PARIKSHA '+hsEscapeFormText(year)+' — CENTRE: TALDANGRA (2206)</p><h4>Venue-1: TALDANGRA FULMATI HIGH SCHOOL [H.S.] (114071)</h4><table class="reporting-table"><thead><tr><th>Sl</th><th>Date</th><th>Day</th><th>Subject</th><th>Enrolled</th><th>Appeared</th><th>Absent</th></tr></thead><tbody>'+buildVenueRows('TFHS')+'</tbody></table><h4 style="margin-top:16px;">Venue-2: TALDANGRA GIRLS\' HIGH SCHOOL [H.S.] (114200)</h4><table class="reporting-table"><thead><tr><th>Sl</th><th>Date</th><th>Day</th><th>Subject</th><th>Enrolled</th><th>Appeared</th><th>Absent</th></tr></thead><tbody>'+buildVenueRows('TGHS')+'</tbody></table></div>';
+}
+function mpConfPrint(){
+  mpConfRender();
+  var html = document.getElementById('mp_confPreview').innerHTML || '';
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>Madhyamik Confidential Report</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;font-size:9.5pt}table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #000;padding:5px;text-align:center}th{background:#f1f5f9}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+function mpConfReset(){ mpConfRender(); }
+
+function mpSbRender(){
+  var box = document.getElementById('mp_sbPreview'); if(!box) return;
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  box.innerHTML = '<div style="background:#fff;padding:18px;border:1px solid #cbd5e1;border-radius:8px;"><h3 style="text-align:center;margin:0;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h3><p style="text-align:center;font-weight:700;">SUBMISSION LETTER &amp; PACKET SUMMARY — MADHYAMIK PARIKSHA '+hsEscapeFormText(year)+'</p><p>To<br>The Deputy Secretary (Examination),<br>West Bengal Board of Secondary Education</p><p>Sir/Madam,<br>Please find enclosed herewith the sealed packets of written Answer Scripts, Absentee Statements, Venue Supervisor Data Sheets, and Confidential Reports for Madhyamik Pariksha-'+hsEscapeFormText(year)+' conducted at Taldangra Centre (Code: 2206).</p><table class="reporting-table"><thead><tr><th>Sl</th><th>Date</th><th>Day</th><th>Subject</th><th>TFHS (114071) Present</th><th>TGHS (114200) Present</th><th>Total Scripts</th></tr></thead><tbody>' +
+    mpOfficialExamRoutineTimeline.map(function(d,i){
+      var r1 = (mpTrackingStateDatabase.TFHS||[])[i], r2 = (mpTrackingStateDatabase.TGHS||[])[i];
+      var v1 = (r1 && r1.vals)||[0,0,0,0,0,0,0,0], v2 = (r2 && r2.vals)||[0,0,0,0,0,0,0,0];
+      var p1 = v1[4]+v1[5]+v1[6]+v1[7], p2 = v2[4]+v2[5]+v2[6]+v2[7];
+      return '<tr><td>'+(i+1)+'</td><td>'+d.date+'</td><td>'+d.day+'</td><td style="text-align:left;">'+d.sub+'</td><td>'+p1+'</td><td>'+p2+'</td><td><b>'+(p1+p2)+'</b></td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+function mpSbPrintLetter(){
+  mpSbRender();
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>Madhyamik Submission Letter</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body>'+document.getElementById('mp_sbPreview').innerHTML+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+function mpSbPrintBoxLabels(){
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>Madhyamik Box Labels</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif}.lbl{border:3px solid #000;padding:12mm;margin-bottom:10mm;page-break-inside:avoid}</style></head><body>' +
+    ['VENUE-1: TALDANGRA FULMATI HIGH SCHOOL [H.S.] (114071)','VENUE-2: TALDANGRA GIRLS\' HIGH SCHOOL [H.S.] (114200)'].map(function(v){return '<div class="lbl"><h2 style="margin:0;text-align:center;">W.B.B.S.E. MADHYAMIK PARIKSHA — '+hsEscapeFormText(year)+'</h2><h3 style="text-align:center;margin:8px 0;">CENTRE: TALDANGRA &bull; CENTRE CODE: 2206</h3><p style="font-size:14pt;text-align:center;font-weight:700;">'+v+'</p></div>';}).join('') +
+    '<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+
+var _origSwitchTool = window.switchTool;
+window.switchTool = function(tool){
+  if(typeof _origSwitchTool === 'function') _origSwitchTool(tool);
+  if(tool === 'forms') try{ mpRenderDaySubjectSelector(); }catch(e){}
+  if(tool === 'dailyops') try{ mpDailyOpsRender(); }catch(e){}
+  if(tool === 'roomduty') try{ mpRdRender(); }catch(e){}
+  if(tool === 'confreport') try{ mpConfRender(); }catch(e){}
+  if(tool === 'submission') try{ mpSbRender(); }catch(e){}
+};
+
+var _origSwitchBoard = window.switchBoard;
+window.switchBoard = function(board){
+  if(typeof _origSwitchBoard === 'function') _origSwitchBoard(board);
+  var lbl = document.querySelector('.tool-btn[data-tool="forms"]');
+  if(lbl){
+    lbl.innerHTML = '<span class="dot"></span>' + (board==='mp' ? 'WBBSE Centre Forms' : 'WBCHSE Centre Forms');
+  }
+};
+
+cloudRunWhenReady(function(){
+  try{
+    mpInitDataEngine();
+    mpReqInitSystemWorkspace();
+    mpRecPopulatePresetSelect();
+    mpRecLoadPreset(6);
+    mpRenderDaySubjectSelector();
+    mpDailyOpsRender();
+    mpRdRender();
+    mpEntrySheetRender();
+    mpConfRender();
+    mpSbRender();
+  }catch(e){ console.warn('MP init warning:', e); }
+});
+</script>
