@@ -2277,7 +2277,36 @@ function hsPrintCentreForm(type,venueOverride,dateOverride){
   } else if(type==='seal'){ title='SEAL OPENING FORMAT'; body=`<h3>SEAL OPENING FORMAT</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><table><tr><th>Centre Name / Code</th><td>${esc(c.centre)} / ${esc(c.centreCode)}</td></tr><tr><th>Venue / Code</th><td>${esc(c.venue)} / ${esc(c.venueCode)}</td></tr><tr><th>Date / Day</th><td>${esc(c.date)} / ${esc(c.day)}</td></tr><tr><th>Allotted Subject(s)</th><td>${esc(c.subject)}</td></tr></table><p>Details of Question Paper Carton / Packet:</p><table><tr><th>Sl.</th><th>Carton / Packet No.</th><th>Seal Condition</th><th>Opening Time</th><th>Signature</th></tr>${Array.from({length:8},(_,i)=>`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td></tr>`).join('')}</table><p>Signature of Venue Supervisor: __________________________ &nbsp;&nbsp; Centre Secretary / Centre-in-Charge: __________________________</p>`;
   } else { title='R. A. FORMAT'; body=`<h3>R. A. FORMAT</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><table><tr><th>Centre Name / Code</th><td>${esc(c.centre)} / ${esc(c.centreCode)}</td><th>Venue Code</th><td>${esc(c.venueCode)}</td></tr><tr><th>Venue</th><td colspan="3">${esc(c.venue)}</td></tr><tr><th>Date / Day</th><td>${esc(c.date)} / ${esc(c.day)}</td><th>Subject(s)</th><td>${esc(c.subject)}</td></tr></table><table><tr><th>Sl.</th><th>Candidate / Roll / Registration</th><th>Reason / R.A. Details</th><th>Action Taken</th><th>Signature</th></tr>${Array.from({length:12},(_,i)=>`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td></tr>`).join('')}</table><p>Signature of Venue Supervisor: __________________________ &nbsp;&nbsp; Centre Secretary / Centre-in-Charge: __________________________</p>`; }
   const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
-  w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.official-form-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0;border-bottom:1px solid #333}.official-top-table{margin:0!important}.official-top-table .blank-col{width:11%}.official-top-table th{width:31%;font-size:14px}.official-top-table td{font-size:14px}.official-detail-table{margin-top:0!important}.official-section-note{font-weight:700;margin:12px 0 4px}h3{text-align:center;margin:0 0 10px}.small{font-size:9pt}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top;min-height:22px}th{background:#f1f5f9}.lines{border-bottom:1px solid #333;line-height:28px}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script></body></html>`); w.document.close();
+  w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.official-form-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0;border-bottom:1px solid #333}.official-top-table{margin:0!important}.official-top-table .blank-col{width:11%}.official-top-table th{width:31%;font-size:14px}.official-top-table td{font-size:14px}.official-detail-table{margin-top:0!important}.official-section-note{font-weight:700;margin:12px 0 4px}h3{text-align:center;margin:0 0 10px}.small{font-size:9pt}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top;min-height:22px}th{background:#f1f5f9}.lines{border-bottom:1px solid #333;line-height:28px}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`); w.document.close();
 }
 function hsGenerateSelectedDayForms(){
   hsSaveCurrentDaySubjects(); hsSaveSelectedFormDates(); const venue=hsGetVenue(); const date=document.getElementById('hs_formDay')?.value||hsOfficialExamRoutineTimeline[0].date; const subs=hsGetAllocatedSubjects(venue,date); if(!subs.length)return alert('No subject selected for this day.');
@@ -2398,7 +2427,36 @@ function hsPrintTeacherDutyDeclaration(){
   const c={venue:'TALDANGRA Examination Centre',venueCode:'2206',date:'',day:''};
   const body=`<h3>ON DUTY DECLARATION</h3><p><b>(In connection with Semester-III of H. S. Examination, 2027)</b></p><p>I, Sri / Smt. <b>${esc(rec.name)}</b> of <b>${esc(school)}</b> was engaged with examination duty related to Semester-III of H.S. Examination, 2027 on the following date(s):</p><table><tr><th>Sl.</th><th>Date</th><th>Day</th><th>Venue</th><th>Subject(s)</th></tr>${rows}</table><p>Signature of the applicant with date: __________________________________</p><p>Mobile No.: ______________________________</p><p>The above mentioned day(s) may be treated as &ldquo;ON DUTY&rdquo; in respect of Sri/Smt. <b>${esc(rec.name)}</b> of <b>${esc(school)}</b>.</p><p>Signature of Convenor / DI of Schools (SE) with date: ______________________________</p>`;
   const w=window.open('','_blank'); if(!w)return alert('Please allow pop-ups for form printing.');
-  w.document.write(`<!doctype html><html><head><title>ON DUTY DECLARATION — ${esc(rec.name)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.write(`<!doctype html><html><head><title>ON DUTY DECLARATION — ${esc(rec.name)}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11pt;color:#111}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px;margin-bottom:0}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}h3{text-align:center;margin:12px 0 10px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px;vertical-align:top}th{background:#f1f5f9}.sig{margin-top:35px;display:flex;justify-content:space-between}</style></head><body>${hsFormHeaderHtml(c)}${body}<div class="sig"><span>Venue Supervisor</span><span>Centre Secretary / Centre-in-Charge</span></div><script>window.onload=()=>window.print();<\/script>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 /* ================================================================
@@ -2512,7 +2570,36 @@ function hsCertMetaTableHtml(refSuffix){
 function hsCertOpenWindow(title,school,bodyHtml){
   const esc=hsEscapeFormText;
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for form printing.');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)} — ${esc(school)}</title><style>${hsCertLetterCss()}</style></head><body><div class="cert-wrap">${bodyHtml}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)} — ${esc(school)}</title><style>${hsCertLetterCss()}</style></head><body><div class="cert-wrap">${bodyHtml}</div><script>window.onload=()=>window.print();<\/script>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 function hsPrintCheckedTeachersDutyCertificate(){
@@ -2582,7 +2669,36 @@ function hsOpenMultiFormWindow(venue,dates,types){
 @page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#222;background:#fff}.page{page-break-after:always;min-height:100vh;position:relative}.venue-official-page{width:100%;padding:15mm 11mm 10mm}.venue-logo-wrap{text-align:center;margin:0 0 4mm}.venue-logo{width:25mm;height:25mm;object-fit:contain}.venue-main-title{text-align:center;font-size:16pt;font-weight:700;text-decoration:underline;margin:0 0 4mm}.venue-subtitle{text-align:center;font-size:9pt;font-weight:700;line-height:1.3;margin-bottom:5mm}.venue-meta{display:flex;justify-content:space-between;font-size:10.5pt;font-weight:600;margin:0 0 3mm}.venue-meta>div{width:48%;white-space:nowrap}.venue-data-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.2pt}.venue-data-table th,.venue-data-table td{border:1px solid #555;padding:1.5mm 1mm;text-align:center;vertical-align:middle}.venue-data-table th{font-weight:700}.venue-data-table .hall-col{width:5%}.venue-data-table .inv-col{width:13%}.venue-data-table .sig-col{width:11%}.venue-data-table tbody td{height:10mm}.venue-notes{font-size:8pt;line-height:1.45;margin-top:2.5mm}.venue-signature{text-align:right;margin-top:7mm;margin-right:4mm;font-size:8.5pt;line-height:1.4}.seal-official-page{width:100%;padding:15mm 20mm 12mm}.seal-logo-wrap{text-align:center;margin-bottom:2mm}.seal-logo{width:22mm;height:22mm;object-fit:contain}.seal-title{text-align:center;font-size:15pt;font-weight:700;margin-bottom:5mm}.seal-subtitle{text-align:center;font-size:11pt;font-weight:700;margin-bottom:4mm}.seal-box{border:1px solid #555;padding:4mm 5mm 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;line-height:1.65}.seal-box p{margin:0 0 5mm}.write-line{display:inline-block;min-width:105mm;border-bottom:1px solid #777;vertical-align:bottom}.short-line{display:inline-block;min-width:32mm;border-bottom:1px solid #777;text-align:center}.seal-person-table{width:100%;border-collapse:collapse;margin-top:2mm;font-size:10pt;line-height:1.1}.seal-person-table th,.seal-person-table td{border:1px solid #555;padding:1.7mm;text-align:left;height:11mm}.seal-person-table th{text-align:center;font-weight:700}.seal-person-table th:first-child,.seal-person-table td:first-child{width:8%}.seal-person-table th:nth-child(2){width:43%}.seal-person-table th:nth-child(3){width:18%}.seal-person-table th:nth-child(4){width:31%}.seal-meta{display:flex;justify-content:space-between;margin:8mm 0 0;font-family:Georgia,'Times New Roman',serif;font-size:10.5pt}.seal-meta.single{display:block;margin-top:6mm}.seal-signature{text-align:center;margin-top:20mm;font-family:Georgia,'Times New Roman',serif;font-size:10pt}.generic-page{padding:12mm}.generic-page .official-form-head{text-align:center;border-bottom:2px solid #111;padding:8px 0 9px}.wbchse-logo{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 4px}.council-name{font-weight:700;font-size:18px;line-height:1.2}.address{font-size:14px;line-height:1.25}.exam-line{font-size:14px;line-height:1.25}.generic-title{text-align:center;font-weight:700;font-size:20px;padding:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #555;padding:6px;vertical-align:top}th{font-weight:700}.sig{margin-top:35px;display:flex;justify-content:space-between}
 ${HS_VS_LAND_CSS}
 ${typeof HS_OFFICIAL_CSS==='string'?HS_OFFICIAL_CSS:''}
-</style></head><body>${typeof hsFormsToolbar==='function'?hsFormsToolbar(types):hsVsToolbar()}${pages.join('')}</body></html>`); w.document.close();
+</style></head><body>${typeof hsFormsToolbar==='function'?hsFormsToolbar(types):hsVsToolbar()}${pages.join('')}
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`); w.document.close();
 }
 
 
@@ -3866,7 +3982,36 @@ function hsCertOpenMulti(title,bodies){
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for form printing.');
   const pages=bodies.map(b=>`<div class="cert-wrap">${b}</div>`).join('');
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${hsCertLetterCss()}
-@media print{.cert-wrap{margin:0!important;min-height:274mm!important;page-break-after:always}.cert-wrap:last-child{page-break-after:auto}}</style></head><body>${pages}<script>window.onload=()=>window.print();<\/script></body></html>`);
+@media print{.cert-wrap{margin:0!important;min-height:274mm!important;page-break-after:always}.cert-wrap:last-child{page-break-after:auto}}</style></head><body>${pages}<script>window.onload=()=>window.print();<\/script>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 function hsEntryPrintSchoolCert(all){
@@ -5200,7 +5345,36 @@ td.l{text-align:left;font-weight:600}td.rn{font-weight:700;font-size:8pt}
 [contenteditable]{outline:none}
 @media screen{body{background:#e5e7eb}.grp{background:#fff;padding:6mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>Room-wise Allotment of Invigilator — A4 Landscape. Heading lines are editable; edit R.N. / names in the tool itself.</span><button onclick="window.print()">Print</button></div>${body}</body></html>`);
+</style></head><body><div class="tb no-print"><span>Room-wise Allotment of Invigilator — A4 Landscape. Heading lines are editable; edit R.N. / names in the tool itself.</span><button onclick="window.print()">Print</button></div>${body}
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5373,7 +5547,36 @@ tbody tr{height:var(--rh,6.4mm);page-break-inside:avoid;break-inside:avoid}
 [contenteditable]{outline:none}
 @media screen{body{background:#e5e7eb}.pg{background:#fff;padding:10mm;margin:10px auto;max-width:210mm;box-shadow:0 2px 8px rgba(0,0,0,.25)}[contenteditable]:hover{background:#fffbe6}[contenteditable]:focus{background:#eff6ff}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>${esc(note)}</span><button onclick="window.print()">Print</button></div>${body}</body></html>`);
+</style></head><body><div class="tb no-print"><span>${esc(note)}</span><button onclick="window.print()">Print</button></div>${body}
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5416,7 +5619,36 @@ tbody tr{height:7.5mm;page-break-inside:avoid;break-inside:avoid}
 <div class="vl" contenteditable="true">${venueLine}</div>
 <table><colgroup><col style="width:6%"><col style="width:29%"><col style="width:31%"><col style="width:34%"></colgroup>
 <thead><tr><th>Sl.No</th><th>Name of the Invigilator(s)</th><th>Invigilator's School Name</th><th>Signature</th></tr></thead>
-<tbody>${trs}</tbody></table></div></body></html>`);
+<tbody>${trs}</tbody></table></div>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5571,7 +5803,36 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff}
       <div class="seal">With Official seal</div>
     </div>
   </div>
-</div></body></html>`);
+</div>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5685,7 +5946,36 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#f
 [contenteditable]{outline:none}
 @media screen{body{background:#cbd5e1}.sheet{margin:10px auto;box-shadow:0 2px 10px rgba(0,0,0,.3)}[contenteditable]:hover{background:#fef9c3}[contenteditable]:focus{background:#dbeafe}}
 @media print{.no-print{display:none!important}}
-</style></head><body><div class="tb no-print"><span>Insured Speed Post covers — ${dates.length} page(s), A4 colour. <u>Click any line to edit</u>. Parcel limit 10 kg (8–10 kg): print one copy per parcel and fill PARCEL NO. Then</span><button onclick="window.print()">Print</button></div>${pages}</body></html>`);
+</style></head><body><div class="tb no-print"><span>Insured Speed Post covers — ${dates.length} page(s), A4 colour. <u>Click any line to edit</u>. Parcel limit 10 kg (8–10 kg): print one copy per parcel and fill PARCEL NO. Then</span><button onclick="window.print()">Print</button></div>${pages}
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5832,7 +6122,36 @@ body.no-seal .doc-seal{display:none}
 @media screen{body{background:#cbd5e1}.sheet{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 10px rgba(0,0,0,.3);height:auto;min-height:271mm;width:210mm}[contenteditable]:hover{background:#fef9c3}[contenteditable]:focus{background:#dbeafe}.sigw{margin-top:8mm}}
 @media print{.no-print{display:none!important}}
 ${typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:''}
-</style></head><body><div class="tb no-print"><span>Despatch Report Form 3A (AP) [SEM-III] &mdash; ${pageCount} page(s) for ${dates.length} day(s), A4. Centre, dates, post office and SUBJECT CODES are auto-filled; type packets, top-sheet numbers, boxes and receipt in the boxes (large font). <u>Click any line to edit</u>.</span><label><input type="checkbox" checked onchange="document.body.classList.toggle('no-seal',!this.checked)"> Round Centre seal</label><button onclick="window.print()">Print</button></div>${pages}</body></html>`);
+</style></head><body><div class="tb no-print"><span>Despatch Report Form 3A (AP) [SEM-III] &mdash; ${pageCount} page(s) for ${dates.length} day(s), A4. Centre, dates, post office and SUBJECT CODES are auto-filled; type packets, top-sheet numbers, boxes and receipt in the boxes (large font). <u>Click any line to edit</u>.</span><label><input type="checkbox" checked onchange="document.body.classList.toggle('no-seal',!this.checked)"> Round Centre seal</label><button onclick="window.print()">Print</button></div>${pages}
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -5983,7 +6302,36 @@ tr.tot td{background:var(--t);font-weight:700;border-top:.5mm solid var(--a)}
 <tr class="tot"><td colspan="2" style="text-align:right">TOTAL &nbsp;(${E(cand)} candidates @ Rs. ${rate}/- per head)</td><td class="n">${rows.reduce((x,r)=>x+r.m,0)}</td><td class="n">${rows.reduce((x,r)=>x+r.f,0)}</td><td class="n">${E(cand)}</td><td class="n">${E(amt)}.00</td></tr></tbody></table>
 <div class="ft"><div class="sl"><div class="sline">Depositor Signature</div></div><div class="sealbox"><img src="${seal}" alt=""></div><div class="sg">${signBlk}${signOn?'':'<div style="font-weight:700">Officer-In-Charge / Centre Secretary</div>'}</div></div>
 <div class="note">This is a computer-generated receipt, valid with the Centre seal and signature.</div></div>
-</div></div></div></body></html>`);
+</div></div></div>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -6347,7 +6695,36 @@ var SZ=${sizesJson};
 function setShow(v){var b=document.body;b.classList.remove('only-env','only-sp');if(v==='env')b.classList.add('only-env');if(v==='sp')b.classList.add('only-sp');}
 function setSize(k){var s=SZ[k];document.getElementById('envPage').textContent='@page env{size:'+s.w+'mm '+s.h+'mm;margin:0}';var r=document.documentElement.style;r.setProperty('--ew',s.w+'mm');r.setProperty('--eh',s.h+'mm');r.setProperty('--u',(s.w/220).toFixed(3));}
 document.getElementById('showSel').value='${which==='env'?'env':which==='sp'?'sp':'both'}';
-<\/script></body></html>`);
+<\/script>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>`);
   w.document.close();
 }
 hsPrintSpeedPost=function(mode){ hsPrintCovers(mode,'sp'); };
@@ -6718,7 +7095,36 @@ function hsConfPrint(){
   const w=window.open('','_blank'); if(!w) return alert('Please allow pop-ups for printing.');
   const html=pg.outerHTML.replace(/\scontenteditable="true"/g,'');
   const css=document.getElementById('confReportCss').textContent;
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Confidential Report \u2014 H.S. 2027 [SEM-III] \u2014 Centre 2206</title><style>@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}body{margin:0;background:#fff}.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}.tb label{font-weight:600;cursor:pointer}</style><style>'+css+TF_DOC_SEAL_CSS+'</style><style>.cr-page{width:194mm;max-width:none;margin:0 auto;padding:6mm;border:1mm double #1e3a8a;box-shadow:none}body.no-seal .doc-seal{display:none}@media screen{body{background:#e5e7eb}.cr-page{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}}@media print{.no-print{display:none!important}}</style></head><body><div class="tb no-print"><span>Confidential Report \u2014 A4 portrait. Use the tool to change wording or figures.</span><label><input type="checkbox" checked onchange="document.body.classList.toggle(\'no-seal\',!this.checked)"> Round Centre seal</label><label><input type="checkbox" onchange="document.getElementById(\'hs_confPage\').classList.toggle(\'office-compact\',this.checked)"> Office view (compact, single-page share)</label><button onclick="window.print()">Print</button></div>'+html+'</body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Confidential Report \u2014 H.S. 2027 [SEM-III] \u2014 Centre 2206</title><style>@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}body{margin:0;background:#fff}.tb{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 14px;font:600 13px Arial;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tb button{background:#16a34a;color:#fff;border:0;border-radius:5px;padding:7px 16px;font-weight:700;cursor:pointer}.tb label{font-weight:600;cursor:pointer}</style><style>'+css+TF_DOC_SEAL_CSS+'</style><style>.cr-page{width:194mm;max-width:none;margin:0 auto;padding:6mm;border:1mm double #1e3a8a;box-shadow:none}body.no-seal .doc-seal{display:none}@media screen{body{background:#e5e7eb}.cr-page{background:#fff;padding:8mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.25)}}@media print{.no-print{display:none!important}}</style></head><body><div class="tb no-print"><span>Confidential Report \u2014 A4 portrait. Use the tool to change wording or figures.</span><label><input type="checkbox" checked onchange="document.body.classList.toggle(\'no-seal\',!this.checked)"> Round Centre seal</label><label><input type="checkbox" onchange="document.getElementById(\'hs_confPage\').classList.toggle(\'office-compact\',this.checked)"> Office view (compact, single-page share)</label><button onclick="window.print()">Print</button></div>'+html+'
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 document.addEventListener('input',function(ev){
@@ -6729,7 +7135,36 @@ document.addEventListener('input',function(ev){
 </script>
 <!-- ============================================================
      RECEIPT PATCH  —  paste this whole block into your index.html
-     just BEFORE the final </body> tag (after the last </script>).
+     just BEFORE the final 
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body> tag (after the last </script>).
      1) Adds "Signature of Depositor" to the COUNTERFOIL (H.S. + Madhyamik)
      2) Rebuilds "Print Receipt — A4 Landscape" so nothing is cut off:
         real 6 mm page margin, one page only, each half auto-shrinks to fit.
@@ -6817,7 +7252,36 @@ hsPrintReceiptLandscape=function(pfx){
   ' });'+
   '}'+
   'window.addEventListener("load",fit); window.addEventListener("beforeprint",fit);'+
-  '<\/script></body></html>');
+  '<\/script>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 };
 </script>
@@ -7194,7 +7658,36 @@ function sbPrint(b,what){
     '@media print{.no-print{display:none!important}.sb-sheet{margin:0;box-shadow:none}.sb-letter{margin:0;box-shadow:none;width:auto;padding:0}}'+
     '</style></head><body><div class="tb no-print"><span>'+ttl+' \u2014 A4. Print on plain / sticker paper (scale 100%).</span>'+
     '<label><input type="checkbox" checked onchange="document.body.classList.toggle(\'no-seal\',!this.checked)"> Round Centre seal</label>'+
-    '<button onclick="window.print()">Print</button></div>'+body+'</body></html>');
+    '<button onclick="window.print()">Print</button></div>'+body+'
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 
@@ -7449,7 +7942,36 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
   window.cwPrint=function(b,mode){
     sbLoad();let body=allPages(b,mode);const w=window.open('','_blank');if(!w)return alert('Please allow pop-ups for printing.');
     const title='TALDANGRA CENTRE 2206 — '+mode.toUpperCase();
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>'+CSS+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+body+'</body></html>');w.document.close();
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>'+CSS+(typeof TF_DOC_SEAL_CSS==='string'?TF_DOC_SEAL_CSS:'')+'</style></head><body>'+body+'
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');w.document.close();
   };
   const oldRender=window.sbRender;window.sbRender=function(){oldRender();setTimeout(()=>{controls('hs');controls('mp');cwSync('hs');cwSync('mp');},20)};
   const oldPaint=window.sbPaint;window.sbPaint=function(b){oldPaint(b);setTimeout(()=>{controls(b);cwSync(b)},0)};
@@ -7470,6 +7992,658 @@ html,body{margin:0;padding:0;background:#fff;font-family:Arial,"Segoe UI",Helvet
   },100);
 })();
 </script>
+<script id="mpExcelMatchingFormsUpgrade">
+/* ================================================================
+   WBBSE MADHYAMIK PARIKSHA — EXACT EXCEL-MATCHING FORMS ENGINE
+   Matches MP_REPORT ALL.xlsm & H.S. Official Format (Centre 2206)
+   ================================================================ */
+
+const MP_WBBSE_LOGO_SVG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">' +
+  '<circle cx="60" cy="60" r="56" fill="none" stroke="#1e293b" stroke-width="4"/>' +
+  '<circle cx="60" cy="60" r="48" fill="none" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="3,2"/>' +
+  '<path d="M60 22 L68 48 L94 48 L73 64 L81 90 L60 74 L39 90 L47 64 L26 48 L52 48 Z" fill="none" stroke="#7c2d12" stroke-width="2.5"/>' +
+  '<text x="60" y="64" font-family="Arial,sans-serif" font-size="14" font-weight="900" text-anchor="middle" fill="#1e293b">WBBSE</text>' +
+  '<text x="60" y="106" font-family="Arial,sans-serif" font-size="8" font-weight="700" text-anchor="middle" fill="#1e293b">KOLKATA</text>' +
+  '</svg>'
+);
+
+function mpSealHtml(mm, posStyle){
+  var sz = mm || 24;
+  return '<div style="position:absolute;' + (posStyle||'right:65mm;bottom:6mm;') + 'width:' + sz + 'mm;height:' + sz + 'mm;pointer-events:none;opacity:.88;">' +
+    '<svg viewBox="0 0 120 120" width="100%" height="100%">' +
+      '<circle cx="60" cy="60" r="56" fill="none" stroke="#5b21b6" stroke-width="3.5"/>' +
+      '<circle cx="60" cy="60" r="38" fill="none" stroke="#5b21b6" stroke-width="1.8"/>' +
+      '<text x="60" y="24" font-family="Arial" font-size="7.5" font-weight="800" fill="#5b21b6" text-anchor="middle">TALDANGRA MADHYAMIK</text>' +
+      '<text x="60" y="34" font-family="Arial" font-size="7" font-weight="800" fill="#5b21b6" text-anchor="middle">EXAM CENTRE COMMITTEE</text>' +
+      '<text x="60" y="57" font-family="Arial" font-size="9.5" font-weight="900" fill="#5b21b6" text-anchor="middle">CENTRE: 2206</text>' +
+      '<text x="60" y="69" font-family="Arial" font-size="8" font-weight="800" fill="#5b21b6" text-anchor="middle">BANKURA</text>' +
+      '<text x="60" y="102" font-family="Arial" font-size="7.5" font-weight="800" fill="#5b21b6" text-anchor="middle">W.B.B.S.E.</text>' +
+    '</svg></div>';
+}
+
+/* 1. UPGRADED CENTRE FORMS (Venue Supervisor 16-Room Landscape, Seal Opening, R.A., Duty, Confidential) */
+window.mpPrintCentreForm = function(type){
+  var venueKey = mpGetVenue();
+  var venue = HS_VENUE_INFO[venueKey].name;
+  var venueCode = HS_VENUE_INFO[venueKey].code;
+  var dayEl = document.getElementById('mp_formDay');
+  var date = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
+  var subs = mpGetAllocatedSubjects(venueKey, item.date);
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  var rec = mpDailyOpsEnsureRecord(venueKey, item.date);
+  var esc = hsEscapeFormText;
+
+  // Pull room-wise invigilators from Room-wise Invigilator Allotment if entered
+  mpRdLoad();
+  var rdRows = (mpRdDB[venueKey] && mpRdDB[venueKey].rows) || [];
+  var roomInvMap = {};
+  rdRows.forEach(function(r){
+    var rn = String((r.d && r.d[item.date])||'').trim();
+    if(!rn || !r.n) return;
+    var numMatch = rn.match(/\d+/);
+    var key = numMatch ? String(parseInt(numMatch[0],10)) : rn.toUpperCase();
+    if(!roomInvMap[key]) roomInvMap[key] = [];
+    roomInvMap[key].push(r.n);
+  });
+
+  if(type === 'venue'){
+    var roomRowsHtml = '';
+    for(var rNo=1; rNo<=16; rNo++){
+      var sub = subs[rNo-1] || (rNo===1 ? (subs[0]||item.sub) : '');
+      var d = (sub && rec.subjects[sub]) ? rec.subjects[sub] : {};
+      var tot = (Number(d.male)||0) + (Number(d.female)||0);
+      var qTo = hsDailySerialEnd(d.qFrom, tot);
+      var omrTo = hsDailySerialEnd(d.omrFrom, tot);
+      var invs = roomInvMap[String(rNo)] || [];
+      var inv1 = d.inv1 || invs[0] || '';
+      var inv2 = d.inv2 || invs[1] || '';
+      roomRowsHtml += '<tr>' +
+        '<td style="font-weight:700;">' + rNo + '</td>' +
+        '<td contenteditable="true" style="text-align:left;padding-left:4px;">' + esc(inv1) + '</td>' +
+        '<td contenteditable="true" style="text-align:left;padding-left:4px;">' + esc(inv2) + '</td>' +
+        '<td contenteditable="true" style="font-weight:700;">' + esc(sub ? mpSubjectCode4(sub) : '') + '</td>' +
+        '<td contenteditable="true">' + esc(d.qFrom||'') + '</td>' +
+        '<td contenteditable="true">' + esc(qTo||'') + '</td>' +
+        '<td contenteditable="true" style="font-weight:700;">' + (tot||'') + '</td>' +
+        '<td contenteditable="true"></td>' +
+        '<td contenteditable="true">' + esc(d.omrFrom||'') + '</td>' +
+        '<td contenteditable="true">' + esc(omrTo||'') + '</td>' +
+        '<td contenteditable="true" style="font-weight:700;">' + (tot||'') + '</td>' +
+        '<td></td>' +
+      '</tr>';
+    }
+
+    var w = window.open('','_blank'); if(!w) return alert('Allow pop-ups to print.');
+    w.document.write('<!doctype html><html><head><title>WBBSE Venue Supervisor Format (Data Sheet)</title><style>' +
+      '@page{size:A4 landscape;margin:7mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#111;background:#fff}' +
+      '.page{width:100%;padding:4mm 6mm;position:relative}' +
+      '.top-bar{display:flex;align-items:center;justify-content:center;gap:14px;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:5px}' +
+      '.top-bar img{width:16mm;height:16mm}' +
+      '.title-main{font-size:14pt;font-weight:900;text-align:center;letter-spacing:.3px}' +
+      '.title-sub{font-size:8.5pt;font-weight:700;text-align:center;margin-top:2px}' +
+      '.meta-row{display:flex;justify-content:space-between;font-size:9.5pt;font-weight:700;margin:4px 0}' +
+      'table.vs-tbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8pt;margin-top:4px}' +
+      '.vs-tbl th,.vs-tbl td{border:1px solid #111;padding:2px 3px;text-align:center;vertical-align:middle}' +
+      '.vs-tbl th{background:#f1f5f9;font-weight:800;font-size:7.4pt}' +
+      '.vs-tbl tbody td{height:7.3mm}' +
+      '.foot{display:flex;justify-content:space-between;align-items:flex-end;margin-top:6mm;font-size:8.5pt;position:relative}' +
+      '@media print{.no-print{display:none!important}}' +
+    '</style></head><body>' +
+      '<div class="no-print" style="padding:8px 14px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center;">' +
+        '<span><b>WBBSE Venue Supervisor Data Sheet (A4 Landscape — 16 Rooms)</b> &bull; Any cell can be edited before printing</span>' +
+        '<button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:6px 14px;border-radius:5px;font-weight:700;cursor:pointer;">Print Sheet</button>' +
+      '</div>' +
+      '<div class="page">' +
+        '<div class="top-bar"><img src="' + MP_WBBSE_LOGO_SVG + '" alt="WBBSE"><div>' +
+          '<div class="title-main">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
+          '<div class="title-sub">VENUE SUPERVISOR FORMAT ( DATA SHEET ) — MADHYAMIK PARIKSHA (SECONDARY EXAMINATION), ' + esc(year) + '</div>' +
+          '<div style="font-size:7.5pt;text-align:center;font-weight:600;">DETAILED RECORDS OF QUESTION PAPERS &amp; ANSWER SCRIPTS SENT FROM VENUE SUPERVISOR TO EXAMINATION HALLS / ROOMS</div>' +
+        '</div></div>' +
+        '<div class="meta-row">' +
+          '<div>CENTRE NAME &amp; CODE : TALDANGRA (2206)</div>' +
+          '<div>VENUE CODE : ' + esc(venueCode) + ' &nbsp;|&nbsp; VENUE : ' + esc(venue) + '</div>' +
+          '<div>DATE : ' + esc(item.date) + ' (' + esc(item.day) + ')</div>' +
+        '</div>' +
+        '<table class="vs-tbl"><thead>' +
+          '<tr><th rowspan="2" style="width:4.5%;">ROOM<br>NO.</th><th rowspan="2" style="width:15%;">NAME OF INVIGILATOR 1</th><th rowspan="2" style="width:15%;">NAME OF INVIGILATOR 2</th><th colspan="5">DETAILS OF QUESTION PAPER</th><th colspan="3">DETAILS OF ANSWER SCRIPT / LOOSE SHEET</th><th rowspan="2" style="width:12%;">SIGNATURE OF<br>INVIGILATORS</th></tr>' +
+          '<tr><th style="width:7%;">SUBJECT</th><th style="width:9.5%;">SERIAL FROM</th><th style="width:9.5%;">SERIAL TO</th><th style="width:5.5%;">TOTAL</th><th style="width:6.5%;">PACKET<br>SL. NO.</th><th style="width:9.5%;">SERIAL FROM</th><th style="width:9.5%;">SERIAL TO</th><th style="width:5.5%;">TOTAL</th></tr>' +
+        '</thead><tbody>' + roomRowsHtml + '</tbody></table>' +
+        '<div class="foot">' +
+          '<div style="font-size:7.6pt;line-height:1.4;max-width:58%;">' +
+            '<b>N.B.:</b> 1) Invigilators are requested to verify the Question Paper packet seal in presence of examinees before opening.<br>' +
+            '2) Distribute Question Papers at 10:45 a.m. and Answer Scripts at 10:50 a.m.; writing begins at 11:00 a.m.<br>' +
+            '3) This day-to-day record is to be preserved at the Venue Office.' +
+          '</div>' +
+          mpSealHtml(22, 'right:75mm;bottom:0;') +
+          '<div style="text-align:right;line-height:1.45;">' +
+            'Venue Supervisor: <b>' + esc(rec.officials.venueSupervisor||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor) + '</b><br>' +
+            'Centre Secretary: <b>' + esc(rec.officials.centreSecretary||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary) + '</b> &nbsp;|&nbsp; Officer-in-Charge: <b>' + esc(rec.officials.centreInCharge||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge) + '</b><br><br>' +
+            '....................................................................................<br>' +
+            '<b>( Signature of Venue Supervisor with Date &amp; Seal )</b>' +
+          '</div>' +
+        '</div>' +
+      '</div>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
+    w.document.close();
+    return;
+  }
+
+  // Portrait Official WBBSE Forms (Seal Opening, R.A., Duty, Confidential)
+  var bodyHtml = '', formTitle = '';
+  if(type === 'seal'){
+    formTitle = 'SEAL OPENING FORMAT';
+    bodyHtml = '<div style="text-align:center;font-weight:700;font-size:11pt;margin-bottom:10px;">For Question Paper Sealed Packets in Venue Supervisor\'s Confidential Room</div>' +
+      '<div style="border:1px solid #111;padding:12px 14px;font-family:Georgia,serif;font-size:10.8pt;line-height:1.8;">' +
+        '<p style="margin:0 0 10px;">Question Paper packets of <b>Madhyamik Pariksha (Secondary Examination), ' + esc(year) + '</b> for the subject(s) <span style="display:inline-block;min-width:95mm;border-bottom:1px solid #111;font-weight:700;text-align:center;" contenteditable="true">' + esc(subs.join(', ')) + '</span></p>' +
+        '<p style="margin:0 0 10px;">contained in sealed Packet(s) / Carton(s) bearing No(s). <span style="display:inline-block;min-width:95mm;border-bottom:1px solid #111;" contenteditable="true">&nbsp;</span></p>' +
+        '<p style="margin:0 0 12px;">are being opened on <b>' + esc(item.date) + ' (' + esc(item.day) + ')</b> at <b>10:15 a.m.</b> in presence of the following Examination Personnel:</p>' +
+        '<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:10pt;">' +
+          '<thead><tr><th style="width:8%;">Sl.</th><th style="width:42%;">Name</th><th style="width:22%;">Designation</th><th style="width:28%;">Signature &amp; Date</th></tr></thead>' +
+          '<tbody>' +
+            '<tr><td style="text-align:center;height:13mm;">1.</td><td contenteditable="true"><b>' + esc(rec.officials.venueSupervisor) + '</b></td><td style="text-align:center;">Venue Supervisor</td><td></td></tr>' +
+            '<tr><td style="text-align:center;height:13mm;">2.</td><td contenteditable="true"><b>' + esc(rec.officials.centreSecretary) + '</b></td><td style="text-align:center;">Centre Secretary</td><td></td></tr>' +
+            '<tr><td style="text-align:center;height:13mm;">3.</td><td contenteditable="true"><b>' + esc(rec.officials.centreInCharge) + '</b></td><td style="text-align:center;">Officer-in-Charge</td><td></td></tr>' +
+            '<tr><td style="text-align:center;height:13mm;">4.</td><td contenteditable="true"><b>' + esc(rec.officials.councilNominee) + '</b></td><td style="text-align:center;">Addl. Venue Supervisor</td><td></td></tr>' +
+            '<tr><td style="text-align:center;height:13mm;">5.</td><td contenteditable="true"></td><td style="text-align:center;">Invigilator</td><td></td></tr>' +
+            '<tr><td style="text-align:center;height:13mm;">6.</td><td contenteditable="true"></td><td style="text-align:center;">Invigilator</td><td></td></tr>' +
+          '</tbody>' +
+        '</table>' +
+      '</div>';
+  } else if(type === 'ra'){
+    formTitle = 'REPORTED AGAINST ( R. A. ) FORMAT';
+    bodyHtml = '<table><tr><th style="width:22%;">Centre Name / Code</th><td style="width:28%;">TALDANGRA / 2206</td><th style="width:22%;">Venue Code</th><td style="width:28%;">' + esc(venueCode) + '</td></tr>' +
+      '<tr><th>Venue Name</th><td colspan="3">' + esc(venue) + '</td></tr>' +
+      '<tr><th>Date &amp; Day</th><td>' + esc(item.date) + ' (' + esc(item.day) + ')</td><th>Subject(s)</th><td>' + esc(subs.join(', ')) + '</td></tr></table>' +
+      '<table><thead><tr><th style="width:6%;">Sl.</th><th style="width:22%;">Candidate Name</th><th style="width:18%;">Roll &amp; No.</th><th style="width:18%;">Registration No.</th><th style="width:22%;">Reason / R.A. Details</th><th style="width:14%;">Invigilator Sign</th></tr></thead>' +
+      '<tbody>' + Array.from({length:12},function(_,i){return '<tr><td style="text-align:center;height:10mm;">'+(i+1)+'</td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td></td></tr>';}).join('') + '</tbody></table>';
+  } else if(type === 'duty'){
+    formTitle = 'ON DUTY DECLARATION';
+    bodyHtml = '<div style="line-height:1.9;font-size:11pt;margin:14px 0;">' +
+      '<p>I, Sri / Smt. ________________________________________________________ was engaged in examination duty in connection with <b>Madhyamik Pariksha (Secondary Examination), ' + esc(year) + '</b> on / from ______________________ to ______________________.</p>' +
+      '<p><b>Examination Venue:</b> ' + esc(venue) + ' (Venue Code: ' + esc(venueCode) + ', Centre Code: 2206)</p>' +
+      '<p><b>Examination Date &amp; Day:</b> ' + esc(item.date) + ' (' + esc(item.day) + ') &nbsp;&nbsp;|&nbsp;&nbsp; <b>Subject(s):</b> ' + esc(subs.join(', ')) + '</p>' +
+      '<p style="margin-top:18mm;">Signature of the Applicant with Date: ________________________________________</p>' +
+      '<p>Name of Feeder School: _____________________________________________________</p>' +
+      '<p>Mobile No.: ____________________________________</p><hr style="margin:14px 0;border:1px dashed #333;">' +
+      '<p>The above-mentioned day(s) may be treated as <b>"ON DUTY"</b> in respect of Sri / Smt. ________________________________________________________.</p>' +
+      '</div>';
+  } else {
+    formTitle = 'CONFIDENTIAL INCIDENT FORMAT';
+    bodyHtml = '<p><b>Examination Date / Day:</b> ' + esc(item.date) + ' (' + esc(item.day) + ') &nbsp;&nbsp;|&nbsp;&nbsp; <b>Subject(s):</b> ' + esc(subs.join(', ')) + '</p>' +
+      '<p><b>a)</b> It has been noted that the following person(s) has/have been using mobile phones / electronic devices inside the Examination Venue during examination hours despite repeated warnings:</p>' +
+      '<p>i) ________________________________________ &nbsp; ii) ________________________________________</p>' +
+      '<p><b>b)</b> Nature of untoward incident reported from the examination hall / venue premises:</p>' +
+      '<div style="border:1px solid #111;min-height:65mm;padding:8px;" contenteditable="true"></div>' +
+      '<table><tr><th>Date &amp; Time</th><td contenteditable="true"></td><th>Venue Supervisor Name</th><td contenteditable="true">' + esc(rec.officials.venueSupervisor) + '</td></tr>' +
+      '<tr><th>Venue with Code</th><td colspan="3">' + esc(venue) + ' — ' + esc(venueCode) + ' (Centre: TALDANGRA - 2206)</td></tr></table>';
+  }
+
+  var w2 = window.open('','_blank'); if(!w2) return alert('Allow pop-ups to print.');
+  w2.document.write('<!doctype html><html><head><title>' + esc(formTitle) + ' — WBBSE</title><style>' +
+    '@page{size:A4 portrait;margin:12mm}body{font-family:Arial,sans-serif;font-size:10.5pt;color:#111;margin:0}' +
+    '.head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}' +
+    '.head img{width:20mm;height:20mm;display:block;margin:0 auto 4px}' +
+    'table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #111;padding:6px}th{background:#f1f5f9}' +
+    '.sig{margin-top:28mm;display:flex;justify-content:space-between;font-weight:700;position:relative}' +
+    '@media print{.no-print{display:none!important}}' +
+  '</style></head><body>' +
+    '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+      '<span><b>WBBSE ' + esc(formTitle) + '</b></span>' +
+      '<button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:6px 14px;border-radius:5px;font-weight:700;cursor:pointer;">Print Form</button>' +
+    '</div>' +
+    '<div class="head"><img src="' + MP_WBBSE_LOGO_SVG + '" alt="WBBSE">' +
+      '<div style="font-size:14.5pt;font-weight:900;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
+      '<div style="font-size:9.5pt;">Nivedita Bhavan, DJ-8, Sector-II, Salt Lake, Kolkata – 700 091</div>' +
+      '<div style="font-size:11pt;font-weight:800;margin-top:3px;">Madhyamik Pariksha (Secondary Examination), ' + esc(year) + '</div>' +
+    '</div>' +
+    '<div style="text-align:center;font-size:14pt;font-weight:900;text-decoration:underline;margin:8px 0 12px;">' + esc(formTitle) + '</div>' +
+    bodyHtml +
+    '<div class="sig">' + mpSealHtml(24, 'left:42%;top:-10mm;') +
+      '<span>Signature of Venue Supervisor (' + esc(venueCode) + ')</span>' +
+      '<span>Centre Secretary / Officer-in-Charge (2206)</span>' +
+    '</div>' +
+  '
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
+  w2.document.close();
+};
+
+/* 2. UPGRADED INSURED SPEED POST COVER & DESPATCH REPORT FORM (Matching H.S. Official Format) */
+window.mpPrintSpeedPost = function(scope){
+  var venueKey = mpGetVenue();
+  var venue = HS_VENUE_INFO[venueKey].name, venueCode = HS_VENUE_INFO[venueKey].code;
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  var dayEl = document.getElementById('mp_formDay');
+  var activeDate = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  var dates = (scope === 'all')
+    ? mpOfficialExamRoutineTimeline.map(function(x){return x.date;})
+    : [activeDate];
+  var esc = hsEscapeFormText;
+
+  var pagesHtml = dates.map(function(dt){
+    var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===dt;}) || mpOfficialExamRoutineTimeline[0];
+    var row = (mpTrackingStateDatabase[venueKey]||[]).find(function(r){return r.date===dt;});
+    var v = (row && row.vals) || [0,0,0,0,0,0,0,0];
+    var scripts = v[4]+v[5]+v[6]+v[7];
+    return '<section style="page-break-after:always;border:4px double #7c2d12;padding:10mm;min-height:180mm;position:relative;box-sizing:border-box;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #7c2d12;padding-bottom:6px;">' +
+        '<img src="' + MP_WBBSE_LOGO_SVG + '" style="width:20mm;height:20mm;">' +
+        '<div style="text-align:center;flex:1;">' +
+          '<div style="font-size:18pt;font-weight:900;color:#7c2d12;">INSURED SPEED POST / CONFIDENTIAL ANSWER SCRIPTS</div>' +
+          '<div style="font-size:13pt;font-weight:800;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
+          '<div style="font-size:11pt;font-weight:700;">MADHYAMIK PARIKSHA (SECONDARY EXAMINATION) — ' + esc(year) + '</div>' +
+        '</div>' +
+        '<div style="border:2px solid #111;padding:6px 12px;font-weight:900;font-size:12pt;text-align:center;">PARCEL NO.<br><span contenteditable="true" style="font-size:16pt;">1 of 1</span></div>' +
+      '</div>' +
+      '<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:12pt;">' +
+        '<tr><th style="border:1px solid #111;padding:6px;background:#fde3d0;width:22%;">EXAM DATE &amp; DAY</th><td style="border:1px solid #111;padding:6px;font-weight:800;" contenteditable="true">' + esc(item.date) + ' (' + esc(item.day) + ')</td>' +
+        '<th style="border:1px solid #111;padding:6px;background:#fde3d0;width:20%;">TOTAL SCRIPTS</th><td style="border:1px solid #111;padding:6px;font-weight:900;font-size:14pt;" contenteditable="true">' + (scripts||'') + '</td></tr>' +
+        '<tr><th style="border:1px solid #111;padding:6px;background:#fde3d0;">SUBJECT &amp; CODE</th><td colspan="3" style="border:1px solid #111;padding:6px;font-weight:800;font-size:13pt;" contenteditable="true">' + esc(mpSubjectWithCode(item.sub)) + '</td></tr>' +
+      '</table>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-top:8mm;">' +
+        '<div style="border:2px solid #1e293b;padding:8mm;border-radius:6px;background:#f8fafc;">' +
+          '<div style="font-size:11pt;font-weight:900;color:#475569;text-decoration:underline;margin-bottom:6px;">FROM (SENDER):</div>' +
+          '<div style="font-size:12.5pt;font-weight:800;line-height:1.55;" contenteditable="true">' +
+            'The Centre Secretary / Venue Supervisor,<br>' +
+            esc(venue) + '<br>' +
+            'Centre: TALDANGRA &bull; Centre Code: 2206<br>' +
+            'Venue Code: ' + esc(venueCode) + '<br>' +
+            'P.O. &amp; Block: Taldangra, Sub-Div: Khatra,<br>' +
+            'Dist.: Bankura, PIN – 722152<br>' +
+            'Mob: 9434654678 / 9933035811' +
+          '</div>' +
+        '</div>' +
+        '<div style="border:2px solid #7c2d12;padding:8mm;border-radius:6px;background:#fff7ed;">' +
+          '<div style="font-size:11pt;font-weight:900;color:#7c2d12;text-decoration:underline;margin-bottom:6px;">TO (ADDRESSEE):</div>' +
+          '<div style="font-size:13pt;font-weight:900;line-height:1.6;" contenteditable="true">' +
+            'The Deputy Secretary (Examination) /<br>' +
+            'Regional Officer / Head Examiner,<br>' +
+            'WEST BENGAL BOARD OF SECONDARY EDUCATION<br>' +
+            'Burdwan / Medinipur Regional Examination Council,<br>' +
+            'Nivedita Bhavan, DJ-8, Sector-II,<br>' +
+            'Salt Lake, Kolkata – 700 091' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      mpSealHtml(28, 'left:45%;bottom:8mm;') +
+      '<div style="display:flex;justify-content:space-between;margin-top:16mm;font-weight:800;font-size:10.5pt;">' +
+        '<div>Despatch Date: ' + esc(item.date) + ' &bull; Taldangra S.O. (722152)</div>' +
+        '<div>Signature of Venue Supervisor / Centre Secretary with Seal</div>' +
+      '</div>' +
+    '</section>';
+  }).join('');
+
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>WBBSE Insured Speed Post Covers</title><style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;margin:0}@media print{.no-print{display:none!important}}</style></head><body>' +
+    '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;align-items:center;"><span><b>WBBSE Answer Script Parcel Covers</b> (Editable before printing)</span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:6px 14px;border-radius:4px;font-weight:700;cursor:pointer;">Print Cover(s)</button></div>' +
+    pagesHtml + '
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
+  w.document.close();
+};
+
+window.mpPrintDespatch = function(scope){
+  var venueKey = mpGetVenue();
+  var venue = HS_VENUE_INFO[venueKey].name, venueCode = HS_VENUE_INFO[venueKey].code;
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  var dayEl = document.getElementById('mp_formDay');
+  var activeDate = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
+  var dates = (scope === 'all')
+    ? mpOfficialExamRoutineTimeline.map(function(x){return x.date;})
+    : [activeDate];
+  var esc = hsEscapeFormText;
+
+  var pagesHtml = dates.map(function(dt){
+    var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===dt;}) || mpOfficialExamRoutineTimeline[0];
+    var row = (mpTrackingStateDatabase[venueKey]||[]).find(function(r){return r.date===dt;});
+    var v = (row && row.vals) || [0,0,0,0,0,0,0,0];
+    var en = v[0]+v[1]+v[2]+v[3], ap = v[4]+v[5]+v[6]+v[7], ab = en - ap;
+    return '<section style="page-break-after:always;padding:10mm;border:2px solid #111;min-height:265mm;position:relative;box-sizing:border-box;">' +
+      '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px;">' +
+        '<img src="' + MP_WBBSE_LOGO_SVG + '" style="width:18mm;height:18mm;display:block;margin:0 auto 4px;">' +
+        '<div style="font-size:15pt;font-weight:900;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
+        '<div style="font-size:11.5pt;font-weight:800;">DESPATCH REPORT FORM FOR ANSWER SCRIPT PACKETS — MADHYAMIK PARIKSHA, ' + esc(year) + '</div>' +
+      '</div>' +
+      '<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:10.5pt;">' +
+        '<tr><th style="border:1px solid #111;padding:6px;background:#f1f5f9;">Centre Name &amp; Code</th><td style="border:1px solid #111;padding:6px;font-weight:700;">TALDANGRA (2206)</td>' +
+        '<th style="border:1px solid #111;padding:6px;background:#f1f5f9;">Venue Code</th><td style="border:1px solid #111;padding:6px;font-weight:700;">' + esc(venueCode) + '</td></tr>' +
+        '<tr><th style="border:1px solid #111;padding:6px;background:#f1f5f9;">Venue Name</th><td colspan="3" style="border:1px solid #111;padding:6px;font-weight:700;">' + esc(venue) + '</td></tr>' +
+        '<tr><th style="border:1px solid #111;padding:6px;background:#f1f5f9;">Date of Examination</th><td style="border:1px solid #111;padding:6px;font-weight:700;">' + esc(item.date) + ' (' + esc(item.day) + ')</td>' +
+        '<th style="border:1px solid #111;padding:6px;background:#f1f5f9;">Post Office</th><td style="border:1px solid #111;padding:6px;font-weight:700;" contenteditable="true">TALDANGRA S.O. (722152)</td></tr>' +
+      '</table>' +
+      '<table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:10.5pt;text-align:center;">' +
+        '<thead><tr style="background:#f1f5f9;"><th style="border:1px solid #111;padding:7px;">Subject &amp; Code</th><th style="border:1px solid #111;padding:7px;">Enrolled</th><th style="border:1px solid #111;padding:7px;">Appeared (Scripts Sent)</th><th style="border:1px solid #111;padding:7px;">Absent</th><th style="border:1px solid #111;padding:7px;">No. of Sealed Packets</th><th style="border:1px solid #111;padding:7px;">Speed Post / Receipt No.</th></tr></thead>' +
+        '<tbody><tr>' +
+          '<td style="border:1px solid #111;padding:10px;font-weight:800;" contenteditable="true">' + esc(mpSubjectWithCode(item.sub)) + '</td>' +
+          '<td style="border:1px solid #111;padding:10px;font-weight:700;" contenteditable="true">' + en + '</td>' +
+          '<td style="border:1px solid #111;padding:10px;font-weight:900;font-size:13pt;" contenteditable="true">' + ap + '</td>' +
+          '<td style="border:1px solid #111;padding:10px;font-weight:700;" contenteditable="true">' + ab + '</td>' +
+          '<td style="border:1px solid #111;padding:10px;font-weight:800;font-size:13pt;" contenteditable="true">1</td>' +
+          '<td style="border:1px solid #111;padding:10px;" contenteditable="true">EW__________________IN</td>' +
+        '</tr></tbody>' +
+      '</table>' +
+      '<div style="border:1px dashed #111;padding:12px;margin-top:14mm;font-size:10pt;line-height:1.7;">' +
+        '<b>Postal / Receiving Officer\'s Acknowledgement:</b><br>' +
+        'Received _______________ sealed packet(s) of Madhyamik Pariksha Answer Scripts in intact condition on ' + esc(item.date) + '.<br><br>' +
+        '<div style="display:flex;justify-content:space-between;margin-top:14mm;"><span>Date &amp; Stamp of Post Office / Camp Office</span><span>Signature of Receiving Clerk / Postmaster</span></div>' +
+      '</div>' +
+      mpSealHtml(25, 'left:43%;bottom:14mm;') +
+      '<div style="display:flex;justify-content:space-between;margin-top:26mm;font-weight:700;">' +
+        '<span>Signature of Venue Supervisor (' + esc(venueCode) + ')</span>' +
+        '<span>Signature of Centre Secretary / Officer-in-Charge (2206)</span>' +
+      '</div>' +
+    '</section>';
+  }).join('');
+
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>WBBSE Despatch Report Form</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;margin:0}@media print{.no-print{display:none!important}}</style></head><body>' +
+    '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;align-items:center;"><span><b>WBBSE Despatch Report Form</b></span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:6px 14px;border-radius:4px;font-weight:700;cursor:pointer;">Print Despatch Report</button></div>' +
+    pagesHtml + '
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
+  w.document.close();
+};
+
+/* 3. UPGRADED COMPACT INVIGILATOR DECLARATION & SPECIMEN SIGNATURE LIST (Matches H.S. Room Duty Printouts) */
+window.mpRdPrintDeclaration = function(){
+  mpRdLoad();
+  var v = mpGetVenue(), info = HS_VENUE_INFO[v];
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  var rows = hsSchoolWiseSort((mpRdDB[v].rows||[]).filter(function(r){return r.n;}));
+  for(var b=0; b<6; b++) rows.push({n:'', s:''});
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>WBBSE Invigilators Non-Relation &amp; Mobile Phone Declaration</title><style>' +
+    '@page{size:A4 portrait;margin:9mm}body{font-family:Arial,sans-serif;font-size:9pt;color:#111;margin:0}' +
+    'table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #111;padding:3.5px 5px}th{background:#f1f5f9}' +
+    '@media print{.no-print{display:none!important}}' +
+  '</style></head><body>' +
+    '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;"><span><b>WBBSE Invigilator Declaration</b></span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:5px 12px;border-radius:4px;font-weight:700;cursor:pointer;">Print</button></div>' +
+    '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:5px;">' +
+      '<div style="font-size:13pt;font-weight:900;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
+      '<div style="font-size:10.5pt;font-weight:800;">INVIGILATOR\'S DECLARATION — MADHYAMIK PARIKSHA, ' + hsEscapeFormText(year) + '</div>' +
+      '<div style="font-size:9pt;font-weight:700;">Centre: TALDANGRA (2206) &bull; Venue: ' + hsEscapeFormText(info.name) + ' (' + hsEscapeFormText(info.code) + ')</div>' +
+    '</div>' +
+    '<p style="margin:6px 0;font-size:8.5pt;text-align:justify;"><b>Declaration:</b> I hereby declare that (1) None of my near relations is appearing at the Madhyamik Pariksha-' + hsEscapeFormText(year) + ' from this examination venue, and (2) I have deposited my mobile phone / electronic device with the Venue Supervisor before entering the examination hall.</p>' +
+    '<table><thead><tr><th style="width:6%;">Sl.</th><th style="width:32%;">Name of Invigilator</th><th style="width:32%;">Name of Feeder School</th><th style="width:10%;">Room No.</th><th style="width:20%;">Signature with Date</th></tr></thead><tbody>' +
+      rows.map(function(r,i){return '<tr><td style="text-align:center;height:6.5mm;">'+(i+1)+'</td><td>'+hsEscapeFormText(r.n)+'</td><td>'+hsEscapeFormText(r.s)+'</td><td></td><td></td></tr>';}).join('') +
+    '</tbody></table>' +
+    '<div style="display:flex;justify-content:space-between;margin-top:14mm;font-weight:700;position:relative;">' + mpSealHtml(22, 'left:44%;top:-8mm;') +
+      '<span>Venue Supervisor (' + hsEscapeFormText(info.code) + ')</span><span>Centre Secretary / Officer-in-Charge (2206)</span>' +
+    '</div>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
+  w.document.close();
+};
+
+window.mpRdPrintSpecimenSignature = function(){
+  mpRdLoad();
+  var v = mpGetVenue(), info = HS_VENUE_INFO[v];
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  var rows = hsSchoolWiseSort((mpRdDB[v].rows||[]).filter(function(r){return r.n;}));
+  for(var b=0; b<6; b++) rows.push({n:'', s:''});
+  var w = window.open('','_blank'); if(!w) return;
+  w.document.write('<!doctype html><html><head><title>WBBSE Specimen Signature List of Invigilators</title><style>' +
+    '@page{size:A4 portrait;margin:9mm}body{font-family:Arial,sans-serif;font-size:9pt;color:#111;margin:0}' +
+    'table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #111;padding:4px 5px}th{background:#f1f5f9}' +
+    '@media print{.no-print{display:none!important}}' +
+  '</style></head><body>' +
+    '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;"><span><b>WBBSE Specimen Signature Sheet</b></span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:5px 12px;border-radius:4px;font-weight:700;cursor:pointer;">Print</button></div>' +
+    '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:5px;">' +
+      '<div style="font-size:13pt;font-weight:900;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
+      '<div style="font-size:10.5pt;font-weight:800;">SPECIMEN SIGNATURE OF INVIGILATORS — MADHYAMIK PARIKSHA, ' + hsEscapeFormText(year) + '</div>' +
+      '<div style="font-size:9pt;font-weight:700;">Centre: TALDANGRA (2206) &bull; Venue: ' + hsEscapeFormText(info.name) + ' (' + hsEscapeFormText(info.code) + ')</div>' +
+    '</div>' +
+    '<table><thead><tr><th style="width:6%;">Sl.</th><th style="width:32%;">Name of Invigilator</th><th style="width:32%;">School</th><th style="width:15%;">Full Signature</th><th style="width:15%;">Short Signature (Initials)</th></tr></thead><tbody>' +
+      rows.map(function(r,i){return '<tr><td style="text-align:center;height:7mm;">'+(i+1)+'</td><td>'+hsEscapeFormText(r.n)+'</td><td>'+hsEscapeFormText(r.s)+'</td><td></td><td></td></tr>';}).join('') +
+    '</tbody></table>' +
+    '<div style="display:flex;justify-content:space-between;margin-top:14mm;font-weight:700;position:relative;">' + mpSealHtml(22, 'left:44%;top:-8mm;') +
+      '<span>Venue Supervisor (' + hsEscapeFormText(info.code) + ')</span><span>Centre Secretary / Officer-in-Charge (2206)</span>' +
+    '</div>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
+  w.document.close();
+};
+
+/* 4. UPGRADED SUBJECT-COLUMN CONFIDENTIAL REPORT (Matching H.S. Matrix Layout) */
+window.mpConfRender = function(){
+  var box = document.getElementById('mp_confPreview'); if(!box) return;
+  var year = mpTrackingStateDatabase["year"] || "2027";
+  var esc = hsEscapeFormText;
+
+  var buildMatrix = function(vKey, vLabel){
+    var rows = mpTrackingStateDatabase[vKey] || [];
+    var cols = mpOfficialExamRoutineTimeline.map(function(d, idx){
+      var r = rows[idx] || {vals:[0,0,0,0,0,0,0,0]};
+      var v = r.vals;
+      var en = v[0]+v[1]+v[2]+v[3], ap = v[4]+v[5]+v[6]+v[7], ab = en - ap;
+      return {code: mpSubjectCode4(d.sub), date: d.date.slice(0,5), en:en, ap:ap, ab:ab};
+    });
+    return '<div style="margin-top:12px;">' +
+      '<div style="font-weight:800;font-size:10pt;margin-bottom:4px;color:#7c2d12;">' + esc(vLabel) + '</div>' +
+      '<table class="reporting-table" style="font-size:9pt;"><thead><tr><th style="text-align:left;width:22%;">Category / Metric</th>' +
+        cols.map(function(c){return '<th>' + esc(c.code) + '<br><small>' + esc(c.date) + '</small></th>';}).join('') +
+      '</tr></thead><tbody>' +
+        '<tr><td style="text-align:left;font-weight:700;">Allotted / Enrolled</td>' + cols.map(function(c){return '<td contenteditable="true">' + c.en + '</td>';}).join('') + '</tr>' +
+        '<tr><td style="text-align:left;font-weight:700;color:#166534;">Appeared (Present)</td>' + cols.map(function(c){return '<td contenteditable="true" style="font-weight:700;color:#166534;">' + c.ap + '</td>';}).join('') + '</tr>' +
+        '<tr><td style="text-align:left;font-weight:700;color:#dc2626;">Absent</td>' + cols.map(function(c){return '<td contenteditable="true" style="font-weight:700;color:#dc2626;">' + c.ab + '</td>';}).join('') + '</tr>' +
+      '</tbody></table></div>';
+  };
+
+  box.innerHTML = '<div style="background:#fff;padding:20px;border:2px solid #1e293b;border-radius:8px;position:relative;">' +
+    '<div style="display:flex;align-items:center;justify-content:center;gap:12px;border-bottom:2px solid #111;padding-bottom:8px;">' +
+      '<img src="' + MP_WBBSE_LOGO_SVG + '" style="width:18mm;height:18mm;">' +
+      '<div style="text-align:center;">' +
+        '<div style="font-size:14pt;font-weight:900;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
+        '<div style="font-size:11pt;font-weight:800;color:#7c2d12;">CONFIDENTIAL REPORT TO THE DEPUTY SECRETARY (EXAMINATION) — MADHYAMIK PARIKSHA, ' + esc(year) + '</div>' +
+        '<div style="font-size:9.5pt;font-weight:700;">CENTRE NAME: TALDANGRA &bull; CENTRE CODE: 2206 &bull; SUB-DIVISION: KHATRA &bull; DIST.: BANKURA</div>' +
+      '</div>' +
+    '</div>' +
+    buildMatrix('TFHS', 'VENUE-1 [114071] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]') +
+    buildMatrix('TGHS', 'VENUE-2 [114200] — TALDANGRA GIRLS\' HIGH SCHOOL [H.S.]') +
+    mpSealHtml(24, 'left:44%;bottom:8mm;') +
+    '<div style="display:flex;justify-content:space-between;margin-top:20mm;font-size:9.5pt;font-weight:700;">' +
+      '<div>Date: _______________________<br>Place: Taldangra, Bankura</div>' +
+      '<div style="text-align:right;">_______________________________________________<br>Centre Secretary / Officer-in-Charge<br>Taldangra Madhyamik Examination Centre (2206)</div>' +
+    '</div>' +
+  '</div>';
+};
+
+try{ mpConfRender(); }catch(e){}
+</script>
+
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
 </body>
 </html>
 <script id="mpAutoInjectorAllInOne">
@@ -8214,7 +9388,36 @@ function mpPrintCentreForm(type){
   }
 
   var w = window.open('','_blank'); if(!w) return alert('Allow pop-ups to print.');
-  w.document.write('<!doctype html><html><head><title>'+esc(title)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:10.5pt;color:#111}.head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #222;padding:6px;text-align:left}th{background:#f1f5f9}.sig{margin-top:38px;display:flex;justify-content:space-between;font-weight:700}</style></head><body><div class="head"><div style="font-size:15pt;font-weight:800;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div><div>Nivedita Bhavan, DJ-8, Sector-II, Salt Lake, Kolkata - 700091</div><div style="font-weight:700;margin-top:4px;">Madhyamik Pariksha (Secondary Examination), '+esc(year)+'</div></div>'+body+'<div class="sig"><span>Venue Supervisor ('+esc(venueCode)+')</span><span>Centre Secretary / Officer-in-Charge (2206)</span></div><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>'+esc(title)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:10.5pt;color:#111}.head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #222;padding:6px;text-align:left}th{background:#f1f5f9}.sig{margin-top:38px;display:flex;justify-content:space-between;font-weight:700}</style></head><body><div class="head"><div style="font-size:15pt;font-weight:800;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div><div>Nivedita Bhavan, DJ-8, Sector-II, Salt Lake, Kolkata - 700091</div><div style="font-weight:700;margin-top:4px;">Madhyamik Pariksha (Secondary Examination), '+esc(year)+'</div></div>'+body+'<div class="sig"><span>Venue Supervisor ('+esc(venueCode)+')</span><span>Centre Secretary / Officer-in-Charge (2206)</span></div><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpGenerateSelectedDayForms(){ mpPrintCentreForm('venue'); }
@@ -8227,7 +9430,36 @@ function mpPrintSpeedPost(scope){
   var date = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
   var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>WBBSE Answer Script Packet Cover</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;border:3px double #000;padding:14mm}</style></head><body><h1 style="text-align:center;margin:0;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h1><h2 style="text-align:center;margin:6px 0 18px;">MADHYAMIK PARIKSHA ANSWER SCRIPT PARCEL</h2><p style="font-size:14pt;"><b>Exam Date:</b> '+hsEscapeFormText(item.date)+' ('+hsEscapeFormText(item.day)+') &nbsp;&nbsp;|&nbsp;&nbsp; <b>Subject:</b> '+hsEscapeFormText(item.sub)+'</p><p style="font-size:14pt;"><b>From:</b> Centre Secretary / Venue Supervisor, '+hsEscapeFormText(venue)+' (Venue Code: '+hsEscapeFormText(venueCode)+', Centre Code: 2206), P.O. Taldangra, Dist. Bankura, PIN-722152</p><p style="font-size:14pt;"><b>To:</b> The Deputy Secretary / Regional Officer, W.B.B.S.E. Regional Office</p><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>WBBSE Answer Script Packet Cover</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;border:3px double #000;padding:14mm}</style></head><body><h1 style="text-align:center;margin:0;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h1><h2 style="text-align:center;margin:6px 0 18px;">MADHYAMIK PARIKSHA ANSWER SCRIPT PARCEL</h2><p style="font-size:14pt;"><b>Exam Date:</b> '+hsEscapeFormText(item.date)+' ('+hsEscapeFormText(item.day)+') &nbsp;&nbsp;|&nbsp;&nbsp; <b>Subject:</b> '+hsEscapeFormText(item.sub)+'</p><p style="font-size:14pt;"><b>From:</b> Centre Secretary / Venue Supervisor, '+hsEscapeFormText(venue)+' (Venue Code: '+hsEscapeFormText(venueCode)+', Centre Code: 2206), P.O. Taldangra, Dist. Bankura, PIN-722152</p><p style="font-size:14pt;"><b>To:</b> The Deputy Secretary / Regional Officer, W.B.B.S.E. Regional Office</p><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpPrintDespatch(scope){ mpPrintSpeedPost(scope); }
@@ -8278,7 +9510,36 @@ function mpRdPrint(){
   var rows = order ? hsSchoolWiseSort(mpRdDB[v].rows.slice()) : mpRdDB[v].rows.slice();
   var dates = mpOfficialExamRoutineTimeline;
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Madhyamik Room-wise Invigilator Allotment</title><style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;font-size:9pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #222;padding:4px;text-align:center}th{background:#f1f5f9}</style></head><body><h3 style="text-align:center;margin:0 0 6px;">W.B.B.S.E. MADHYAMIK PARIKSHA — ROOM-WISE ALLOTMENT OF INVIGILATORS — '+hsEscapeFormText(info.name)+' ('+hsEscapeFormText(info.code)+')</h3><table><thead><tr><th>Sl</th><th>Invigilator Name</th><th>School</th>'+dates.map(function(d){return '<th>'+d.date+'<br><small>'+d.day+'</small></th>';}).join('')+'</tr></thead><tbody>'+rows.filter(function(r){return r.n;}).map(function(r,i){return '<tr><td>'+(i+1)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.n)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.s)+'</td>'+dates.map(function(d){return '<td><b>'+hsEscapeFormText((r.d&&r.d[d.date])||'')+'</b></td>';}).join('')+'</tr>';}).join('')+'</tbody></table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Madhyamik Room-wise Invigilator Allotment</title><style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;font-size:9pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #222;padding:4px;text-align:center}th{background:#f1f5f9}</style></head><body><h3 style="text-align:center;margin:0 0 6px;">W.B.B.S.E. MADHYAMIK PARIKSHA — ROOM-WISE ALLOTMENT OF INVIGILATORS — '+hsEscapeFormText(info.name)+' ('+hsEscapeFormText(info.code)+')</h3><table><thead><tr><th>Sl</th><th>Invigilator Name</th><th>School</th>'+dates.map(function(d){return '<th>'+d.date+'<br><small>'+d.day+'</small></th>';}).join('')+'</tr></thead><tbody>'+rows.filter(function(r){return r.n;}).map(function(r,i){return '<tr><td>'+(i+1)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.n)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.s)+'</td>'+dates.map(function(d){return '<td><b>'+hsEscapeFormText((r.d&&r.d[d.date])||'')+'</b></td>';}).join('')+'</tr>';}).join('')+'</tbody></table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpRdPrintDeclaration(){ mpRdPrint(); }
@@ -8418,7 +9679,36 @@ function mpPrintTeacherDutyDeclaration(){
   var rec = (mpCollectFeederSchoolDutyDays()[school]||{})[name.toUpperCase()];
   if(!rec) return;
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>WBBSE On Duty Declaration — '+hsEscapeFormText(rec.name)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h2><h3 style="text-align:center;text-decoration:underline;">ON DUTY DECLARATION — MADHYAMIK PARIKSHA</h3><p>Certified that Sri / Smt. <b>'+hsEscapeFormText(rec.name)+'</b> of <b>'+hsEscapeFormText(school)+'</b> performed invigilation duty at Taldangra Madhyamik Examination Centre (2206) on:</p><table><tr><th>Sl</th><th>Date</th><th>Day</th><th>Subject</th></tr>'+rec.days.map(function(d,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(d.date)+'</td><td>'+hsEscapeFormText(d.day)+'</td><td>'+hsEscapeFormText(d.subject)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>WBBSE On Duty Declaration — '+hsEscapeFormText(rec.name)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">WEST BENGAL BOARD OF SECONDARY EDUCATION</h2><h3 style="text-align:center;text-decoration:underline;">ON DUTY DECLARATION — MADHYAMIK PARIKSHA</h3><p>Certified that Sri / Smt. <b>'+hsEscapeFormText(rec.name)+'</b> of <b>'+hsEscapeFormText(school)+'</b> performed invigilation duty at Taldangra Madhyamik Examination Centre (2206) on:</p><table><tr><th>Sl</th><th>Date</th><th>Day</th><th>Subject</th></tr>'+rec.days.map(function(d,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(d.date)+'</td><td>'+hsEscapeFormText(d.day)+'</td><td>'+hsEscapeFormText(d.subject)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpPrintCheckedTeachersDutyCertificate(){
@@ -8428,7 +9718,36 @@ function mpPrintCheckedTeachersDutyCertificate(){
   if(!school || !checked.length) return alert('Select a school and tick at least one teacher.');
   var x = mpOfficialExamRoutineTimeline[idx];
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><p>Certified that the following teacher(s) of your institution performed invigilation duty on <b>'+hsEscapeFormText(x.date)+' ('+hsEscapeFormText(x.day)+')</b>:</p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Date</th></tr>'+checked.map(function(n,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(n)+'</td><td>'+hsEscapeFormText(x.date)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><p>Certified that the following teacher(s) of your institution performed invigilation duty on <b>'+hsEscapeFormText(x.date)+' ('+hsEscapeFormText(x.day)+')</b>:</p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Date</th></tr>'+checked.map(function(n,i){return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(n)+'</td><td>'+hsEscapeFormText(x.date)+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpPrintSchoolWiseHOICertificate(){
@@ -8438,7 +9757,36 @@ function mpPrintSchoolWiseHOICertificate(){
   var rec = mpCollectFeederSchoolDutyDays()[school];
   if(!rec) return alert('No teachers entered for this school in the Madhyamik Entry Sheet.');
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Consolidated Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">CONSOLIDATED PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Dates Served</th><th>Total Days</th></tr>'+Object.keys(rec).map(function(k,i){var t=rec[k]; return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(t.name)+'</td><td>'+t.days.map(function(d){return d.date;}).join(', ')+'</td><td>'+t.days.length+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Consolidated Participation Certificate — '+hsEscapeFormText(school)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px}</style></head><body><h2 style="text-align:center;">TALDANGRA MADHYAMIK EXAMINATION CENTRE COMMITTEE (CODE: 2206)</h2><h3 style="text-align:center;text-decoration:underline;">CONSOLIDATED PARTICIPATION CERTIFICATE</h3><p>To<br>The Head of the Institution,<br><b>'+hsEscapeFormText(school)+'</b></p><table><tr><th>Sl.</th><th>Name of Teacher</th><th>Dates Served</th><th>Total Days</th></tr>'+Object.keys(rec).map(function(k,i){var t=rec[k]; return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(t.name)+'</td><td>'+t.days.map(function(d){return d.date;}).join(', ')+'</td><td>'+t.days.length+'</td></tr>';}).join('')+'</table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpEntryPrintSchoolCert(){ mpPrintSchoolWiseHOICertificate(); }
@@ -8460,7 +9808,36 @@ function mpConfPrint(){
   mpConfRender();
   var html = document.getElementById('mp_confPreview').innerHTML || '';
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Madhyamik Confidential Report</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;font-size:9.5pt}table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #000;padding:5px;text-align:center}th{background:#f1f5f9}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Madhyamik Confidential Report</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;font-size:9.5pt}table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #000;padding:5px;text-align:center}th{background:#f1f5f9}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpConfReset(){ mpConfRender(); }
@@ -8479,7 +9856,36 @@ function mpSbRender(){
 function mpSbPrintLetter(){
   mpSbRender();
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>Madhyamik Submission Letter</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body>'+document.getElementById('mp_sbPreview').innerHTML+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.write('<!doctype html><html><head><title>Madhyamik Submission Letter</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body>'+document.getElementById('mp_sbPreview').innerHTML+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
+(function(){
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
+})();
+</script>
+
+</body></html>');
   w.document.close();
 }
 function mpSbPrintBoxLabels(){
@@ -8487,116 +9893,32 @@ function mpSbPrintBoxLabels(){
   var w = window.open('','_blank'); if(!w) return;
   w.document.write('<!doctype html><html><head><title>Madhyamik Box Labels</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif}.lbl{border:3px solid #000;padding:12mm;margin-bottom:10mm;page-break-inside:avoid}</style></head><body>' +
     ['VENUE-1: TALDANGRA FULMATI HIGH SCHOOL [H.S.] (114071)','VENUE-2: TALDANGRA GIRLS\' HIGH SCHOOL [H.S.] (114200)'].map(function(v){return '<div class="lbl"><h2 style="margin:0;text-align:center;">W.B.B.S.E. MADHYAMIK PARIKSHA — '+hsEscapeFormText(year)+'</h2><h3 style="text-align:center;margin:8px 0;">CENTRE: TALDANGRA &bull; CENTRE CODE: 2206</h3><p style="font-size:14pt;text-align:center;font-weight:700;">'+v+'</p></div>';}).join('') +
-    '<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt><script>
-/* ===== MP EXCEL FORMS (from MP_REPORT_ALL_2026.xlsm) — added block ===== */
+    '<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt>
+<!-- FIX: Always open the combined command center on H.S.; Madhyamik remains available from the board toggle. -->
+<script>
 (function(){
-var D={"meta": {"name": "TALDANGRA FULMATI HIGH SCHOOL", "code": "30126", "year": "2026", "email": "highschooltaldangrafulmati@gmail.com", "mob": "9434654678 [Center Secretary]/8250953306 (Officer-In-Charge)", "addr": "P.O. & BLOCK:- TALDANGRA*SUB. DIV.:- KHATRA *DIST. :-BANKURA *PIN-722152", "subdiv": "Khatra Sub-Division , Bankura", "centre": "TALDANGRA", "dist": "BANKURA", "subdivName": "KHATRA", "region": "MEDNIPUR", "oic": "Dipankar Das", "sec": "Prabir Kumar Dangar", "booked": "KGP", "bookedTo": "KHARAGPUR RAIL STATION", "bookedBlank": "HOWRAH RAIL STATION", "railStn": "BQA", "confTail": "4. All answer scripts were duly transported in proper time through BQA Railway station.\n5. All post examination papers sent to the regional office by hand.\n6. All unused Answer Scripts were duly transported through BQA Railway.  \n7. The examination conducted as per rule of W.B.B.S.E and the examination completed smoothly and peacefully."}, "days": [{"date": "2026-02-02", "sub": "Bengali & Santali", "rB": "301126-1N:0118,0222,0229,0237 =04 Nos\n30126-2N: 0002=01 No \n30126-4N: 0007,0013,0021,0024 =04 Nos", "nB": 9, "rS": "", "nS": 0, "cn": "_ _ _ _ _ _ _ _ _ _ _ _", "cnDate": "2026-02-03", "eB": [284, 185, 8, 25, 0, 0], "aB": [280, 184, 8, 21, 0, 0], "eS": [0, 7, 0, 0, 0, 0], "aS": [0, 7, 0, 0, 0, 0]}, {"date": "2026-02-03", "sub": "English", "rB": "301126-1N:0118,0222,0229,0237 =04 Nos\n30126-2N: 0002=01 No \n30126-4N: 0007,0013,0021,0024 =04 Nos", "nB": 9, "rS": "", "nS": 0, "cn": "_ _ _ _ _ _ _ _ _ _ _ _", "cnDate": "2026-02-03", "eB": [284, 185, 8, 25, 0, 0], "aB": [280, 184, 8, 21, 0, 0], "eS": [0, 7, 0, 0, 0, 0], "aS": [0, 7, 0, 0, 0, 0]}, {"date": "2026-02-06", "sub": "History", "rB": "301126-1N:0021,0118,0222,0229,0237 =05 Nos\n30126-2N: 0002=01 No \n30126-4N: 0007,0013,0021,0024 =04 Nos", "nB": 10, "rS": "", "nS": 0, "cn": "_ _ _ _ _ _ _ _ _ _ _ _", "cnDate": "2026-02-07", "eB": [284, 185, 8, 25, 0, 0], "aB": [279, 184, 8, 21, 0, 0], "eS": [0, 7, 0, 0, 0, 0], "aS": [0, 7, 0, 0, 0, 0]}, {"date": "2026-02-07", "sub": "Geography", "rB": "301126-1N:0021,0118,0222,0229,0237 =05 Nos\n30126-2N: 0002=01 No \n30126-4N: 0007,0013,0021,0024 =04 Nos", "nB": 10, "rS": "", "nS": 0, "cn": "_ _ _ _ _ _ _ _ _ _ _ _", "cnDate": "2026-02-07", "eB": [284, 185, 8, 25, 0, 0], "aB": [279, 184, 8, 21, 0, 0], "eS": [0, 7, 0, 0, 0, 0], "aS": [0, 7, 0, 0, 0, 0]}, {"date": "2026-02-09", "sub": "Mathematics", "rB": "301126-1N:0021,0118,0222,0229,0237 =05 Nos\n30126-2N: 0002=01 No \n30126-4N: 0007,0013,0021,0024 =04 Nos", "nB": 10, "rS": "", "nS": 0, "cn": "I834358", "cnDate": "2026-02-10", "eB": [284, 185, 8, 25, 0, 0], "aB": [279, 184, 8, 21, 0, 0], "eS": [0, 7, 0, 0, 0, 0], "aS": [0, 7, 0, 0, 0, 0]}, {"date": "2026-02-10", "sub": "Physical Science", "rB": "301126-1N:0021,0118,0222,0229,0237 =05 Nos\n30126-2N: 0002=01 No \n30126-4N: 0007,0013,0021,0024 =04 Nos", "nB": 10, "rS": "", "nS": 0, "cn": "I834358", "cnDate": "2026-02-10", "eB": [284, 185, 8, 25, 0, 0], "aB": [279, 184, 8, 21, 0, 0], "eS": [0, 7, 0, 0, 0, 0], "aS": [0, 7, 0, 0, 0, 0]}, {"date": "2026-02-11", "sub": "Life Science", "rB": "301126-1N:0021,0118,0222,0229,0237 =05 Nos\n30126-2N: 0002=01 No \n30126-4N: 0007,0013,0021,0024 =04 Nos", "nB": 10, "rS": "", "nS": 0, "cn": "I834358", "cnDate": "2026-02-12", "eB": [284, 185, 8, 25, 0, 0], "aB": [279, 184, 8, 21, 0, 0], "eS": [0, 7, 0, 0, 0, 0], "aS": [0, 7, 0, 0, 0, 0]}, {"date": "2026-02-12", "sub": "Optional Elective Subjects [AG & ELEC]", "rB": "30126-1N:0230", "nB": 1, "rS": "", "nS": 0, "cn": "I834358", "cnDate": "2026-02-12", "eB": [77, 0, 0, 0, 0, 0], "aB": [76, 0, 0, 0, 0, 0], "eS": [0, 0, 0, 0, 0, 0], "aS": [0, 0, 0, 0, 0, 0]}], "encl": ["D.R. Sheet [Examinee Attendance sheet] (2 copies)", "Absentee statement (2 copies)", "Annexure-VII (1 copy)", "Annexure –IV (Document regarding opening of Confidential papers)-1 Copy", "Confidential Report- [1 Copy]", "Seat Plan- [1 Copy]", "Invigilator duty chart with specimen signature sheet-01 copy.", "Centre Grant Final ( In Separate envelope)", "Form No 22 [01 copy]", "Signature of Officer in Charge & Centre Secretary", "Railway Receipt [02 nos] Blank AS & Despatch Report for 11.02.2026&12.02.2026", "Letter regarding Discrepency [if any]", "Consolidated List of Recognition Status of all Participating Schools", "DISPATCH REPORT"], "f22": [["Total Received", "", "", "NA", "100", "100", "20", "11", "NA"], ["Used for  MP(SE)' %Y", "", "", "NA", "82", "82", "8", "10", "NA"], ["Damaged if any", "", "", "NA", "10", "8", "4", "0", "NA"], ["Balance after MP(SE) '%Y", "", "", "NA", "8", "10", "8", "1", "NA"]], "f22notes": ["1. OFFICER-IN-CHARGE OF THE EXAM CENTRE IS REQUESTED NOT TO USE THE OLD 'C' KHATA WHICH ARE KEPT IN HIS CUSTODY UPTO 2008. THEY SHALL BE RETURNED TO BOARD IMMEDIATELY.", "2. Officer-in-Charge of the Exam Centre is requested to fill in the form and returned to the Board within a WEEK from the date of completion of the Exam on", "3. Answer papers and other articles received form the Board shall be verified and the discrepancy, if any, should be reported immediately", "4. NO facsimile of signature should be put on answer papers which are not supplied to the candidates.", "5. Centre must bear the expenses for returning the Answer Books to the Board from the examination fund.", "6. While returning blank papers, please sort out the papers bearing the facsimile or damaged.", "7. PLEASE NOTE THAT FINAL CENTRE GRANT SHALL NOY BE RELEASED UNTIL THE UNUSED PAPERS AND MATERIALS ARE RETURNED TO BOARD ALONG WITH FORM NO 22"], "bank": {"ac": "TALDANGRA MP CENTER", "no": "606113053425", "ifsc": "WBSC0BDCB13", "bank": "BANKURA DISTRICT CENTRAL COOPERATIVE BANK LTD", "branch": "TALDANGRA"}, "seal": true}, K='mpxFormsData_v1';
-try{var sv=JSON.parse(localStorage.getItem(K)||'null'); if(sv&&sv.days) D=sv;}catch(e){}
-function save(){try{localStorage.setItem(K,JSON.stringify(D));}catch(e){}}
-function E(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function N(x){return Number(x)||0;}
-function sum(a){return a.reduce(function(s,x){return s+N(x);},0);}
-function dmy(iso,sep){var p=String(iso||'').split('-');return p.length<3?'':p[2]+(sep||'/')+p[1]+(sep||'/')+p[0];}
-function today(plus){var d=new Date();d.setDate(d.getDate()+(plus||0));return dmy(d.toISOString().slice(0,10),'-');}
-function ord(n){var s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
-var MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
-function longDate(iso){var p=String(iso).split('-');return p.length<3?'':ord(+p[2])+' '+MON[+p[1]-1]+' '+p[0];}
-var ON=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],TN=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
-function W(n){n=N(n);if(n<20)return ON[n]||'Zero';if(n<100)return TN[Math.floor(n/10)]+(n%10?' '+ON[n%10]:'');if(n<1000)return ON[Math.floor(n/100)]+' Hundred'+(n%100?' '+W(n%100):'');if(n<100000)return W(Math.floor(n/1000))+' Thousand'+(n%1000?' '+W(n%1000):'');return String(n);}
-function EX(){return 'Madhyamik Pariksha, '+D.meta.year;}
-function seal(){if(!D.seal)return '';try{return typeof tfDocSeal==='function'?tfDocSeal(24,'mp','position:absolute;right:12mm;bottom:38mm'):'';}catch(e){return '';}}
-function dayEnr(d){return sum(d.eB)+sum(d.eS);} function dayApp(d){return sum(d.aB)+sum(d.aS);}
-function dayAbs(d){return N(d.nB)+N(d.nS);}
-function lh(){var m=D.meta;return '<div class=c><div style="font-size:9pt">E-mail: '+E(m.email)+'<br>Mob No.-'+E(m.mob)+'</div><div class=b style="font-size:15pt">'+E(EX().toUpperCase())+' CENTRE COMMITTEE</div><div class=b>CENTRE CODE: '+E(m.code)+'</div><div style="font-size:9pt">'+E(m.addr)+'</div><hr style="border:1px solid #000"></div>';}
-function ro(){return 'The Regional Officer<br>Midnapore Regional Office<br>[West Bengal Board of Secondary Education]<br>Keranitola Chawk, P.O. Midnapore, Dist. Paschim Medinipur, PIN-721101';}
-function sig(){var m=D.meta;return '<div class=b style="margin-top:20mm;text-align:right">Officer-in-charge<br>'+E((m.name+' (H.S.) ; CENTRE Code - '+m.code).toUpperCase())+'</div>';}
-function letter(sub,body,enc,plus){return '<div class=pg>'+lh()+'<p>From: Officer-In-Charge/Center Secretary</p><table class=nb><tr><td>Memo No:_ _ _ _ _ _ _</td><td style="text-align:right">Date: '+today(plus||0)+'</td></tr></table><p>To<br>'+ro()+'</p><p class=b><u>Sub: - '+sub+'</u></p><p style="white-space:pre-wrap;text-align:justify;line-height:1.6" contenteditable="true">'+body+'</p>'+(enc?'<p style="white-space:pre-wrap">'+enc+'</p>':'')+'<p>Thanking you.<span style="float:right">Yours faithfully.</span></p>'+sig()+seal()+'</div>';}
-function rolls(txt){var out=[],re=/(\d+-\d[A-Z]):\s*([0-9,\s]+)/g,m;while((m=re.exec(txt||''))){m[2].split(',').forEach(function(x){x=x.trim();if(x)out.push(m[1]+':'+x);});}return out;}
-var CAT=['REGULAR BOYS','REGULAR GIRLS','C.C. BOYS','C.C. GIRLS','COMP. BOYS','COMP. GIRLS'];
-var F={};
-F.annex7=function(){var h='<div class=pg><h3 class=c>ANNEXURE-VII</h3><p class=c class=b>'+E(EX())+' — '+E(D.meta.name)+' ['+E(D.meta.code)+']</p><table class=c><tr><th colspan=8>DAYS OF EXAMINATION (put a [✔] mark for the particular day(s))</th></tr><tr>';
- for(var i=0;i<8;i++)h+='<th>'+ord(i+1)+'</th>';h+='</tr><tr>';
- for(i=0;i<8;i++)h+='<td>'+(D.days[i]?dayEnr(D.days[i]):'')+'</td>';h+='</tr><tr>';
- for(i=0;i<8;i++)h+='<td>'+(D.days[i]?dayAbs(D.days[i]):'')+'</td>';
- return h+'</tr></table><p style="font-size:9pt">Row 1: No. of candidates present (as per Excel Annexure-VII) &nbsp; Row 2: No. of candidates absent</p><div class=b style="margin-top:25mm;text-align:right">Signature of Centre / Venue Supervisor</div>'+seal()+'</div>';};
-F.submit=function(){var m=D.meta,enc='Enclosures:\n'+D.encl.map(function(x,i){return (i+1)+'.\t'+x;}).join('\n');
- return letter('Submission of papers / Documents relating to '+E(EX()),'Sir,\n       Please find enclosed herewith the papers/documents relating to  '+E(EX())+' of this Centre with Centre code  '+E(m.code)+'.  Therefore, I request you to accept the following papers/documents and oblige.',enc,1);};
-F.daily=function(d){function one(){var h='<table style="margin-bottom:6mm"><tr><th colspan=4 class=c>'+E(EX().toUpperCase())+'</th></tr><tr><td colspan=4>Centre Name : '+E(D.meta.name)+'['+E(D.meta.code)+']</td></tr><tr><td colspan=3>SUBJECT: '+E(d.sub.toUpperCase())+'</td><td>DATE: '+dmy(d.date)+'</td></tr><tr class=c><th></th><th>Enrolled</th><th>Appeared</th><th>Absent</th></tr>',te=0,ta=0;
- for(var k=0;k<6;k++){var e=N(d.eB[k])+N(d.eS[k]),a=N(d.aB[k])+N(d.aS[k]);te+=e;ta+=a;h+='<tr class=c><td style="text-align:left">'+CAT[k]+'</td><td>'+e+'</td><td>'+a+'</td><td>'+(e-a)+'</td></tr>';}
- return h+'<tr class="c b"><td style="text-align:left">TOTAL</td><td>'+te+'</td><td>'+ta+'</td><td>'+(te-ta)+'</td></tr></table><p>Dated:- '+longDate(d.date)+'<span style="float:right" class=b>Centre Secretary/Officer-In-Charge</span></p>';}
- return '<div class=pg>'+one()+'<hr style="border-top:1px dashed #000;margin:8mm 0">'+one()+seal()+'</div>';};
-F.dailyfmt=function(d){var e=d.eB.concat([]).map(function(x,i){return N(x)+N(d.eS[i]);}),M=e[0]+e[2]+e[4],Fm=e[1]+e[3]+e[5],te=sum(e),ta=dayApp(d);
- return '<div class=pg><div class=c><b>Madhyamik Examination '+E(D.meta.year)+'</b><br>'+E(D.meta.subdiv)+'<hr>'+'<b>DAILY REPORTING FORMAT</b><br>Centre Code : '+E(D.meta.code)+'</div><div style="line-height:2.2;margin-top:8mm">1) Date :- '+dmy(d.date)+'<br>2) SUBJECT: '+E(d.sub.toUpperCase())+'<br>3) Name of Venue / Sub-Venue :- '+E(D.meta.name)+'<br>4) Total Students allotted :- '+te+' &nbsp; 4a) Male: '+M+' &nbsp; 4b) Female: '+Fm+'<br>5) Total Students Present :- '+ta+'<br>6) Total Students absent: '+(te-ta)+'<br>7) No. of PH Students who are taking the Exam. with the help of writer : NIL &nbsp; 7a) Male NIL &nbsp; 7b) Female NIL</div><p style="margin-top:20mm">'+today()+'<br><b>Centre Secretary<br>Taldangra Madhyamik Pariksha Centre- '+E(D.meta.code)+'</b><br>Dated:- '+longDate(d.date)+'</p>'+seal()+'</div>';};
-F.despatch=function(d,i){var m=D.meta,b=i===0?'BENGALI':d.sub.toUpperCase()+' (BENGALI MEDIUM)',s=i===0?'SANTALI':d.sub.toUpperCase()+' (SANTALI MEDIUM)',sb=sum(d.eB)-N(d.nB),ss=sum(d.eS)-N(d.nS);
- return '<div class=pg style="border:2px solid #000;padding:6mm"><div style="text-align:right">EMU/F/29</div><h3 class=c><u>DESPATCH REPORT FORM</u></h3><p>Subject: <b>'+E(d.sub.toUpperCase())+'</b></p><p>From<br>The Officer-in-Charge<br>Centre Code No: <b>'+E(m.code)+'</b> &nbsp; '+E(EX())+' (Regular &amp; External)</p><p>To<br>The Deputy Secretary (Examination)<br>WEST BENGAL BOARD OF SECONDARY EDUCATION<br>77/2, PARK STREET, KOLKATA - 700016</p><p style="text-align:right">Dated the '+today()+'</p><p>Report of Despatch by Railway / Air / Post / Messenger dated the : '+dmy(d.cnDate)+' of 01 Boxes / Packets, containing answer paper as per details is given below.</p><table class=c><tr><th>PARTICULARS</th><th>No. of Scripts enclosed</th><th>No. of absentees</th><th>Roll Nos. of absentees</th></tr><tr><td style="text-align:left">(1) Subject<br>Freight/Postage<br><b>'+E(b)+'</b></td><td>'+sb+'<br>['+W(sb)+']</td><td>'+N(d.nB)+'<br>['+W(N(d.nB))+']</td><td style="white-space:pre-wrap;font-size:9pt">'+E(d.rB)+'</td></tr><tr><td style="text-align:left">(2) Paid/To Pay (Tick out word\'s applicable)</td><td></td><td></td><td></td></tr><tr><td style="text-align:left">(3) Where booked (if sent by Rail or Air) '+E(m.booked)+'<br><b>'+E(s)+'</b></td><td>'+ss+(ss?'<br>['+W(ss)+']':'')+'</td><td>'+N(d.nS)+'</td><td style="white-space:pre-wrap;font-size:9pt">'+E(d.rS)+'</td></tr><tr><td style="text-align:left" colspan=4>(4) Consignment Note Number: <b>'+E(d.cn)+'</b></td></tr></table><p>Dated:- '+longDate(d.date)+'<span style="float:right" class=b>Signature of The Officer-in-Charge<br>With Seal</span></p><p style="font-size:9pt">First or Second or as the case may be should be stated here</p>'+seal()+'</div>';};
-F.conf=function(){var m=D.meta,d0=D.days[0],tb=sum(d0.eB),ts=sum(d0.eS),h='<div class=pg>'+lh()+'<p>From: Officer-In-Charge/Center Secretary</p><table class=nb><tr><td>Memo No:_ _ _ _ _ _ _</td><td style="text-align:right">Date: '+today()+'</td></tr></table><p>To<br>'+ro()+'</p><p class=b><u>Sub: - Confidential Report on Madhyamik Examination relating to '+E(EX())+' at '+E(m.name)+' [ Centre Code: '+E(m.code)+' ]</u></p><div style="line-height:1.5;text-align:justify" contenteditable="true">Sir,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;I, Sri '+E(m.oic)+', Officer in Charge of '+E(m.name)+' [Centre Code: '+E(m.code)+'], beg to submit the report about the '+E(EX())+' duly held in this centre as follows.<br>1. No unfair incidents occurred during the examination in this centre.<br>2. The total allotted candidates in this Centre are='+tb+' (Bengali Medium) &amp; '+ts+' (Santhali Medium) ='+(tb+ts)+' ['+W(tb+ts)+' ].<br>3. Subject and Medium wise Total no of absentee candidates are noted as follows</div><table class=c style="font-size:9pt;margin:3mm 0"><tr><th>Subject<br>Medium</th><th>Bengali</th><th>Santhali</th><th>English</th><th>History</th><th>Geography</th><th>Mathematics</th><th>LSC</th><th>PSC</th><th>AG / Electronics</th></tr>';
- ['B','S'].forEach(function(t){h+='<tr><td>'+(t==='B'?'Bengali':'Santhali')+'</td>';D.days.forEach(function(d,i){var v=N(d['n'+t]);if(i===0){h+=(t==='B'?'<td>'+v+'</td><td>NA</td>':'<td>NA</td><td>'+v+'</td>');}else h+='<td>'+v+'</td>';});h+='</tr>';});
- return h+'</table><div style="line-height:1.5;white-space:pre-wrap" contenteditable="true">'+E(m.confTail)+'</div><p>Thanking you.<span style="float:right">Yours faithfully.</span></p>'+sig()+seal()+'</div>';};
-function env(t,n){var m=D.meta;return '<div class=pg style="border:3px double #000;padding:8mm;height:120mm;page-break-after:auto;margin-bottom:6mm"><h3 class=c><u>'+E(t.toUpperCase())+'</u></h3><p class="c b">'+E(EX().toUpperCase())+' : : TALDANGRA M.P. CENTRE [ CODE '+E(m.code)+' ]</p><p class="c b" style="font-size:16pt">[ '+n+' ]</p><table class=nb><tr><td style="width:50%"><b>TO</b><br>THE REGIONAL OFFICER<br>MIDNAPORE REGIONAL OFFICE<br>[WEST BENGAL BOARD OF SECONDARY EDUCATION]<br>KERANITOLA CHAWK, P.O. MIDNAPORE<br>DIST: PASCHIM MEDINIPUR PIN-721101</td><td><b>From:-</b><br>TALDANGRA M.P. CENTRE [ CODE '+E(m.code)+' ]<br>'+E(m.name.toUpperCase())+'[H.S.]<br>P.O TALDANGRA. DIST- BANKURA. PIN-722152<br>CENTRE CODE : '+E(m.code)+'</td></tr></table></div>';}
-function insured(top,to,from,bk,sub,dt){return '<div class=pg style="border:3px double #000;padding:8mm;height:120mm;page-break-after:auto;margin-bottom:6mm"><h3 class=c><u>INSURED FOR Rs.501/- ONLY &nbsp; ['+E(D.meta.code)+']</u></h3><p class="c b">'+top+'</p>'+(sub?'<p class=b>'+sub+' &nbsp;&nbsp; '+dt+'</p>':'')+'<table class=nb><tr><td style="width:50%"><b>From:-</b><br>'+from+'</td><td><b>TO:-</b><br>'+to+'</td></tr></table><p class=b style="margin-top:6mm">BOOKED TO &nbsp; '+E(bk)+'</p></div>';}
-F.cover=function(d){var m=D.meta,h='';
- if(d){h+=insured('','THE REGIONAL OFFICER<br>MIDNAPORE REGIONAL OFFICE<br>[WEST BENGAL BOARD OF SECONDARY EDUCATION]<br>KERANITOLA CHAWK, P.O. MIDNAPORE<br>DIST: PASCHIM MEDINIPUR PIN-721101',E(m.oic.toUpperCase())+'<br>Officer-In-Charge<br>TALDANGRA M.P. CENTRE-'+E(m.year)+'<br>CENTRE CODE : '+E(m.code),m.bookedTo,'SUBJECT : '+E(d.sub.toUpperCase()),'DATE : '+dmy(d.date,'-'));return h;}
- [8,9,13,12].forEach(function(n){h+=env(D.encl[n-1],n);});
- return h;};
-F.blankAS=function(){var m=D.meta;return insured('BLANK ANSWER SCRIPTS OF M.P.[S.E.]-'+E(m.year),'THE DEPUTY SECRETARY (EXAM) W.B.B.S.E.<br>[WEST BENGAL BOARD OF SECONDARY EDUCATION]<br>NIVEDITA BHAWAN, BLOCK-DJ8, SECTOR-II KARUNAMOYEE, SALTLAKE, KOLKATA-700091.',E(m.oic.toUpperCase())+'<br>Officer-In-Charge<br>'+E(m.name.toUpperCase())+' [H.S.]<br>P.O TALDANGRA. DIST- BANKURA. PIN-722152<br>TALDANGRA M.P. CENTRE-'+E(m.year)+'<br>CENTRE CODE : '+E(m.code),m.bookedBlank);};
-F.railway=function(){var h='';for(var i=0;i<3;i++)h+='<div class=pg style="border:3px double #000;padding:6mm;height:80mm;page-break-after:auto;margin-bottom:5mm"><h3 class=c><u>RAILWAY RECEIPT</u></h3><p class="c b">'+E(EX().toUpperCase())+' : : TALDANGRA M.P. CENTRE [ CODE '+E(D.meta.code)+' ]</p><table class=nb><tr><td style="width:50%"><b>From:-</b><br>'+E(D.meta.name.toUpperCase())+'[H.S.]<br>P.O TALDANGRA. DIST- BANKURA. PIN-722152</td><td><b>TO</b><br>THE REGIONAL OFFICER<br>MIDNAPORE REGIONAL OFFICE<br>KERANITOLA CHAWK; MEDINIPUR, PIN-721101</td></tr></table></div>';return h;};
-F.absentee=function(){var map={};D.days.forEach(function(d,i){rolls(d.rB).concat(rolls(d.rS)).forEach(function(r){(map[r]=map[r]||{})[i]=1;});});
- var h='<div class=pg style="font-size:10pt"><div style="text-align:right">No. EMU/C/31A</div><h3 class=c>WEST BENGAL BOARD OF SECONDARY EDUCATION</h3><p class="c b">STATEMENT OF ABSENTEES PREPARED AS PER ATTENDANCE-CUM-SIGNATURE RECORD OF FOR BOTH REGULAR AND EXTERNAL CANDIDATES MADHYAMIK PARIKSHA (SE),'+E(D.meta.year)+'<br>BOARD\'S COPY/COMPUTER\'S COPY/CENTRE\'S COPY</p><p>Name of Centre: '+E(D.meta.name)+' &nbsp; Centre Code: '+E(D.meta.code)+' &nbsp; Year: '+E(D.meta.year)+'</p><table class=c style="font-size:9pt"><tr><th rowspan=2>Roll No.</th><th rowspan=2>Name of the Candidate</th><th colspan=9>E X A M I N A T I O N &nbsp; D A Y S</th><th rowspan=2>Remarks</th></tr><tr>';
- for(var i=0;i<8;i++)h+='<th>'+ord(i+1)+' Day</th>';h+='<th>R.A.</th></tr>';
- Object.keys(map).forEach(function(r){h+='<tr><td style="white-space:nowrap">'+E(r)+'</td><td></td>';for(i=0;i<8;i++)h+='<td>'+(map[r][i]?'AB':'')+'</td>';h+='<td></td><td></td></tr>';});
- for(i=0;i<4;i++)h+='<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
- return h+'</table><table class=nb style="margin-top:18mm"><tr><td>Signature of Venue/Centre Supervisor<br>with Seal &amp; date</td><td style="text-align:right">Signature of Officer-in-Charge<br>with Seal &amp; date</td></tr></table><p style="font-size:8.5pt">NB: 1. To be prepared in Triplicate.<br>2. Please compare all the copies with Attendance-Cum-Signature record before submission of the respective Regional Council Office in duplicate.<br>3. For individual candidate please put Roll Number, Name and AB under the particular date (and FABS for full absent)<br>4. For R.A. please put Roll Number, name and RA under R.A. Column and day column.</p>'+seal()+'</div>';};
-F.misc=function(){return letter('Submission of papers / Documents relating to '+E(EX()),'Sir,\n        In the ____________ examination dated __-__-____, due to unintentional mistake, Roll ______ No-____ has been marked as "Absent" in the Top Sheet and Despatch Report but instead of it, Roll ______ No-____ will be marked as "Absent".\n    The Answer script of Roll ______ No-____ is in the packet where on Top Sheet of packet Roll ______ No-____ TO ____ is written. All Others are in order. Please arrange accordingly.','Enclosures:\n1.\tRevised Despatch Report for ____________ examination dated __-__-____');};
-F.unused=function(){var m=D.meta;return letter('Information regarding Submission of Unused Answer Scripts relating to '+E(EX()),'Sir,\n       I would like to inform you that Unused Answer Scripts relating to M.P Examination-'+E(m.year)+' of this Centre with Centre code  '+E(m.code)+' has been sent to you through '+E(m.railStn)+' Railway vide Railway Receipt No. J_ _  _ _ _ _  _ _ relating to  '+E(EX())+'. Therefore, I request you to accept the following papers/documents and oblige.','Enclosures:\n1.\tRailway Receipt');};
-F.signature=function(){var m=D.meta,box=function(n,t){return '<td class=c style="width:50%"><br><br><br><br><br><b>'+t+'</b><br>TALDANGRA MADHYAMIK PARIKSHA CENTRE<br>[Centre Code: '+E(m.code)+' ]<br><b>'+E(n.toUpperCase())+'</b></td>';};
- return '<div class=pg>'+lh()+'<p>From: Officer-In-Charge/Center Secretary</p><table class=nb><tr><td>Memo No:_ _ _ _ _ _ _</td><td style="text-align:right">Date: '+today(1)+'</td></tr></table><p>To<br>'+ro()+'</p><p class=b><u>Sub: - Signatures of Officer in Charge &amp; Centre Secretary relating to Madhyamik Examination-'+E(m.year)+'</u></p><table class=nb><tr>'+box(m.oic,'Officer-in-charge')+box(m.sec,'Centre Secretary')+'</tr></table>'+seal()+'</div>';};
-F.form22=function(){var m=D.meta,r=D.f22,h='<div class=pg style="font-size:10pt"><div style="text-align:right" class=b>FORM NO - 22</div><h3 class=c>WEST BENGAL BOARD OF SECONDARY EDUCATION<br>77/2, Park Street, Kolkata-16<br>(STATEMENT OF USE OF BLANK ANSWER PAPER AND STATIONARY)</h3><table class=nb><tr><td>Please send blank papers and stationeries (Damage Wastage)<br>Through ____________ &nbsp; R/R No ____________ &nbsp; Date: ________</td><td style="border:1px solid #000"><b>FOR OFFICE USE ONLY</b><br>Name of the Centre: '+E(m.name)+'<br>Name of the Main Venue: '+E(m.name)+'<br>Nos of candidates alloted: '+dayEnr(D.days[0])+'</td></tr></table><p class=b>DETAIL OF DIFFERENT STATIONERS RECEIVED USED AND RETURNED</p><table class=c style="font-size:9pt"><tr><th>Date</th><th>C\' 16 Pages</th><th>F\' 4 Pages</th><th>Graph paper</th><th>Envelops</th><th>Top Sheet</th><th>Despatch Report</th><th>No of Pkts</th><th>Remarks if any</th></tr>';
- for(var i=0;i<4;i++)h+='<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
- r.forEach(function(x,k){h+='<tr><td style="text-align:left">'+E(x[0]).replace('%Y',m.year)+'</td>'+x.slice(1).map(function(v,j){return '<td contenteditable="true">'+E(v)+'</td>';}).join('')+'</tr>';});
- return h+'</table><table class=nb style="margin-top:6mm"><tr><td>Officer-in-Charge-'+E(m.oic.toUpperCase())+' &amp; Code No: '+E(m.code)+'<br>Examination Centre: '+E(m.name)+' &amp; Code No: '+E(m.code)+'<br>Seal of the Exam Centre</td><td style="border:1px solid #000">Received article as mentioned above<br><br>Signature of OS<br>with Seal &amp; date</td></tr></table><p style="font-size:8pt">'+D.f22notes.map(E).join('<br>')+'</p>'+seal()+'</div>';};
-F.grant=function(){var m=D.meta,b=D.bank,days=D.days;function mx(k,arr,j){return Math.max.apply(null,days.map(function(d){return N(d[arr][j]);}));}
- function S(arr,js){return sum(js.map(function(j){return mx(0,arr,j);}));}
- var aM=S('eB',[0,2])+S('eS',[0,2]),aF=S('eB',[1,3])+S('eS',[1,3]),cM=S('eB',[4])+S('eS',[4]),cF=S('eB',[5])+S('eS',[5]),pM=S('aB',[0,2])+S('aS',[0,2]),pF=S('aB',[1,3])+S('aS',[1,3]),qM=S('aB',[4])+S('aS',[4]),qF=S('aB',[5])+S('aS',[5]);
- function row(l,a,b2,c,d2,e,f){return '<tr class=c><td style="text-align:left">'+l+'</td><td>'+a+'</td><td>'+b2+'</td><td>'+(a+b2)+'</td><td>'+c+'</td><td>'+d2+'</td><td>'+(c+d2)+'</td></tr>';}
- return '<div class=pg><h3 class=c>MADHYAMIK PARIKSHA (S.E.) '+E(m.year)+'</h3><p style="font-size:9.5pt">To be filled in by the Centre and submitted to the respective Regional Office immediately after the Examination</p><p>Name of the Centre: '+E(m.centre)+' ['+E(m.name)+'] &nbsp; CODE NO: '+E(m.code)+'<br>Dist: '+E(m.dist)+' &nbsp; SUB DIV-'+E(m.subdivName)+' &nbsp; Region: '+E(m.region)+'</p><table><tr class=c><th rowspan=2>Particulars</th><th colspan=3>Regular / C.C. / Ext. / WE</th><th colspan=3>Compartmental</th></tr><tr class=c><th>Male</th><th>Female</th><th>Total</th><th>Male</th><th>Female</th><th>Total</th></tr>'+row('1.No. of candidates allotted to this centre.',aM,aF,cM,cF)+row('2.No. of candidates transferred to this centre by the Board.',0,0,0,0)+row('3.No. of candidates transferred from this centre by the Board',0,0,0,0)+row('4. Total No. of candidates actually appeared.',pM,pF,qM,qF)+row('5.No. of absentees',aM-pM,aF-pF,cM-qM,cF-qF)+'</table><table class=nb style="margin-top:14mm"><tr><td>Centre Secretary :<br><b>'+E(m.sec.toUpperCase())+' [HEADMASTER]</b><br>Name &amp; Designation of the Centre Secretary / Venue Supervisor</td><td style="text-align:right">Signature of the Centre Secretary / Venue Supervisor with seal<br>CENTRE CODE : '+E(m.code)+'</td></tr></table><p class=b>Bank Details of the Centre</p><table class=nb><tr><td>Name of Ac. '+E(b.ac)+'<br>A/C No : '+E(b.no)+'<br>IFSC Code: '+E(b.ifsc)+'<br>Bank Name: '+E(b.bank)+'<br>Branch Name '+E(b.branch)+'</td><td style="text-align:right">Signature of Officer-in-Charge<br>CENTRE CODE : '+E(m.code)+'<br>Name in Full : '+E(m.oic.toUpperCase())+'<br>[Block Letters]</td></tr></table>'+seal()+'</div>';};
-var CSS='@page{size:A4;margin:10mm}body{font:11pt "Times New Roman",serif;color:#000}.pg{page-break-after:always;position:relative}table{border-collapse:collapse;width:100%}td,th{border:1px solid #000;padding:4px;vertical-align:top}.nb td{border:0}.c{text-align:center}.b{font-weight:700}.doc-seal{display:inline-block}';
-var DAYWISE={daily:1,dailyfmt:1,despatch:1};
-function run(key,scope){var i=Math.max(0,+((document.getElementById('mpx_day')||{}).value)||0),h='';
- if(DAYWISE[key]||key==='cover'&&scope!=='misc'&&scope!=='env'){ if(scope==='all'){D.days.forEach(function(d,k){h+=F[key](d,k);});}else h=F[key](D.days[i],i);}
- else h=F[key](scope==='env'?null:D.days[i],i);
- var w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print.');
- w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>MP '+key+'</title><style>'+CSS+'</style></head><body>'+h+'<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');w.document.close();}
-window.mpx={print:run,D:function(){return D;}};
-/* make the existing MP buttons use the Excel-format forms */
-window.mpPrintDespatch=function(s){run('despatch',s);};
-window.mpPrintCovers=function(s){run('cover',s);};
-window.mpPrintSpeedPost=function(s){run('cover',s);};
-/* ---------- panel ---------- */
-function field(k,l){return '<div class="form-group"><label>'+l+'</label><input type="text" data-k="'+k+'" value="'+E(D.meta[k])+'" oninput="mpx.setMeta(this)"></div>';}
-window.mpx.setMeta=function(el){D.meta[el.getAttribute('data-k')]=el.value;save();};
-window.mpx.setDay=function(el){var i=+el.getAttribute('data-i'),k=el.getAttribute('data-k'),j=el.getAttribute('data-j');if(j!==null&&j!=='')D.days[i][k][+j]=N(el.value);else D.days[i][k]=el.value;save();};
-window.mpx.toggleSeal=function(v){D.seal=v;save();};
-window.mpx.reset=function(){if(confirm('Reset all MP Excel-form data to the values from MP_REPORT_ALL_2026.xlsm?')){localStorage.removeItem(K);location.reload();}};
-window.mpx.importXlsm=function(inp){var f=inp.files[0];if(!f||typeof XLSX==='undefined')return alert('XLSX library not loaded.');var r=new FileReader();r.onload=function(e){try{var wb=XLSX.read(e.target.result,{type:'array',cellDates:true}),ws=wb.Sheets['INPUT'];if(!ws)return alert('INPUT sheet not found.');
- var g=function(c,rw){var x=ws[c+rw];return x?x.v:'';},cols=['P','Q','R','S','T','U'],cols2=['V','W','X','Y','Z','AA'],cs=['AB','AC','AD','AE','AF','AG'],cs2=['AH','AI','AJ','AK','AL','AM'];
- var nd=[];for(var rw=3;rw<=10;rw++){var dt=g('C',rw);if(!dt)continue;var iso=dt instanceof Date?new Date(dt.getTime()-dt.getTimezoneOffset()*60000).toISOString().slice(0,10):String(dt);
-  var old=D.days[nd.length]||{};nd.push({date:iso,sub:g('D',rw),rB:g('E',rw),nB:N(g('F',rw)),rS:g('G',rw),nS:N(g('H',rw)),cn:g('N',rw),cnDate:(function(v){return v instanceof Date?new Date(v.getTime()-v.getTimezoneOffset()*60000).toISOString().slice(0,10):(old.cnDate||iso);})(g('O',rw)),eB:cols.map(function(c){return N(g(c,rw));}),aB:cols2.map(function(c){return N(g(c,rw));}),eS:cs.map(function(c){return N(g(c,rw));}),aS:cs2.map(function(c){return N(g(c,rw));})});}
- if(!nd.length)return alert('No data rows found.');D.days=nd;var a1=ws['A1']?String(ws['A1'].v):'';var ym=a1.match(/(20\d\d)/);if(ym)D.meta.year=ym[1];save();alert('Imported '+nd.length+' days from INPUT sheet.');location.reload();}catch(err){alert('Import failed: '+err.message);}};r.readAsArrayBuffer(f);};
-function build(){var p=document.getElementById('mp-forms');if(!p||document.getElementById('mpx_panel'))return;
- var days=D.days.map(function(d,i){return '<option value="'+i+'">'+ord(i+1)+' day — '+dmy(d.date)+' — '+E(d.sub)+'</option>';}).join('');
- var btn=function(k,l,s,c){return '<button class="btn '+(c||'btn-primary')+'" onclick="mpx.print(\''+k+'\''+(s?',\''+s+'\'':'')+')">'+l+'</button> ';};
- var rows=D.days.map(function(d,i){var h='<tr><td>'+(i+1)+'</td><td><input type="date" value="'+E(d.date)+'" data-i="'+i+'" data-k="date" oninput="mpx.setDay(this)"></td><td><input type="text" value="'+E(d.sub)+'" data-i="'+i+'" data-k="sub" oninput="mpx.setDay(this)"></td><td><input type="number" style="width:52px" value="'+N(d.nB)+'" data-i="'+i+'" data-k="nB" oninput="mpx.setDay(this)"></td><td><textarea rows=2 style="width:190px" data-i="'+i+'" data-k="rB" oninput="mpx.setDay(this)">'+E(d.rB)+'</textarea></td><td><input type="number" style="width:52px" value="'+N(d.nS)+'" data-i="'+i+'" data-k="nS" oninput="mpx.setDay(this)"></td><td><input type="text" style="width:90px" value="'+E(d.cn)+'" data-i="'+i+'" data-k="cn" oninput="mpx.setDay(this)"></td><td><input type="date" value="'+E(d.cnDate)+'" data-i="'+i+'" data-k="cnDate" oninput="mpx.setDay(this)"></td>';
-  ['eB','aB','eS','aS'].forEach(function(a){for(var j=0;j<6;j++)h+='<td><input type="number" style="width:46px" value="'+N(d[a][j])+'" data-i="'+i+'" data-k="'+a+'" data-j="'+j+'" oninput="mpx.setDay(this)"></td>';});return h+'</tr>';}).join('');
- var hd='<th>#</th><th>Date</th><th>Subject</th><th>Abs. Beng</th><th>Absentee roll nos. (Beng)</th><th>Abs. Sant</th><th>Consignment No</th><th>Despatch date</th>';['Enr-Beng','App-Beng','Enr-Sant','App-Sant'].forEach(function(n){['RB','RG','CCB','CCG','CmB','CmG'].forEach(function(c){hd+='<th>'+n+' '+c+'</th>';});});
- var d=document.createElement('div');d.id='mpx_panel';d.className='table-container no-print';d.style.padding='16px';
- d.innerHTML='<h3 style="margin:0 0 6px;">WBBSE Centre Forms from MP_REPORT_ALL (Excel) — Centre '+E(D.meta.code)+'</h3><div style="font-size:9pt;color:#475569;margin-bottom:10px;">All forms of the Madhyamik Excel workbook, generated from the data table below (saved in this browser). Import next year\'s .xlsm to refill the table. Printed forms keep the Excel layout and carry the Centre seal.</div>'
- +'<div class="control-deck" style="margin:0 0 10px;"><div class="form-group"><label>Examination Day (day-wise forms)</label><select id="mpx_day">'+days+'</select></div><div class="form-group"><label>Import MP_REPORT_ALL .xlsm</label><input type="file" accept=".xlsm,.xlsx" onchange="mpx.importXlsm(this)"></div><div class="form-group"><label>Centre seal on forms</label><label style="font-weight:400"><input type="checkbox" '+(D.seal?'checked':'')+' onchange="mpx.toggleSeal(this.checked)"> Print seal</label></div><div class="form-group"><label>&nbsp;</label><button class="btn btn-danger" onclick="mpx.reset()">Reset to Excel data</button></div></div>'
- +'<div class="control-deck" style="margin:0 0 10px;">'+field('name','Venue / School name')+field('code','Centre code')+field('year','Year')+field('oic','Officer-in-Charge')+field('sec','Centre Secretary')+field('booked','Where booked (despatch)')+field('bookedTo','Insured cover booked to')+field('bookedBlank','Blank-script cover booked to')+field('railStn','Railway station (unused scripts)')+'</div>'
- +'<div style="line-height:2.4"><b>Day-wise:</b> '+btn('daily','Daily Report (This Day)')+btn('daily','Daily Reports — All Days','all','btn-success')+btn('dailyfmt','Daily Reporting Format')+btn('dailyfmt','Daily Reporting — All Days','all','btn-success')+btn('despatch','Despatch Report EMU/F/29 (This Day)')+btn('despatch','Despatch Reports — All Days','all','btn-success')+btn('cover','Insured Cover (This Day)')+btn('cover','Insured Covers — All Days','all','btn-success')+'<br><b>Centre-wise:</b> '+btn('annex7','Annexure-VII')+btn('submit','Submission Letter + Enclosures')+btn('conf','Confidential Report')+btn('absentee','Absentee Statement EMU/C/31A')+btn('form22','Form No. 22')+btn('grant','Centre Grant Form')+btn('cover','Envelopes (Grant, Form-22, Recognition, Discrepancy)','env')+btn('blankAS','Blank Answer-Script Insured Cover')+btn('railway','Railway Receipts')+btn('unused','Unused Scripts Letter')+btn('misc','Discrepancy / Misc Letter')+btn('signature','Signature Letter')+'</div>'
- +'<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">Examination data table (from INPUT sheet) — edit here</summary><div style="overflow:auto;margin-top:8px"><table class="reporting-table" style="font-size:8.5pt"><thead><tr>'+hd+'</tr></thead><tbody>'+rows+'</tbody></table></div></details>';
- p.appendChild(d);}
-function boot(){try{build();}catch(e){console.warn('MPX panel',e);}}
-if(typeof cloudRunWhenReady==='function')cloudRunWhenReady(function(){setTimeout(boot,50);});else window.addEventListener('load',function(){setTimeout(boot,300);});
+  function restoreCombinedBoard(){
+    var hs=document.getElementById('board-hs');
+    var mp=document.getElementById('board-mp');
+    if(!hs || !mp) return;
+    document.querySelectorAll('.board-pane').forEach(function(p){
+      p.style.display = p.id === 'board-hs' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.board-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.board === 'hs');
+    });
+    document.querySelectorAll('.tool-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tool === 'ledger');
+    });
+    document.querySelectorAll('.board-pane .tool-panel').forEach(function(p){
+      p.classList.toggle('active', p.dataset.tool === 'ledger');
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', restoreCombinedBoard);
+  } else {
+    restoreCombinedBoard();
+  }
 })();
 </script>
 
