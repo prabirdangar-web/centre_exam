@@ -1180,10 +1180,10 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       <table class="reporting-table">
         <thead>
           <tr>
-            <th rowspan="2" style="width:3%;">SL</th><th rowspan="2" style="width:9%;">Date of Exam</th><th rowspan="2" style="width:7%;">Day</th><th rowspan="2" style="width:17%;">Subject Schedule Mapping</th>
-            <th colspan="3" style="background:#e2e8f0;color:#0f172a;">Regular M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Regular F</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Casual M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Casual F</th>
+            <th rowspan="2" style="width:3%;">SL</th><th rowspan="2" style="width:9%;">Date of Exam</th><th rowspan="2" style="width:7%;">Day</th><th rowspan="2" style="width:12%;">Subject Schedule Mapping</th>
+            <th colspan="3" style="background:#e2e8f0;color:#0f172a;">Regular M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Regular F</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Continuing M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Continuing F</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Compartmental M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Compartmental F</th>
           </tr>
-          <tr><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th></tr>
+          <tr><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th></tr>
         </thead>
         <tbody id="mp_matrixTableBody"></tbody>
       </table>
@@ -4008,7 +4008,7 @@ function mpResetToDefaults(){
   ["TFHS","TGHS"].forEach(sch=>{
     mpTrackingStateDatabase[sch] = mpOfficialExamRoutineTimeline.map((session, index)=>{
       const defaults = mpImageFallbackPresets[sch];
-      return { date: session.date, day: session.day, sub: session.sub, vals: [defaults[0],defaults[1],defaults[2],defaults[3],defaults[0],defaults[1],defaults[2],defaults[3]] };
+      return { date: session.date, day: session.day, sub: session.sub, vals: [defaults[0],defaults[1],defaults[2],defaults[3],defaults[0],defaults[1],defaults[2],defaults[3]], cp:[0,0,0,0] };
     });
   });
   mpTrackingStateDatabase["year"] = "2027";
@@ -4031,8 +4031,8 @@ function mpRenderReportingMatrixTable(){
     const tr = document.createElement("tr");
     tr.id = "mp-row-idx-" + rowIndex;
     let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date.replace("2027", examYear)}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${row.sub}</td>`;
-    for(let c=0;c<4;c++){
-      const en=row.vals[c], ap=row.vals[4+c], ab=Math.max(0,en-ap);
+    for(let c=0;c<6;c++){
+      const ea=mpCatGet(row,c), en=ea[0], ap=ea[1], ab=Math.max(0,en-ap);
       rowHtml += `<td><input type="number" min="0" value="${en}" oninput="mpUpdateEnAbs(${rowIndex},${c},'en',this.value)"></td><td id="mp-pr-${rowIndex}-${c}" style="background:#dcfce7;color:#14532d;font-weight:700;">${ap}</td><td><input type="number" min="0" value="${ab}" style="background:#fffbeb;" oninput="mpUpdateEnAbs(${rowIndex},${c},'ab',this.value)"></td>`;
     }
     tr.innerHTML = rowHtml;
@@ -4047,12 +4047,15 @@ function mpUpdateValueNode(row, col, value){
   mpCalculateTotalsMathEngine();
   if(document.getElementById("mp_activeDayFocus").value == row){ mpHighlightAndPrepareDualSlips(row); }
 }
+function mpCp(r){ return (r&&r.cp)||[0,0,0,0]; }
+function mpCatGet(r,c){ if(c<4) return [r.vals[c],r.vals[4+c]]; r.cp=r.cp||[0,0,0,0]; return [r.cp[c-4],r.cp[c-2]]; }
+function mpCatSet(r,c,en,ap){ if(c<4){ r.vals[c]=en; r.vals[4+c]=ap; } else { r.cp=r.cp||[0,0,0,0]; r.cp[c-4]=en; r.cp[c-2]=ap; } }
 function mpUpdateEnAbs(row,c,kind,value){
   const r=mpTrackingStateDatabase[mpActiveSchool][row]; const v=Math.max(0,parseInt(value)||0);
-  let en=r.vals[c], ab=Math.max(0,r.vals[c]-r.vals[4+c]);
+  const ea=mpCatGet(r,c); let en=ea[0], ab=Math.max(0,ea[0]-ea[1]);
   if(kind==='en') en=v; else ab=v;
   if(ab>en) ab=en;
-  r.vals[c]=en; r.vals[4+c]=en-ab;
+  mpCatSet(r,c,en,en-ab);
   localStorage.setItem("ExamReportingLedgerCache_MP", JSON.stringify(mpTrackingStateDatabase));
   const cell=document.getElementById("mp-pr-"+row+"-"+c); if(cell) cell.textContent=en-ab;
   mpCalculateTotalsMathEngine();
@@ -4068,6 +4071,7 @@ function mpCalculateTotalsMathEngine(){
   mpTrackingStateDatabase[mpActiveSchool].forEach(row=>{
     for(let i=0;i<4;i++) en += row.vals[i];
     for(let i=4;i<8;i++) ap += row.vals[i];
+    const cp=mpCp(row); en += cp[0]+cp[1]; ap += cp[2]+cp[3];
   });
   const ab = en - ap;
   document.getElementById("mp_kpiGrossEn").textContent = en.toLocaleString();
@@ -4078,9 +4082,9 @@ function mpCalculateTotalsMathEngine(){
 function mpBuildMemoHtmlSegment(typeTag, rowData, examYear){
   const schoolNameText = mpActiveSchool==="TFHS" ? "TALDANGRA FULMATI HIGH SCHOOL [H.S.] [CENTRE CODE: "+window.mpxVC()+"]" : "TALDANGRA GIRLS' HIGH SCHOOL [H.S.] [CENTRE CODE: "+window.mpxVC()+"]";
   const venueCode = mpActiveSchool==="TFHS" ? "114071" : "114200";
-  const v = rowData.vals;
-  const enSum = v[0]+v[1]+v[2]+v[3];
-  const apSum = v[4]+v[5]+v[6]+v[7];
+  const v = rowData.vals; const c = mpCp(rowData);
+  const enSum = v[0]+v[1]+v[2]+v[3]+c[0]+c[1];
+  const apSum = v[4]+v[5]+v[6]+v[7]+c[2]+c[3];
   const abSum = enSum - apSum;
   return `
     <div class="badge-type">${typeTag}</div>
@@ -4093,8 +4097,9 @@ function mpBuildMemoHtmlSegment(typeTag, rowData, examYear){
     <table class="memo-data-table"><thead><tr><th>Candidate Category</th><th>Enrolled (M)</th><th>Enrolled (F)</th><th>Appeared (M)</th><th>Appeared (F)</th><th>Absent (M)</th><th>Absent (F)</th></tr></thead>
       <tbody>
         <tr><td>Regular</td><td>${v[0]}</td><td>${v[1]}</td><td>${v[4]}</td><td>${v[5]}</td><td>${v[0]-v[4]}</td><td>${v[1]-v[5]}</td></tr>
-        <tr><td>Casual / External</td><td>${v[2]}</td><td>${v[3]}</td><td>${v[6]}</td><td>${v[7]}</td><td>${v[2]-v[6]}</td><td>${v[3]-v[7]}</td></tr>
-        <tr style="font-weight:bold; background:#f1f5f9;"><td>TOTALS</td><td>${v[0]+v[2]}</td><td>${v[1]+v[3]}</td><td>${v[4]+v[6]}</td><td>${v[5]+v[7]}</td><td>${(v[0]+v[2])-(v[4]+v[6])}</td><td>${(v[1]+v[3])-(v[5]+v[7])}</td></tr>
+        <tr><td>Continuing</td><td>${v[2]}</td><td>${v[3]}</td><td>${v[6]}</td><td>${v[7]}</td><td>${v[2]-v[6]}</td><td>${v[3]-v[7]}</td></tr>
+        <tr><td>Compartmental</td><td>${c[0]}</td><td>${c[1]}</td><td>${c[2]}</td><td>${c[3]}</td><td>${c[0]-c[2]}</td><td>${c[1]-c[3]}</td></tr>
+        <tr style="font-weight:bold; background:#f1f5f9;"><td>TOTALS</td><td>${v[0]+v[2]+c[0]}</td><td>${v[1]+v[3]+c[1]}</td><td>${v[4]+v[6]+c[2]}</td><td>${v[5]+v[7]+c[3]}</td><td>${(v[0]+v[2]+c[0])-(v[4]+v[6]+c[2])}</td><td>${(v[1]+v[3]+c[1])-(v[5]+v[7]+c[3])}</td></tr>
       </tbody></table>
     <div class="memo-summary-box"><div><strong>GROSS REGISTERED:</strong> ${enSum}</div><div><strong>TOTAL PRESENT:</strong> ${apSum}</div><div><strong>VERIFIED ABSENT:</strong> ${abSum}</div></div>
     <div class="memo-footer" style="position:relative;"><span class="doc-seal" data-seal="mp" data-mm="19" style="left:50%;margin-left:-9.5mm;top:-5mm"></span><div><br>___________________________<br>Venue Supervisor Sign</div><div style="text-align:right;"><span class="doc-sign" data-sign="1" style="margin-left:auto;font-size:.75mm"></span><span class="sg-print"><br>___________________________<br>Officer-In-Charge / Centre Secretary</span></div></div>
@@ -7740,7 +7745,7 @@ window.mpPrintSpeedPost = function(scope){
     var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===dt;}) || mpOfficialExamRoutineTimeline[0];
     var row = (mpTrackingStateDatabase[venueKey]||[]).find(function(r){return r.date===dt;});
     var v = (row && row.vals) || [0,0,0,0,0,0,0,0];
-    var scripts = v[4]+v[5]+v[6]+v[7];
+    var scripts = v[4]+v[5]+v[6]+v[7]+mpCp(row)[2]+mpCp(row)[3];
     return '<section style="page-break-after:always;border:4px double #7c2d12;padding:10mm;min-height:180mm;position:relative;box-sizing:border-box;">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #7c2d12;padding-bottom:6px;">' +
         '<img src="' + MP_WBBSE_LOGO_SVG + '" style="width:20mm;height:20mm;">' +
@@ -7811,7 +7816,7 @@ window.mpPrintDespatch = function(scope){
     var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===dt;}) || mpOfficialExamRoutineTimeline[0];
     var row = (mpTrackingStateDatabase[venueKey]||[]).find(function(r){return r.date===dt;});
     var v = (row && row.vals) || [0,0,0,0,0,0,0,0];
-    var en = v[0]+v[1]+v[2]+v[3], ap = v[4]+v[5]+v[6]+v[7], ab = en - ap;
+    var en = v[0]+v[1]+v[2]+v[3]+mpCp(row)[0]+mpCp(row)[1], ap = v[4]+v[5]+v[6]+v[7]+mpCp(row)[2]+mpCp(row)[3], ab = en - ap;
     return '<section style="page-break-after:always;padding:10mm;border:2px solid #111;min-height:265mm;position:relative;box-sizing:border-box;">' +
       '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px;">' +
         '<img src="' + MP_WBBSE_LOGO_SVG + '" style="width:18mm;height:18mm;display:block;margin:0 auto 4px;">' +
@@ -7923,7 +7928,7 @@ window.mpConfRender = function(){
     var cols = mpOfficialExamRoutineTimeline.map(function(d, idx){
       var r = rows[idx] || {vals:[0,0,0,0,0,0,0,0]};
       var v = r.vals;
-      var en = v[0]+v[1]+v[2]+v[3], ap = v[4]+v[5]+v[6]+v[7], ab = en - ap;
+      var en = v[0]+v[1]+v[2]+v[3]+mpCp(r)[0]+mpCp(r)[1], ap = v[4]+v[5]+v[6]+v[7]+mpCp(r)[2]+mpCp(r)[3], ab = en - ap;
       return {code: mpSubjectCode4(d.sub), date: d.date.slice(0,5), en:en, ap:ap, ab:ab};
     });
     return '<div style="margin-top:12px;">' +
@@ -8675,8 +8680,8 @@ function mpQuickEntryFetchFromLedger(){
   var venue = mpGetVenue(), date = document.getElementById('mp_qeDay').value || mpOfficialExamRoutineTimeline[0].date;
   var row = (mpTrackingStateDatabase[venue]||[]).find(function(r){return r.date===date;});
   if(!row) return;
-  var m = (Number(row.vals[0])||0) + (Number(row.vals[2])||0);
-  var f = (Number(row.vals[1])||0) + (Number(row.vals[3])||0);
+  var m = (Number(row.vals[0])||0) + (Number(row.vals[2])||0) + (mpCp(row)[0]||0);
+  var f = (Number(row.vals[1])||0) + (Number(row.vals[3])||0) + (mpCp(row)[1]||0);
   document.getElementById('mp_qeMale').value = m;
   document.getElementById('mp_qeFemale').value = f;
   mpQuickEntryRecalc();
@@ -9001,7 +9006,7 @@ function mpConfRender(){
   var buildVenueRows = function(vKey){
     return (mpTrackingStateDatabase[vKey]||[]).map(function(r,i){
       var v = r.vals||[0,0,0,0,0,0,0,0];
-      var en = v[0]+v[1]+v[2]+v[3], ap = v[4]+v[5]+v[6]+v[7], ab = en - ap;
+      var en = v[0]+v[1]+v[2]+v[3]+mpCp(r)[0]+mpCp(r)[1], ap = v[4]+v[5]+v[6]+v[7]+mpCp(r)[2]+mpCp(r)[3], ab = en - ap;
       return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(r.date)+'</td><td>'+hsEscapeFormText(r.day)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.sub)+'</td><td>'+en+'</td><td>'+ap+'</td><td>'+ab+'</td></tr>';
     }).join('');
   };
@@ -9023,7 +9028,7 @@ function mpSbRender(){
     mpOfficialExamRoutineTimeline.map(function(d,i){
       var r1 = (mpTrackingStateDatabase.TFHS||[])[i], r2 = (mpTrackingStateDatabase.TGHS||[])[i];
       var v1 = (r1 && r1.vals)||[0,0,0,0,0,0,0,0], v2 = (r2 && r2.vals)||[0,0,0,0,0,0,0,0];
-      var p1 = v1[4]+v1[5]+v1[6]+v1[7], p2 = v2[4]+v2[5]+v2[6]+v2[7];
+      var p1 = v1[4]+v1[5]+v1[6]+v1[7]+mpCp(r1)[2]+mpCp(r1)[3], p2 = v2[4]+v2[5]+v2[6]+v2[7]+mpCp(r2)[2]+mpCp(r2)[3];
       return '<tr><td>'+(i+1)+'</td><td>'+d.date+'</td><td>'+d.day+'</td><td style="text-align:left;">'+d.sub+'</td><td>'+p1+'</td><td>'+p2+'</td><td><b>'+(p1+p2)+'</b></td></tr>';
     }).join('') + '</tbody></table></div>';
 }
@@ -9498,7 +9503,7 @@ function printRail(scope){
   openDoc('Rail Address Tag — Centre '+VC(),pages.join('')+S,{land:true,margin:'6mm',css:RAIL_CSS});
 }
 function setCode(v){ ensureCentres(); cfg.centres[activeKey()].code=String(v).trim(); save(); refreshStamps(); }
-function syncLedger(){ try{ var d=mpTrackingStateDatabase[activeKey()]; d.forEach(function(r,i){var x=cfg.rows[i]; if(!x) return; for(var j=0;j<4;j++){x.be[j]=r.vals[j];x.ba[j]=r.vals[4+j];} var n=sum(x.be)-sum(x.ba); x.nAbsB=n; if(!n) x.absB='';}); save(); renderPanel(); }catch(e){ alert('Open the Madhyamik Progress Ledger once, then try again.'); } }
+function syncLedger(){ try{ var d=mpTrackingStateDatabase[activeKey()]; d.forEach(function(r,i){var x=cfg.rows[i]; if(!x) return; for(var j=0;j<4;j++){x.be[j]=r.vals[j];x.ba[j]=r.vals[4+j];} var cp=r.cp||[0,0,0,0]; x.be[4]=cp[0];x.be[5]=cp[1];x.ba[4]=cp[2];x.ba[5]=cp[3]; var n=sum(x.be)-sum(x.ba); x.nAbsB=n; if(!n) x.absB='';}); save(); renderPanel(); }catch(e){ alert('Open the Madhyamik Progress Ledger once, then try again.'); } }
 function resetProg(){ if(confirm('Reload the MP-27 programme with no absentees? Day-wise rows of this panel will be reset.')){ cfg.rows=MP27_ROWS(); save(); renderPanel(); } }
 var _mcs=window.mpChangeSchoolView; window.mpChangeSchoolView=function(v){ try{ window.mpSetVenue(v); }catch(e){ if(_mcs) _mcs(v); } try{renderPanel();}catch(e){} };
 var _msv=window.mpSetVenue; window.mpSetVenue=function(v){ if(_msv) _msv(v); refreshStamps(); syncCodeSpans(); };
