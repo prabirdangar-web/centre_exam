@@ -458,8 +458,8 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
     <label class="no-print" style="display:flex;align-items:center;gap:6px;color:#fff;font-size:9pt;font-weight:700;cursor:pointer;" title="Optional: place the Centre Secretary signature + date stamp on all letters, receipts, certificates and forms"><input type="checkbox" id="tfSignToggle" onchange="tfSignSet(this.checked)"> Signature stamp</label>
     <button class="btn btn-success no-print" style="border:none;padding:9px 16px;border-radius:6px;cursor:pointer;font-weight:700;font-size:9pt;" onclick="cloudForceSaveAll()">Save to Cloud Now</button>
     <div class="board-toggle">
-      <button class="board-btn active" data-board="hs" onclick="switchBoard('hs')">H.S.<small>WBCHSE &middot; 2027 [SEM-III]</small></button>
-      <button class="board-btn" data-board="mp" onclick="switchBoard('mp')">Madhyamik<small>WBBSE &middot; 2027</small></button>
+      <button class="board-btn" data-board="hs" onclick="switchBoard('hs')">H.S.<small>WBCHSE &middot; 2027 [SEM-III]</small></button>
+      <button class="board-btn active" data-board="mp" onclick="switchBoard('mp')">Madhyamik<small>WBBSE &middot; 2027</small></button>
     </div>
   </div>
 </div>
@@ -477,7 +477,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
 </div>
 
 <!-- ============================================================ HS BOARD PANE ============================================================ -->
-<div class="board-pane" data-board="hs" id="board-hs" style="--accent:#1e3a8a; --accent-dark:#0f172a;">
+<div class="board-pane" data-board="hs" id="board-hs" style="display:none; --accent:#1e3a8a; --accent-dark:#0f172a;">
 
   <!-- ---------- HS: WBCHSE CENTRE FORMS ---------- -->
   <div class="tool-panel app-shell" data-tool="forms" id="hs-forms">
@@ -1105,7 +1105,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
 </div>
 
 <!-- ============================================================ MP BOARD PANE ============================================================ -->
-<div class="board-pane" data-board="mp" id="board-mp" style="display:none; --accent:#7c2d12; --accent-dark:#431407;">
+<div class="board-pane" data-board="mp" id="board-mp" style="--accent:#7c2d12; --accent-dark:#431407;">
 
   <!-- ---------- MP: PROGRESS LEDGER ---------- -->
   <div class="tool-panel active app-shell" data-tool="ledger" id="mp-ledger">
@@ -1177,16 +1177,17 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
       <div id="mp_archiveList" style="margin-top:8px;"></div>
     </details>
     <div class="table-container no-print">
-      <table class="reporting-table">
+      <style>.mp12 input{width:46px!important;padding:3px 2px!important;font-size:9pt!important}.mp12 th,.mp12 td{padding:3px 2px!important;font-size:8.5pt!important}.mp12{min-width:1750px}</style><table class="reporting-table mp12">
         <thead>
           <tr>
-            <th rowspan="2" style="width:3%;">SL</th><th rowspan="2" style="width:9%;">Date of Exam</th><th rowspan="2" style="width:7%;">Day</th><th rowspan="2" style="width:12%;">Subject Schedule Mapping</th>
-            <th colspan="3" style="background:#e2e8f0;color:#0f172a;">Regular M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Regular F</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Continuing M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Continuing F</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Compartmental M</th><th colspan="3" style="background:#e2e8f0;color:#0f172a;">Compartmental F</th>
+            <th rowspan="2" style="width:3%;">SL</th><th rowspan="2" style="width:6%;">Date of Exam</th><th rowspan="2" style="width:5%;">Day</th><th rowspan="2" style="width:9%;">Subject</th>
+            <th colspan="3" title="Regular Male Bengali Medium" style="background:#e2e8f0;color:#0f172a;">R-M-B</th><th colspan="3" title="Regular Female Bengali Medium" style="background:#e2e8f0;color:#0f172a;">R-F-B</th><th colspan="3" title="Regular Male Santali Medium" style="background:#e2e8f0;color:#0f172a;">R-M-S</th><th colspan="3" title="Regular Female Santali Medium" style="background:#e2e8f0;color:#0f172a;">R-F-S</th><th colspan="3" title="Continuing Male Bengali Medium" style="background:#e2e8f0;color:#0f172a;">C-M-B</th><th colspan="3" title="Continuing Female Bengali Medium" style="background:#e2e8f0;color:#0f172a;">C-F-B</th><th colspan="3" title="Continuing Male Santali Medium" style="background:#e2e8f0;color:#0f172a;">C-M-S</th><th colspan="3" title="Continuing Female Santali Medium" style="background:#e2e8f0;color:#0f172a;">C-F-S</th><th colspan="3" title="Compartmental Male Bengali Medium" style="background:#e2e8f0;color:#0f172a;">CP-M-B</th><th colspan="3" title="Compartmental Female Bengali Medium" style="background:#e2e8f0;color:#0f172a;">CP-F-B</th><th colspan="3" title="Compartmental Male Santali Medium" style="background:#e2e8f0;color:#0f172a;">CP-M-S</th><th colspan="3" title="Compartmental Female Santali Medium" style="background:#e2e8f0;color:#0f172a;">CP-F-S</th>
           </tr>
-          <tr><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th><th class="sub" style="background:#fecdd3;color:#7f1d1d;">Enrolled</th><th class="sub" style="background:#bbf7d0;color:#14532d;">Present</th><th class="sub" style="background:#fde68a;color:#78350f;">Absent</th></tr>
+          <tr><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th><th class="sub" title="Enrolled" style="background:#fecdd3;color:#7f1d1d;">E</th><th class="sub" title="Present" style="background:#bbf7d0;color:#14532d;">P</th><th class="sub" title="Absent" style="background:#fde68a;color:#78350f;">A</th></tr>
         </thead>
         <tbody id="mp_matrixTableBody"></tbody>
       </table>
+      <div style="font-size:8.5pt;color:#334155;padding:6px 4px;line-height:1.5"><b>Key:</b> R = Regular &middot; C = Continuing &middot; CP = Compartmental &nbsp;|&nbsp; M = Male &middot; F = Female &nbsp;|&nbsp; B = Bengali Medium &middot; S = Santali Medium &nbsp;|&nbsp; <b>E</b> = Enrolled &middot; <b>P</b> = Present &middot; <b>A</b> = Absent. &nbsp; e.g. <b>R-M-B</b> = Regular Male Bengali Medium, <b>R-F-S</b> = Regular Female Santali Medium. Subjects: P.SC. = Physical Science, L.SC. = Life Science.</div>
     </div>
 
     <div class="a4-dual-page print-target" id="mp_a4DualPrintPage">
@@ -1278,7 +1279,7 @@ table.rd-table{border-collapse:separate;border-spacing:0;font-size:9pt;min-width
         <div style="width:50%; font-size:8.3pt; line-height:1.4;"><strong>N.B.:</strong> Mobile or such electronic devices should not bring with them in this Madhyamik-<span class="mp_outYear">2027</span> EXAMINATION Centre in compliance with the existing rules of W.B.B.S.E.</div>
         <div style="text-align:center; width:40%; font-size:9.3pt; position:relative;"><span class="doc-seal" data-seal="mp" data-mm="22" style="left:-13mm;top:1mm"></span>
           With Thanks<br><span class="doc-sign" data-sign="1" style="font-size:.9mm"></span><span class="sg-print"><br><span style="font-family:'Courier New',monospace; font-weight:700; letter-spacing:1px;">_ _ _ _ _ _ _ _ _ _ _</span><br>
-          <strong style="font-size:8.3pt; display:block; margin-top:4px;">Centre Secretary / Centre-in-Charge</strong>
+          <strong style="font-size:8.3pt; display:block; margin-top:4px;">Centre Secretary / Officer-in-Charge</strong>
           <span style="font-size:7.8pt; color:#334155;">Taldangra Madhyamik Centre<br>Centre Code: <span id="mp_centerCodeLabel2">30126</span></span></span>
         </div>
       </div>
@@ -3977,8 +3978,8 @@ function hsRecCalculateAutoValues(){
    MP :: PROGRESS LEDGER   (source: WBBSE Notification EMU/C/35, 13/07/2026)
    ================================================================ */
 const mpOfficialExamRoutineTimeline = [
-  { date: "15.02.2027", day: "Monday",    sub: "First Language (Bengali/English/Hindi/etc.)" },
-  { date: "16.02.2027", day: "Tuesday",   sub: "Second Language" },
+  { date: "15.02.2027", day: "Monday",    sub: "First Language (Bengali / Santali)" },
+  { date: "16.02.2027", day: "Tuesday",   sub: "Second Language (English)" },
   { date: "18.02.2027", day: "Thursday",  sub: "History" },
   { date: "19.02.2027", day: "Friday",    sub: "Geography" },
   { date: "22.02.2027", day: "Monday",    sub: "Mathematics" },
@@ -4008,7 +4009,7 @@ function mpResetToDefaults(){
   ["TFHS","TGHS"].forEach(sch=>{
     mpTrackingStateDatabase[sch] = mpOfficialExamRoutineTimeline.map((session, index)=>{
       const defaults = mpImageFallbackPresets[sch];
-      return { date: session.date, day: session.day, sub: session.sub, vals: [defaults[0],defaults[1],defaults[2],defaults[3],defaults[0],defaults[1],defaults[2],defaults[3]], cp:[0,0,0,0] };
+      return { date: session.date, day: session.day, sub: session.sub, vals: [defaults[0],defaults[1],defaults[2],defaults[3],defaults[0],defaults[1],defaults[2],defaults[3]], cp:[0,0,0,0], sv:[0,0,0,0,0,0,0,0], scp:[0,0,0,0] };
     });
   });
   mpTrackingStateDatabase["year"] = "2027";
@@ -4028,10 +4029,11 @@ function mpRenderReportingMatrixTable(){
   const schoolDataset = mpTrackingStateDatabase[mpActiveSchool];
   const examYear = mpTrackingStateDatabase["year"] || "2027";
   schoolDataset.forEach((row, rowIndex)=>{
+    row.sub = mpFixSub(row.sub);
     const tr = document.createElement("tr");
     tr.id = "mp-row-idx-" + rowIndex;
-    let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date.replace("2027", examYear)}</td><td>${row.day}</td><td style="text-align:left; font-size:9pt; color:#475569;">${row.sub}</td>`;
-    for(let c=0;c<6;c++){
+    let rowHtml = `<td>${rowIndex+1}</td><td style="font-weight:600;">${row.date.replace("2027", examYear)}</td><td>${row.day}</td><td style="text-align:left; font-size:8.5pt; color:#475569;" title="${row.sub}">${mpShortSub(row.sub)}</td>`;
+    for(let c=0;c<12;c++){
       const ea=mpCatGet(row,c), en=ea[0], ap=ea[1], ab=Math.max(0,en-ap);
       rowHtml += `<td><input type="number" min="0" value="${en}" oninput="mpUpdateEnAbs(${rowIndex},${c},'en',this.value)"></td><td id="mp-pr-${rowIndex}-${c}" style="background:#dcfce7;color:#14532d;font-weight:700;">${ap}</td><td><input type="number" min="0" value="${ab}" style="background:#fffbeb;" oninput="mpUpdateEnAbs(${rowIndex},${c},'ab',this.value)"></td>`;
     }
@@ -4048,8 +4050,14 @@ function mpUpdateValueNode(row, col, value){
   if(document.getElementById("mp_activeDayFocus").value == row){ mpHighlightAndPrepareDualSlips(row); }
 }
 function mpCp(r){ return (r&&r.cp)||[0,0,0,0]; }
-function mpCatGet(r,c){ if(c<4) return [r.vals[c],r.vals[4+c]]; r.cp=r.cp||[0,0,0,0]; return [r.cp[c-4],r.cp[c-2]]; }
-function mpCatSet(r,c,en,ap){ if(c<4){ r.vals[c]=en; r.vals[4+c]=ap; } else { r.cp=r.cp||[0,0,0,0]; r.cp[c-4]=en; r.cp[c-2]=ap; } }
+function mpSnEn(r){ var s=r&&r.sv||[0,0,0,0,0,0,0,0], c=r&&r.scp||[0,0,0,0]; return s[0]+s[1]+s[2]+s[3]+c[0]+c[1]; }
+function mpSnAp(r){ var s=r&&r.sv||[0,0,0,0,0,0,0,0], c=r&&r.scp||[0,0,0,0]; return s[4]+s[5]+s[6]+s[7]+c[2]+c[3]; }
+function mpSnQ(r,f){ return (r&&r.sv?(r.sv[f]+r.sv[2+f]):0)+(r&&r.scp?r.scp[f]:0); }
+function mpShortSub(s){ s=String(s||''); return s.replace(/Physical Science/i,'P.SC.').replace(/Life Science/i,'L.SC.').replace(/^First Language.*$/i,'1st Lang (Beng/Sant)').replace(/^Second Language.*$/i,'2nd Lang (Eng)').replace(/Optional Elective Subjects.*/i,'Opt. Elective'); }
+function mpFixSub(s){ s=String(s||''); if(/^First Language/i.test(s)) return 'First Language (Bengali / Santali)'; if(/^Second Language/i.test(s)) return 'Second Language (English)'; return s; }
+function mpCatRef(r,c){ var g=Math.floor(c/4),k=c%4,S=k>=2,f=k%2; if(g<2){ var a=S?(r.sv=r.sv||[0,0,0,0,0,0,0,0]):r.vals,i=g*2+f; return [a,i,a,4+i]; } var b=S?(r.scp=r.scp||[0,0,0,0]):(r.cp=r.cp||[0,0,0,0]); return [b,f,b,2+f]; }
+function mpCatGet(r,c){ var x=mpCatRef(r,c); return [x[0][x[1]],x[2][x[3]]]; }
+function mpCatSet(r,c,en,ap){ var x=mpCatRef(r,c); x[0][x[1]]=en; x[2][x[3]]=ap; }
 function mpUpdateEnAbs(row,c,kind,value){
   const r=mpTrackingStateDatabase[mpActiveSchool][row]; const v=Math.max(0,parseInt(value)||0);
   const ea=mpCatGet(r,c); let en=ea[0], ab=Math.max(0,ea[0]-ea[1]);
@@ -4071,7 +4079,7 @@ function mpCalculateTotalsMathEngine(){
   mpTrackingStateDatabase[mpActiveSchool].forEach(row=>{
     for(let i=0;i<4;i++) en += row.vals[i];
     for(let i=4;i<8;i++) ap += row.vals[i];
-    const cp=mpCp(row); en += cp[0]+cp[1]; ap += cp[2]+cp[3];
+    const cp=mpCp(row); en += cp[0]+cp[1]+mpSnEn(row); ap += cp[2]+cp[3]+mpSnAp(row);
   });
   const ab = en - ap;
   document.getElementById("mp_kpiGrossEn").textContent = en.toLocaleString();
@@ -4082,9 +4090,12 @@ function mpCalculateTotalsMathEngine(){
 function mpBuildMemoHtmlSegment(typeTag, rowData, examYear){
   const schoolNameText = mpActiveSchool==="TFHS" ? "TALDANGRA FULMATI HIGH SCHOOL [H.S.] [CENTRE CODE: "+window.mpxVC()+"]" : "TALDANGRA GIRLS' HIGH SCHOOL [H.S.] [CENTRE CODE: "+window.mpxVC()+"]";
   const venueCode = mpActiveSchool==="TFHS" ? "114071" : "114200";
-  const v = rowData.vals; const c = mpCp(rowData);
-  const enSum = v[0]+v[1]+v[2]+v[3]+c[0]+c[1];
-  const apSum = v[4]+v[5]+v[6]+v[7]+c[2]+c[3];
+  const v = rowData.vals; const c = mpCp(rowData); const sv = rowData.sv||[0,0,0,0,0,0,0,0], sc = rowData.scp||[0,0,0,0];
+  const enSum = v[0]+v[1]+v[2]+v[3]+c[0]+c[1]+mpSnEn(rowData);
+  const apSum = v[4]+v[5]+v[6]+v[7]+c[2]+c[3]+mpSnAp(rowData);
+  const mR=[v[0]+sv[0],v[1]+sv[1],v[4]+sv[4],v[5]+sv[5]], mC=[v[2]+sv[2],v[3]+sv[3],v[6]+sv[6],v[7]+sv[7]], mP=[c[0]+sc[0],c[1]+sc[1],c[2]+sc[2],c[3]+sc[3]];
+  const mT=[0,1,2,3].map(i=>mR[i]+mC[i]+mP[i]);
+  const mrw=(n,a)=>`<tr><td>${n}</td><td>${a[0]}</td><td>${a[1]}</td><td>${a[2]}</td><td>${a[3]}</td><td>${a[0]-a[2]}</td><td>${a[1]-a[3]}</td></tr>`;
   const abSum = enSum - apSum;
   return `
     <div class="badge-type">${typeTag}</div>
@@ -4096,10 +4107,10 @@ function mpBuildMemoHtmlSegment(typeTag, rowData, examYear){
       <tr><td colspan="2" style="font-size:9pt; color:#334155; padding-top:2px;"><strong>Subject:</strong> ${rowData.sub}</td></tr></table>
     <table class="memo-data-table"><thead><tr><th>Candidate Category</th><th>Enrolled (M)</th><th>Enrolled (F)</th><th>Appeared (M)</th><th>Appeared (F)</th><th>Absent (M)</th><th>Absent (F)</th></tr></thead>
       <tbody>
-        <tr><td>Regular</td><td>${v[0]}</td><td>${v[1]}</td><td>${v[4]}</td><td>${v[5]}</td><td>${v[0]-v[4]}</td><td>${v[1]-v[5]}</td></tr>
-        <tr><td>Continuing</td><td>${v[2]}</td><td>${v[3]}</td><td>${v[6]}</td><td>${v[7]}</td><td>${v[2]-v[6]}</td><td>${v[3]-v[7]}</td></tr>
-        <tr><td>Compartmental</td><td>${c[0]}</td><td>${c[1]}</td><td>${c[2]}</td><td>${c[3]}</td><td>${c[0]-c[2]}</td><td>${c[1]-c[3]}</td></tr>
-        <tr style="font-weight:bold; background:#f1f5f9;"><td>TOTALS</td><td>${v[0]+v[2]+c[0]}</td><td>${v[1]+v[3]+c[1]}</td><td>${v[4]+v[6]+c[2]}</td><td>${v[5]+v[7]+c[3]}</td><td>${(v[0]+v[2]+c[0])-(v[4]+v[6]+c[2])}</td><td>${(v[1]+v[3]+c[1])-(v[5]+v[7]+c[3])}</td></tr>
+        ${mrw("Regular (Beng+Sant)",mR)}
+        ${mrw("Continuing (Beng+Sant)",mC)}
+        ${mrw("Compartmental (Beng+Sant)",mP)}
+        <tr style="font-weight:bold; background:#f1f5f9;"><td>TOTALS</td><td>${mT[0]}</td><td>${mT[1]}</td><td>${mT[2]}</td><td>${mT[3]}</td><td>${mT[0]-mT[2]}</td><td>${mT[1]-mT[3]}</td></tr>
       </tbody></table>
     <div class="memo-summary-box"><div><strong>GROSS REGISTERED:</strong> ${enSum}</div><div><strong>TOTAL PRESENT:</strong> ${apSum}</div><div><strong>VERIFIED ABSENT:</strong> ${abSum}</div></div>
     <div class="memo-footer" style="position:relative;"><span class="doc-seal" data-seal="mp" data-mm="19" style="left:50%;margin-left:-9.5mm;top:-5mm"></span><div><br>___________________________<br>Venue Supervisor Sign</div><div style="text-align:right;"><span class="doc-sign" data-sign="1" style="margin-left:auto;font-size:.75mm"></span><span class="sg-print"><br>___________________________<br>Officer-In-Charge / Centre Secretary</span></div></div>
@@ -4154,7 +4165,7 @@ function mpClearStoredLedger(){
    ================================================================ */
 const mpDynamicRoutineTimelineBase = [
   { baseDate: "15 February", day: "Monday",    count: "3", sub: "First Language" },
-  { baseDate: "16 February", day: "Tuesday",   count: "3", sub: "Second Language" },
+  { baseDate: "16 February", day: "Tuesday",   count: "3", sub: "Second Language (English)" },
   { baseDate: "18 February", day: "Thursday",  count: "2", sub: "History" },
   { baseDate: "19 February", day: "Friday",    count: "2", sub: "Geography" },
   { baseDate: "22 February", day: "Monday",    count: "3", sub: "Mathematics" },
@@ -7069,18 +7080,18 @@ function sbLetterHtml(b){
   return '<div class="sb-letter" id="sb_'+b+'_letter">'+hdr+
     '<div class="cm">'+c.committee+'</div><div class="cn2">CENTRE NAME: TALDANGRA &amp; CENTRE CODE: 2206</div>'+
     '<div class="ca">P.O. &amp; BLOCK: TALDANGRA * SUB.DIV: KHATRA * DIST: BANKURA * PIN-722152</div>'+
-    '<div class="fr"><span>From: Centre Secretary / Centre-In-Charge</span><span>E-mail: '+E(c.email)+'</span></div>'+
+    '<div class="fr"><span>From: Centre Secretary / '+(c.hs?'Centre-In-Charge':'Officer-in-Charge')+'</span><span>E-mail: '+E(c.email)+'</span></div>'+
     '<div class="ca" style="text-align:right">'+E(c.mob)+'</div>'+
     '<div class="mm"><span>Memo No: '+(E(sbRaw(b,'memo'))||'_ _ _ _ _ _ _')+'</span><span>Date: '+E(date)+'</span></div>'+
     '<div class="to">To<br>'+sbMl(sbF(b,'to'))+'</div>'+
     '<div class="sub">Sub: Submission of papers / materials on the last date of the '+c.exam+' at Taldangra Centre [Centre Code: 2206].</div>'+
     '<p>Sir,</p>'+
-    '<p style="text-indent:8mm">I, Sri '+E(cic)+', Centre-in-Charge of the Taldangra '+(c.hs?'H.S.':'Madhyamik')+' Examination Centre [Centre Code: 2206] comprising the Venues '+vtxt(v1)+' &amp; '+vtxt(v2)+', beg to state that the examination at this centre was duly concluded on <b>'+E(di.date)+(di.day?' ('+E(di.day)+')':'')+'</b>'+(di.sub?' with the paper(s) of '+E(di.sub):'')+'. In terms of the instructions, the following papers / materials are being submitted on the last date of examination. Every parcel box bears the Centre Code <b>2206</b> for easy identification:</p>'+
+    '<p style="text-indent:8mm">I, Sri '+E(cic)+', '+(c.hs?'Centre-in-Charge':'Officer-in-Charge')+' of the Taldangra '+(c.hs?'H.S.':'Madhyamik')+' Examination Centre [Centre Code: 2206] comprising the Venues '+vtxt(v1)+' &amp; '+vtxt(v2)+', beg to state that the examination at this centre was duly concluded on <b>'+E(di.date)+(di.day?' ('+E(di.day)+')':'')+'</b>'+(di.sub?' with the paper(s) of '+E(di.sub):'')+'. In terms of the instructions, the following papers / materials are being submitted on the last date of examination. Every parcel box bears the Centre Code <b>2206</b> for easy identification:</p>'+
     '<table><thead><tr><th style="width:7%">Sl.</th><th style="width:38%">Papers / Materials submitted</th><th style="width:22%">Quantity / Remarks</th><th style="width:33%">Packing &amp; Parcel</th></tr></thead><tbody>'+trs+'</tbody></table>'+
     '<div class="tot">Total number of parcel boxes: '+total+(total?' (Box 1 to Box '+total+')':'')+(sbRaw(b,'mode')?' &nbsp;|&nbsp; Mode of despatch: '+E(sbRaw(b,'mode')):'')+'</div>'+
     '<p>The above materials are submitted for your kind receipt and acknowledgement.</p>'+
     '<p style="margin-left:8mm">Thanking you.</p><div style="text-align:right;margin-right:10mm">Yours faithfully,</div>'+
-    '<div class="sg"><div>'+sbSeal(b,24,'left:-4mm;top:-14mm')+'<div class="ln">Centre-In-Charge</div><b>'+E(cic)+'</b><br>'+c.centreTitle+'<br>Centre Code: 2206</div>'+
+    '<div class="sg"><div>'+sbSeal(b,24,'left:-4mm;top:-14mm')+'<div class="ln">'+(c.hs?'Centre-In-Charge':'Officer-In-Charge')+'</div><b>'+E(cic)+'</b><br>'+c.centreTitle+'<br>Centre Code: 2206</div>'+
     '<div>'+sbSign()+'<div class="ln">Centre Secretary</div>'+c.centreTitle+'<br>Centre Code: 2206</div></div>'+
     '<div class="en"><b>Enclo.:</b> (1) Confidential Report &nbsp; (2) Report on disputed incident (if any) &nbsp; (3) List of parcel boxes (Box 1 to '+(total||'N')+')</div>'+
     '</div>';
@@ -7149,7 +7160,7 @@ function sbOuterLabel(b,bx){
     items='<div class="it"><div>Metal Detector'+(n>1?'s':'')+(n?' \u2014 '+n+' nos.':'')+'<br><small>Handle with care. Each detector carries its own tag.</small></div></div>';
   }
   const toTxt=(bx.g==='C'&&sbRaw(b,'toMD'))?sbRaw(b,'toMD'):sbF(b,'to');
-  const from='<b>Centre Secretary / Centre-In-Charge</b><br>'+c.centreTitle+'<br>Centre Code: <b>2206</b><br>P.O. &amp; Block: Taldangra, Sub-Div: Khatra<br>Dist: Bankura, PIN-722152<br>'+E(c.mob.replace(/Mob No\.-?/,'Mob: '));
+  const from='<b>Centre Secretary / '+(c.hs?'Centre-In-Charge':'Officer-in-Charge')+'</b><br>'+c.centreTitle+'<br>Centre Code: <b>2206</b><br>P.O. &amp; Block: Taldangra, Sub-Div: Khatra<br>Dist: Bankura, PIN-722152<br>'+E(c.mob.replace(/Mob No\.-?/,'Mob: '));
   return '<div class="sb-ol" style="--c:'+bx.color+'">'+
     '<div class="oh">'+sbLogo(c)+'<div class="t"><b>'+c.body+'</b><i>'+c.examLine+'</i><u>'+c.centreTitle+'</u></div></div>'+
     '<div class="bn">'+bx.banner+'</div>'+
@@ -7375,7 +7386,7 @@ function sbPrint(b,what){
       '<div class="c-sub">SUB: PAPERS SUBMITTED ON THE LAST DATE OF EXAMINATION \u2014 '+E(di.date||'')+'</div>'+
       '<table class="c-tb"><thead><tr><th>SL</th><th>PAPERS</th><th>QTY</th><th>PARCEL</th></tr></thead><tbody>'+trs+'</tbody></table>'+
       '<div class="c-tot">TOTAL PARCEL BOXES: <b>'+sbBoxes(b).length+'</b> \u2014 CENTRE CODE <b>'+CODE+'</b> ON EVERY BOX</div>'+
-      '<div class="c-sg"><div>'+seal+'<div class="c-ln">CENTRE-IN-CHARGE</div><b>'+E(cic)+'</b></div><div>'+sign+'<div class="c-ln">CENTRE SECRETARY</div></div></div>'+
+      '<div class="c-sg"><div>'+seal+'<div class="c-ln">'+(c.hs?'CENTRE-IN-CHARGE':'OFFICER-IN-CHARGE')+'</div><b>'+E(cic)+'</b></div><div>'+sign+'<div class="c-ln">CENTRE SECRETARY</div></div></div>'+
       '<div class="c-ft">'+E(c.email)+' \u2022 '+E(c.mob)+'</div>'+
       '</div></div>';
   }
@@ -7545,6 +7556,17 @@ function mpSealHtml(mm, posStyle){
 }
 
 /* 1. UPGRADED CENTRE FORMS (Venue Supervisor 16-Room Landscape, Seal Opening, R.A., Duty, Confidential) */
+/* Room -> subject: use the room number saved in Daily Ops (hall field) when present, else subject order. */
+function mpVsSubjectForRoom(subs, rec, rNo){
+  var hit = '';
+  subs.forEach(function(s){
+    var d = (rec.subjects||{})[s]||{};
+    var rooms = [String(d.manualRoom||''), String(d.hall||'')].join(',').split(/[,;\s]+/).map(function(x){ var m=x.match(/^\d+$/); return m?parseInt(x,10):0; });
+    if(!hit && rooms.indexOf(rNo)!==-1 && (d.manualRoom||(d.roomAllocations&&d.roomAllocations.length))) hit = s;
+  });
+  if(hit) return hit;
+  return subs[rNo-1] || '';
+}
 window.mpPrintCentreForm = function(type){
   var venueKey = mpGetVenue();
   var venue = HS_VENUE_INFO[venueKey].name;
@@ -7573,7 +7595,7 @@ window.mpPrintCentreForm = function(type){
   if(type === 'venue'){
     var roomRowsHtml = '';
     for(var rNo=1; rNo<=16; rNo++){
-      var sub = subs[rNo-1] || (rNo===1 ? (subs[0]||item.sub) : '');
+      var sub = mpVsSubjectForRoom(subs, rec, rNo);
       var d = (sub && rec.subjects[sub]) ? rec.subjects[sub] : {};
       var tot = (Number(d.male)||0) + (Number(d.female)||0);
       var qTo = hsDailySerialEnd(d.qFrom, tot);
@@ -7632,13 +7654,13 @@ window.mpPrintCentreForm = function(type){
           '<tr><th rowspan="2" style="width:4.5%;">ROOM<br>NO.</th><th rowspan="2" style="width:15%;">NAME OF INVIGILATOR 1</th><th rowspan="2" style="width:15%;">NAME OF INVIGILATOR 2</th><th colspan="5">DETAILS OF QUESTION PAPER</th><th colspan="3">DETAILS OF ANSWER SCRIPT / LOOSE SHEET</th><th rowspan="2" style="width:12%;">SIGNATURE OF<br>INVIGILATORS</th></tr>' +
           '<tr><th style="width:7%;">SUBJECT</th><th style="width:9.5%;">SERIAL FROM</th><th style="width:9.5%;">SERIAL TO</th><th style="width:5.5%;">TOTAL</th><th style="width:6.5%;">PACKET<br>SL. NO.</th><th style="width:9.5%;">SERIAL FROM</th><th style="width:9.5%;">SERIAL TO</th><th style="width:5.5%;">TOTAL</th></tr>' +
         '</thead><tbody>' + roomRowsHtml + '</tbody></table>' +
-        '<div class="foot">' +
-          '<div style="font-size:7.6pt;line-height:1.4;max-width:58%;">' +
+        '<div class="foot" style="display:grid;grid-template-columns:1fr 30mm 1fr;gap:6mm;align-items:end;">' +
+          '<div style="font-size:7.6pt;line-height:1.4;">' +
             '<b>N.B.:</b> 1) Invigilators are requested to verify the Question Paper packet seal in presence of examinees before opening.<br>' +
             '2) Distribute Question Papers at 10:45 a.m. and Answer Scripts at 10:50 a.m.; writing begins at 11:00 a.m.<br>' +
             '3) This day-to-day record is to be preserved at the Venue Office.' +
           '</div>' +
-          mpSealHtml(22, 'right:75mm;bottom:0;') +
+          '<div style="position:relative;width:26mm;height:26mm;margin:0 auto;">' + mpSealHtml(24, 'left:1mm;top:1mm;') + '</div>' +
           '<div style="text-align:right;line-height:1.45;">' +
             'Venue Supervisor: <b>' + esc(rec.officials.venueSupervisor||HS_DEFAULT_EXAM_OFFICIALS.venueSupervisor) + '</b><br>' +
             'Centre Secretary: <b>' + esc(rec.officials.centreSecretary||HS_DEFAULT_EXAM_OFFICIALS.centreSecretary) + '</b> &nbsp;|&nbsp; Officer-in-Charge: <b>' + esc(rec.officials.centreInCharge||HS_DEFAULT_EXAM_OFFICIALS.centreInCharge) + '</b><br><br>' +
@@ -7745,7 +7767,7 @@ window.mpPrintSpeedPost = function(scope){
     var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===dt;}) || mpOfficialExamRoutineTimeline[0];
     var row = (mpTrackingStateDatabase[venueKey]||[]).find(function(r){return r.date===dt;});
     var v = (row && row.vals) || [0,0,0,0,0,0,0,0];
-    var scripts = v[4]+v[5]+v[6]+v[7]+mpCp(row)[2]+mpCp(row)[3];
+    var scripts = v[4]+v[5]+v[6]+v[7]+mpCp(row)[2]+mpCp(row)[3]+mpSnAp(row);
     return '<section style="page-break-after:always;border:4px double #7c2d12;padding:10mm;min-height:180mm;position:relative;box-sizing:border-box;">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #7c2d12;padding-bottom:6px;">' +
         '<img src="' + MP_WBBSE_LOGO_SVG + '" style="width:20mm;height:20mm;">' +
@@ -7816,7 +7838,7 @@ window.mpPrintDespatch = function(scope){
     var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===dt;}) || mpOfficialExamRoutineTimeline[0];
     var row = (mpTrackingStateDatabase[venueKey]||[]).find(function(r){return r.date===dt;});
     var v = (row && row.vals) || [0,0,0,0,0,0,0,0];
-    var en = v[0]+v[1]+v[2]+v[3]+mpCp(row)[0]+mpCp(row)[1], ap = v[4]+v[5]+v[6]+v[7]+mpCp(row)[2]+mpCp(row)[3], ab = en - ap;
+    var en = v[0]+v[1]+v[2]+v[3]+mpCp(row)[0]+mpCp(row)[1]+mpSnEn(row), ap = v[4]+v[5]+v[6]+v[7]+mpCp(row)[2]+mpCp(row)[3]+mpSnAp(row), ab = en - ap;
     return '<section style="page-break-after:always;padding:10mm;border:2px solid #111;min-height:265mm;position:relative;box-sizing:border-box;">' +
       '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px;">' +
         '<img src="' + MP_WBBSE_LOGO_SVG + '" style="width:18mm;height:18mm;display:block;margin:0 auto 4px;">' +
@@ -7862,58 +7884,75 @@ window.mpPrintDespatch = function(scope){
 };
 
 /* 3. UPGRADED COMPACT INVIGILATOR DECLARATION & SPECIMEN SIGNATURE LIST (Matches H.S. Room Duty Printouts) */
+/* Date-wise roster: invigilators who have a Room No. against the chosen Madhyamik date.
+   If nobody has a Room No. yet for that date, the whole venue roster is listed instead. */
+function mpRdPickDate(){
+  var el = document.getElementById('mp_rdDay');
+  var date = (el && el.value) || mpOfficialExamRoutineTimeline[0].date;
+  return mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
+}
+function mpRdDayRoster(v, item){
+  var all = (mpRdDB[v].rows||[]).filter(function(r){return r.n;});
+  var due = all.filter(function(r){ return String((r.d&&r.d[item.date])||'').trim(); });
+  var fallback = !due.length;
+  var list = hsSchoolWiseSort((fallback?all:due).map(function(r){ return {n:r.n, s:r.s||'', rn:String((r.d&&r.d[item.date])||'').trim()}; }));
+  return {rows:list, fallback:fallback};
+}
+/* Signature block: physical signatures by Centre Secretary and Officer-in-Charge, circular seal in the blank white
+   space between them. No signature stamp image is used on these sheets. */
+function mpSignBlock(){
+  var seal = '<div style="position:relative;width:26mm;height:26mm;margin:0 auto;">' + mpSealHtml(24, 'left:1mm;top:1mm;') + '</div>';
+  return '<div style="display:grid;grid-template-columns:1fr 30mm 1fr;align-items:end;margin-top:12mm;font-weight:700;font-size:9.5pt;page-break-inside:avoid;break-inside:avoid;">' +
+    '<div style="text-align:center;"><div style="border-top:1px solid #111;padding-top:2px;">Centre Secretary<br>Taldangra Madhyamik Centre (' + hsEscapeFormText(mpxVC()) + ')</div></div>' +
+    seal +
+    '<div style="text-align:center;"><div style="border-top:1px solid #111;padding-top:2px;">Officer-in-Charge<br>Taldangra Madhyamik Centre (' + hsEscapeFormText(mpxVC()) + ')</div></div>' +
+  '</div>';
+}
+function mpRdDayHeader(titleTxt, info, item, year, fallback){
+  var e = hsEscapeFormText;
+  return '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;gap:10px;"><span><b>' + e(titleTxt) + '</b> &mdash; ' + e(item.date) + ' (' + e(item.day) + ')' + (fallback?' &mdash; <u>no Room No. entered for this date, whole venue roster listed</u>':' &mdash; only invigilators allotted on this date') + '</span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:5px 12px;border-radius:4px;font-weight:700;cursor:pointer;">Print</button></div>' +
+    '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:5px;margin-top:6px;">' +
+      '<div style="font-size:13pt;font-weight:900;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
+      '<div style="font-size:10.5pt;font-weight:800;">' + e(titleTxt) + ' &mdash; MADHYAMIK PARIKSHA, ' + e(year) + '</div>' +
+      '<div style="font-size:9pt;font-weight:700;">Centre: TALDANGRA (' + e(mpxVC()) + ') &bull; Venue: ' + e(info.name) + ' (' + e(info.code||'') + ')</div>' +
+      '<div style="font-size:10pt;font-weight:900;margin-top:2px;">DATE: ' + e(item.date) + ' (' + e(item.day) + ') &nbsp;&bull;&nbsp; SUBJECT: ' + e(mpSubjectOptions(item).map(mpSubjectCode4).join(' / ')) + '</div>' +
+    '</div>';
+}
 window.mpRdPrintDeclaration = function(){
   mpRdLoad();
-  var v = mpGetVenue(), info = HS_VENUE_INFO[v];
+  var v = mpGetVenue(), info = HS_VENUE_INFO[v], item = mpRdPickDate();
   var year = mpTrackingStateDatabase["year"] || "2027";
-  var rows = hsSchoolWiseSort((mpRdDB[v].rows||[]).filter(function(r){return r.n;}));
-  for(var b=0; b<6; b++) rows.push({n:'', s:''});
+  var ro = mpRdDayRoster(v, item), rows = ro.rows.slice();
+  for(var b=0; b<5; b++) rows.push({n:'', s:'', rn:''});
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>WBBSE Invigilators Non-Relation &amp; Mobile Phone Declaration</title><style>' +
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>WBBSE Invigilators Declaration - ' + hsEscapeFormText(item.date) + '</title><style>' +
     '@page{size:A4 portrait;margin:9mm}body{font-family:Arial,sans-serif;font-size:9pt;color:#111;margin:0}' +
-    'table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #111;padding:3.5px 5px}th{background:#f1f5f9}' +
+    'table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #111;padding:3.5px 5px}th{background:#f1f5f9}thead{display:table-header-group}tr{page-break-inside:avoid}' +
     '@media print{.no-print{display:none!important}}' +
-  '</style></head><body>' +
-    '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;"><span><b>WBBSE Invigilator Declaration</b></span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:5px 12px;border-radius:4px;font-weight:700;cursor:pointer;">Print</button></div>' +
-    '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:5px;">' +
-      '<div style="font-size:13pt;font-weight:900;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
-      '<div style="font-size:10.5pt;font-weight:800;">INVIGILATOR\'S DECLARATION — MADHYAMIK PARIKSHA, ' + hsEscapeFormText(year) + '</div>' +
-      '<div style="font-size:9pt;font-weight:700;">Centre: TALDANGRA (' + mpxVC() + ') &bull; Venue: ' + hsEscapeFormText(info.name) + ' (' + hsEscapeFormText(mpxVC()) + ')</div>' +
-    '</div>' +
+  '</style></head><body>' + mpRdDayHeader("INVIGILATOR'S DECLARATION", info, item, year, ro.fallback) +
     '<p style="margin:6px 0;font-size:8.5pt;text-align:justify;"><b>Declaration:</b> I hereby declare that (1) None of my near relations is appearing at the Madhyamik Pariksha-' + hsEscapeFormText(year) + ' from this examination venue, and (2) I have deposited my mobile phone / electronic device with the Venue Supervisor before entering the examination hall.</p>' +
-    '<table><thead><tr><th style="width:6%;">Sl.</th><th style="width:32%;">Name of Invigilator</th><th style="width:32%;">Name of Feeder School</th><th style="width:10%;">Room No.</th><th style="width:20%;">Signature with Date</th></tr></thead><tbody>' +
-      rows.map(function(r,i){return '<tr><td style="text-align:center;height:6.5mm;">'+(i+1)+'</td><td>'+hsEscapeFormText(r.n)+'</td><td>'+hsEscapeFormText(r.s)+'</td><td></td><td></td></tr>';}).join('') +
-    '</tbody></table>' +
-    '<div style="display:flex;justify-content:space-between;margin-top:14mm;font-weight:700;position:relative;">' + mpSealHtml(22, 'left:44%;top:-8mm;') +
-      '<span>Venue Supervisor (' + hsEscapeFormText(mpxVC()) + ')</span><span>Centre Secretary / Officer-in-Charge (' + mpxVC() + ')</span>' +
-    '</div></body></html>');
+    '<table><thead><tr><th style="width:6%;">Sl.</th><th style="width:32%;">Name of Invigilator</th><th style="width:32%;">Name of Feeder School</th><th style="width:10%;">Room No.</th><th style="width:20%;">Signature</th></tr></thead><tbody>' +
+      rows.map(function(r,i){return '<tr><td style="text-align:center;height:6.5mm;">'+(i+1)+'</td><td>'+hsEscapeFormText(r.n)+'</td><td>'+hsEscapeFormText(r.s)+'</td><td style="text-align:center;font-weight:700;">'+hsEscapeFormText(r.rn)+'</td><td></td></tr>';}).join('') +
+    '</tbody></table>' + mpSignBlock() + '</body></html>');
   w.document.close();
 };
 
 window.mpRdPrintSpecimenSignature = function(){
   mpRdLoad();
-  var v = mpGetVenue(), info = HS_VENUE_INFO[v];
+  var v = mpGetVenue(), info = HS_VENUE_INFO[v], item = mpRdPickDate();
   var year = mpTrackingStateDatabase["year"] || "2027";
-  var rows = hsSchoolWiseSort((mpRdDB[v].rows||[]).filter(function(r){return r.n;}));
-  for(var b=0; b<6; b++) rows.push({n:'', s:''});
+  var ro = mpRdDayRoster(v, item), rows = ro.rows.slice();
+  var extra = Math.max(0, Math.min(40, parseInt((document.getElementById('mp_spBlank')||{}).value,10)||5));
+  for(var b=0; b<extra; b++) rows.push({n:'', s:'', rn:''});
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><title>WBBSE Specimen Signature List of Invigilators</title><style>' +
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>WBBSE Specimen Signature of Invigilators - ' + hsEscapeFormText(item.date) + '</title><style>' +
     '@page{size:A4 portrait;margin:9mm}body{font-family:Arial,sans-serif;font-size:9pt;color:#111;margin:0}' +
-    'table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #111;padding:4px 5px}th{background:#f1f5f9}' +
+    'table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #111;padding:4px 5px}th{background:#f1f5f9}thead{display:table-header-group}tr{page-break-inside:avoid}' +
     '@media print{.no-print{display:none!important}}' +
-  '</style></head><body>' +
-    '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;"><span><b>WBBSE Specimen Signature Sheet</b></span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:5px 12px;border-radius:4px;font-weight:700;cursor:pointer;">Print</button></div>' +
-    '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:5px;">' +
-      '<div style="font-size:13pt;font-weight:900;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
-      '<div style="font-size:10.5pt;font-weight:800;">SPECIMEN SIGNATURE OF INVIGILATORS — MADHYAMIK PARIKSHA, ' + hsEscapeFormText(year) + '</div>' +
-      '<div style="font-size:9pt;font-weight:700;">Centre: TALDANGRA (' + mpxVC() + ') &bull; Venue: ' + hsEscapeFormText(info.name) + ' (' + hsEscapeFormText(mpxVC()) + ')</div>' +
-    '</div>' +
-    '<table><thead><tr><th style="width:6%;">Sl.</th><th style="width:32%;">Name of Invigilator</th><th style="width:32%;">School</th><th style="width:15%;">Full Signature</th><th style="width:15%;">Short Signature (Initials)</th></tr></thead><tbody>' +
-      rows.map(function(r,i){return '<tr><td style="text-align:center;height:7mm;">'+(i+1)+'</td><td>'+hsEscapeFormText(r.n)+'</td><td>'+hsEscapeFormText(r.s)+'</td><td></td><td></td></tr>';}).join('') +
-    '</tbody></table>' +
-    '<div style="display:flex;justify-content:space-between;margin-top:14mm;font-weight:700;position:relative;">' + mpSealHtml(22, 'left:44%;top:-8mm;') +
-      '<span>Venue Supervisor (' + hsEscapeFormText(mpxVC()) + ')</span><span>Centre Secretary / Officer-in-Charge (' + mpxVC() + ')</span>' +
-    '</div></body></html>');
+  '</style></head><body>' + mpRdDayHeader("SPECIMEN SIGNATURE OF INVIGILATORS", info, item, year, ro.fallback) +
+    '<table><thead><tr><th style="width:6%;">Sl.</th><th style="width:30%;">Name of Invigilator</th><th style="width:30%;">School</th><th style="width:10%;">Room No.</th><th style="width:24%;">Signature</th></tr></thead><tbody>' +
+      rows.map(function(r,i){return '<tr><td style="text-align:center;height:7.5mm;">'+(i+1)+'</td><td>'+hsEscapeFormText(r.n)+'</td><td>'+hsEscapeFormText(r.s)+'</td><td style="text-align:center;font-weight:700;">'+hsEscapeFormText(r.rn)+'</td><td></td></tr>';}).join('') +
+    '</tbody></table>' + mpSignBlock() + '</body></html>');
   w.document.close();
 };
 
@@ -7928,7 +7967,7 @@ window.mpConfRender = function(){
     var cols = mpOfficialExamRoutineTimeline.map(function(d, idx){
       var r = rows[idx] || {vals:[0,0,0,0,0,0,0,0]};
       var v = r.vals;
-      var en = v[0]+v[1]+v[2]+v[3]+mpCp(r)[0]+mpCp(r)[1], ap = v[4]+v[5]+v[6]+v[7]+mpCp(r)[2]+mpCp(r)[3], ab = en - ap;
+      var en = v[0]+v[1]+v[2]+v[3]+mpCp(r)[0]+mpCp(r)[1]+mpSnEn(r), ap = v[4]+v[5]+v[6]+v[7]+mpCp(r)[2]+mpCp(r)[3]+mpSnAp(r), ab = en - ap;
       return {code: mpSubjectCode4(d.sub), date: d.date.slice(0,5), en:en, ap:ap, ab:ab};
     });
     return '<div style="margin-top:12px;">' +
@@ -8015,11 +8054,11 @@ try{ mpConfRender(); }catch(e){}
     }
   },true);
   function init(){
-    activateBoard('hs');
+    activateBoard('mp');
     activateTool('ledger');
     // Re-apply after the app's cloud hydration/startup has had a chance to finish.
     setTimeout(function(){
-      if(document.querySelector('.board-btn[data-board="hs"]')) activateBoard('hs');
+      if(document.querySelector('.board-btn[data-board="mp"]')) activateBoard('mp');
       activateTool('ledger');
       try{ if(typeof hsInitDataEngine==='function') hsInitDataEngine(); }catch(e){console.error('HS data init:',e);}
       try{ if(typeof hsDailyOpsRender==='function') hsDailyOpsRender(); }catch(e){console.error('HS daily ops init:',e);}
@@ -8261,7 +8300,9 @@ try{ mpConfRender(); }catch(e){}
           '</div>',
         '</div>',
         '<div class="hs-dailyops-card no-print">',
-          '<div class="hs-dailyops-toolbar" style="grid-template-columns:2fr 1.3fr 1.6fr;">',
+          '<div class="hs-dailyops-toolbar" style="grid-template-columns:2fr 1.3fr 1.6fr 1.5fr 0.8fr;">',
+            '<div class="form-group"><label>Date for Declaration / Specimen Signature</label><select id="mp_rdDay"></select></div>',
+            '<div class="form-group"><label>Extra blank rows</label><input type="number" id="mp_spBlank" min="0" max="40" value="5"></div>',
             '<div class="form-group"><label>Venue</label><select id="mp_rdVenue" onchange="mpSetVenue(this.value);mpRdRender()"><option value="TFHS">VENUE-1 [114071] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [114200] — TALDANGRA GIRLS\' HIGH SCHOOL [H.S.]</option></select></div>',
             '<div class="form-group"><label>School Order (Print)</label><label style="text-transform:none;font-weight:600;display:flex;gap:6px;align-items:center;height:31px;"><input type="checkbox" id="mp_rdSchoolOrder" style="width:auto;" checked> School-wise, names A&rarr;Z</label></div>',
             '<div class="form-group"><label>Status</label><div id="mp_rdStatus" style="height:31px;display:flex;align-items:center;font-weight:600;padding:0 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f8fafc;font-size:9pt;">—</div></div>',
@@ -8345,13 +8386,16 @@ function mpSetVenue(v){
 function mpSubjectCode4(name){
   var raw = String(name||"").trim();
   var up = raw.toUpperCase();
-  if(up.indexOf("FIRST LANGUAGE")!==-1 || up.indexOf("BENGALI")!==-1) return "FLNG";
-  if(up.indexOf("SECOND LANGUAGE")!==-1 || up.indexOf("ENGLISH")!==-1) return "SLNG";
+  if(up.indexOf("FIRST LANGUAGE")!==-1) return "BENG/SANT";
+  if(up.indexOf("SECOND LANGUAGE")!==-1) return "ENGL";
+  if(up.indexOf("BENGALI")!==-1 || up==="BENG") return "BENG";
+  if(up.indexOf("SANTALI")!==-1 || up.indexOf("SANTHALI")!==-1 || up==="SANT") return "SANT";
+  if(up.indexOf("ENGLISH")!==-1) return "ENGL";
   if(up.indexOf("HISTORY")!==-1) return "HIST";
   if(up.indexOf("GEOGRAPHY")!==-1) return "GEOG";
   if(up.indexOf("MATHEMATICS")!==-1 || up === "MATH") return "MATH";
-  if(up.indexOf("PHYSICAL SCIENCE")!==-1) return "PHSC";
-  if(up.indexOf("LIFE SCIENCE")!==-1) return "LFSC";
+  if(up.indexOf("PHYSICAL SCIENCE")!==-1 || up==="P.SC." || up==="PSC") return "P.SC.";
+  if(up.indexOf("LIFE SCIENCE")!==-1 || up==="L.SC." || up==="LSC") return "L.SC.";
   if(up.indexOf("OPTIONAL")!==-1 || up.indexOf("ELECTIVE")!==-1) return "OPEL";
   return up.replace(/[^A-Z]/g,'').slice(0,4) || "SUBJ";
 }
@@ -8360,8 +8404,17 @@ function mpSubjectWithCode(name){
   if(!raw) return "";
   return raw + " (" + mpSubjectCode4(raw) + ")";
 }
+/* Madhyamik: First Language day = TWO subjects (Bengali, Santali); Second Language day = English. */
+function mpExpandSubjectName(x){
+  x = String(x||'').trim();
+  if(/^First Language/i.test(x)) return ['Bengali','Santali'];
+  if(/^Second Language/i.test(x)) return ['English'];
+  return x ? [x] : [];
+}
 function mpSubjectOptions(item){
-  return String((item && item.sub)||'').split(',').map(function(x){return x.trim();}).filter(Boolean);
+  var out = [];
+  String((item && item.sub)||'').split(',').forEach(function(x){ mpExpandSubjectName(x).forEach(function(y){ if(out.indexOf(y)===-1) out.push(y); }); });
+  return out;
 }
 
 function mpImportCurrentYearExcel(input){
@@ -8407,7 +8460,11 @@ function mpSaveSubjectAllocation(){ localStorage.setItem('mpCentreSubjectAllocat
 function mpGetAllocatedSubjects(venue, date){
   mpLoadSubjectAllocation();
   var key = venue + '|' + date;
-  if(mpCentreSubjectAllocation[key] && mpCentreSubjectAllocation[key].length) return mpCentreSubjectAllocation[key];
+  if(mpCentreSubjectAllocation[key] && mpCentreSubjectAllocation[key].length){
+    var norm = [];
+    mpCentreSubjectAllocation[key].forEach(function(x){ mpExpandSubjectName(x).forEach(function(y){ if(norm.indexOf(y)===-1) norm.push(y); }); });
+    return norm;
+  }
   var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
   return mpSubjectOptions(item);
 }
@@ -8553,7 +8610,8 @@ function mpDailyOpsEnsureRecord(venue, date){
   mpGetAllocatedSubjects(venue, date).forEach(function(sub,i){
     if(!rec.subjects[sub]){
       var m = mpSubjectQpOmrMaster[sub]||{};
-      rec.subjects[sub] = {hall:i+1, male:'', female:'', total:0, qFrom:m.qpFrom||'', qTo:'', qReq:0, qNtp:0, omrFrom:m.omrFrom||'', omrTo:'', omrReq:0, inv1:'', inv2:'', manualRoom:'', roomAllocations:[]};
+      var lc = mpLedgerSubjectCounts(venue, date, sub);
+      rec.subjects[sub] = {hall:i+1, male:lc?String(lc.male):'', female:lc?String(lc.female):'', total:0, qFrom:m.qpFrom||'', qTo:'', qReq:0, qNtp:0, omrFrom:m.omrFrom||'', omrTo:'', omrReq:0, inv1:'', inv2:'', manualRoom:'', roomAllocations:[]};
     }
   });
   return rec;
@@ -8676,14 +8734,28 @@ function mpQuickEntryDayChange(){
   if(main && d){ main.value = d; mpDailyOpsRender(); }
 }
 function mpQuickEntrySubjectChange(){ mpQuickEntryRecalc(); }
+/* Enrolled male / female for a subject from the Progress Ledger.
+   Bengali -> Bengali-medium candidates (R + C + CP); Santali -> Santali-medium candidates;
+   every other subject (English, History ...) -> both mediums together. */
+function mpLedgerSubjectCounts(venue, date, sub){
+  var row = (mpTrackingStateDatabase[venue]||[]).find(function(r){return r.date===date;});
+  if(!row) return null;
+  var v = row.vals||[0,0,0,0,0,0,0,0], cp = mpCp(row), sv = row.sv||[0,0,0,0,0,0,0,0], sc = row.scp||[0,0,0,0];
+  var bM=(+v[0]||0)+(+v[2]||0)+(+cp[0]||0), bF=(+v[1]||0)+(+v[3]||0)+(+cp[1]||0);
+  var sM=(+sv[0]||0)+(+sv[2]||0)+(+sc[0]||0), sF=(+sv[1]||0)+(+sv[3]||0)+(+sc[1]||0);
+  var code = mpSubjectCode4(sub);
+  if(code==='BENG') return {male:bM, female:bF};
+  if(code==='SANT') return {male:sM, female:sF};
+  return {male:bM+sM, female:bF+sF};
+}
 function mpQuickEntryFetchFromLedger(){
   var venue = mpGetVenue(), date = document.getElementById('mp_qeDay').value || mpOfficialExamRoutineTimeline[0].date;
-  var row = (mpTrackingStateDatabase[venue]||[]).find(function(r){return r.date===date;});
-  if(!row) return;
-  var m = (Number(row.vals[0])||0) + (Number(row.vals[2])||0) + (mpCp(row)[0]||0);
-  var f = (Number(row.vals[1])||0) + (Number(row.vals[3])||0) + (mpCp(row)[1]||0);
-  document.getElementById('mp_qeMale').value = m;
-  document.getElementById('mp_qeFemale').value = f;
+  var subEl = document.getElementById('mp_qeSubject');
+  var sub = (subEl && subEl.value) || (mpGetAllocatedSubjects(venue,date)[0]) || '';
+  var c = mpLedgerSubjectCounts(venue, date, sub);
+  if(!c) return;
+  document.getElementById('mp_qeMale').value = c.male;
+  document.getElementById('mp_qeFemale').value = c.female;
   mpQuickEntryRecalc();
 }
 function mpQuickEntryRecalc(){
@@ -8717,62 +8789,6 @@ function mpQuickEntryClearForm(){
   mpQuickEntryRecalc();
 }
 
-function mpPrintCentreForm(type){
-  var venueKey = mpGetVenue();
-  var venue = HS_VENUE_INFO[venueKey].name;
-  var venueCode = mpxVC();
-  var dayEl = document.getElementById('mp_formDay');
-  var date = (dayEl && dayEl.value) || mpOfficialExamRoutineTimeline[0].date;
-  var item = mpOfficialExamRoutineTimeline.find(function(x){return x.date===date;}) || mpOfficialExamRoutineTimeline[0];
-  var subs = mpGetAllocatedSubjects(venueKey, item.date);
-  var year = mpTrackingStateDatabase["year"] || "2027";
-  var rec = mpDailyOpsEnsureRecord(venueKey, item.date);
-  var esc = hsEscapeFormText;
-
-  var title = 'WBBSE FORM', body = '';
-  if(type === 'venue'){
-    title = 'VENUE SUPERVISOR FORMAT (DATA SHEET) — WBBSE';
-    body = '<h3 style="text-align:center;text-decoration:underline;">VENUE SUPERVISOR FORMAT (DATA SHEET)</h3>' +
-      '<p style="text-align:center;font-weight:700;">MADHYAMIK PARIKSHA (SECONDARY EXAMINATION), '+esc(year)+'</p>' +
-      '<table><tr><th>Centre / Code</th><td>TALDANGRA / ' + mpxVC() + '</td><th>Venue / Code</th><td>'+esc(venue)+' / '+esc(venueCode)+'</td></tr>' +
-      '<tr><th>Examination Date</th><td>'+esc(item.date)+' ('+esc(item.day)+')</td><th>Subject(s)</th><td>'+esc(subs.join(', '))+'</td></tr></table>' +
-      '<table><thead><tr><th>Hall/Room</th><th>Invigilator 1</th><th>Invigilator 2</th><th>Subject</th><th>QP From</th><th>QP To</th><th>Total QP</th><th>Script From</th><th>Script To</th><th>Total Script</th><th>Signature</th></tr></thead>' +
-      '<tbody>'+subs.map(function(s,i){
-        var d = rec.subjects[s]||{};
-        var tot = (Number(d.male)||0)+(Number(d.female)||0);
-        return '<tr><td>'+esc(d.hall||i+1)+'</td><td>'+esc(d.inv1||'')+'</td><td>'+esc(d.inv2||'')+'</td><td>'+esc(s)+'</td><td>'+esc(d.qFrom||'')+'</td><td>'+esc(hsDailySerialEnd(d.qFrom,tot))+'</td><td>'+(tot||'')+'</td><td>'+esc(d.omrFrom||'')+'</td><td>'+esc(hsDailySerialEnd(d.omrFrom,tot))+'</td><td>'+(tot||'')+'</td><td></td></tr>';
-      }).join('')+'</tbody></table>';
-  } else if(type === 'seal'){
-    title = 'SEAL OPENING FORMAT — WBBSE';
-    body = '<h3 style="text-align:center;text-decoration:underline;">SEAL OPENING FORMAT (QUESTION PAPER PACKETS)</h3>' +
-      '<p>Question Paper packets of Madhyamik Pariksha (Secondary Examination), '+esc(year)+' for subject(s) <b>'+esc(subs.join(', '))+'</b> are opened on <b>'+esc(item.date)+' ('+esc(item.day)+')</b> in presence of the following officials at <b>'+esc(venue)+' ('+esc(venueCode)+')</b>:</p>' +
-      '<table><tr><th>Sl.</th><th>Name</th><th>Designation</th><th>Signature &amp; Time</th></tr>' +
-      '<tr><td>1</td><td>'+esc(rec.officials.venueSupervisor)+'</td><td>Venue Supervisor</td><td></td></tr>' +
-      '<tr><td>2</td><td>'+esc(rec.officials.centreSecretary)+'</td><td>Centre Secretary</td><td></td></tr>' +
-      '<tr><td>3</td><td>'+esc(rec.officials.centreInCharge)+'</td><td>Officer-in-Charge</td><td></td></tr>' +
-      '<tr><td>4</td><td></td><td>Invigilator Witness</td><td></td></tr></table>';
-  } else if(type === 'duty'){
-    title = 'ON DUTY DECLARATION — WBBSE';
-    body = '<h3 style="text-align:center;text-decoration:underline;">ON DUTY DECLARATION</h3>' +
-      '<p>I, Sri / Smt. __________________________________ was engaged in examination duty for Madhyamik Pariksha (Secondary Examination), '+esc(year)+' on <b>'+esc(item.date)+' ('+esc(item.day)+')</b> at <b>'+esc(venue)+' (Centre Code: '+esc(venueCode)+')</b>.</p>' +
-      '<p>Signature of Applicant: ___________________________ &nbsp;&nbsp; Mobile: ___________________</p>';
-  } else if(type === 'confidential'){
-    title = 'CONFIDENTIAL REPORT FORMAT — WBBSE';
-    body = '<h3 style="text-align:center;text-decoration:underline;">CONFIDENTIAL FORMAT (INCIDENT / RULE VIOLATION)</h3>' +
-      '<p><b>Venue:</b> '+esc(venue)+' ('+esc(venueCode)+') &nbsp;|&nbsp; <b>Date:</b> '+esc(item.date)+' ('+esc(item.day)+') &nbsp;|&nbsp; <b>Subject:</b> '+esc(subs.join(', '))+'</p>' +
-      '<div style="border:1px solid #000;min-height:90mm;padding:8px;">Nature of incident / report:</div>';
-  } else {
-    title = 'R.A. FORMAT — WBBSE';
-    body = '<h3 style="text-align:center;text-decoration:underline;">REPORTED AGAINST (R.A.) FORMAT</h3>' +
-      '<p><b>Centre:</b> TALDANGRA (' + mpxVC() + ') &nbsp;|&nbsp; <b>Venue:</b> '+esc(venue)+' ('+esc(venueCode)+') &nbsp;|&nbsp; <b>Date:</b> '+esc(item.date)+' &nbsp;|&nbsp; <b>Subject:</b> '+esc(subs.join(', '))+'</p>' +
-      '<table><tr><th>Sl.</th><th>Roll &amp; No.</th><th>Registration No.</th><th>Nature of Malpractice / R.A.</th><th>Signature</th></tr>' +
-      Array.from({length:10},function(_,i){return '<tr><td>'+(i+1)+'</td><td></td><td></td><td></td><td></td></tr>';}).join('')+'</table>';
-  }
-
-  var w = window.open('','_blank'); if(!w) return alert('Allow pop-ups to print.');
-  w.document.write('<!doctype html><html><head><title>'+esc(title)+'</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:10.5pt;color:#111}.head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #222;padding:6px;text-align:left}th{background:#f1f5f9}.sig{margin-top:38px;display:flex;justify-content:space-between;font-weight:700}</style></head><body><div class="head"><div style="font-size:15pt;font-weight:800;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div><div>Nivedita Bhavan, DJ-8, Sector-II, Salt Lake, Kolkata - 700091</div><div style="font-weight:700;margin-top:4px;">Madhyamik Pariksha (Secondary Examination), '+esc(year)+'</div></div>'+body+'<div class="sig"><span>Venue Supervisor ('+esc(venueCode)+')</span><span>Centre Secretary / Officer-in-Charge (' + mpxVC() + ')</span></div><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
-  w.document.close();
-}
 function mpGenerateSelectedDayForms(){ mpPrintCentreForm('venue'); }
 function mpGenerateAllSelectedDayForms(){ mpPrintCentreForm('venue'); }
 function mpPrintCovers(scope, mode){ mpPrintSpeedPost(scope); }
@@ -8815,6 +8831,12 @@ function mpRdRender(){
       dates.map(function(d){return '<td style="text-align:center;"><input class="rd-rn" type="text" data-idx="'+idx+'" data-dt="'+d.date+'" value="'+hsEscapeFormText((r.d&&r.d[d.date])||'')+'" oninput="mpRdDateInput(this)"></td>';}).join('') +
       '<td style="text-align:center;"><button class="rd-del" onclick="mpRdDelRow('+idx+')">&times;</button></td></tr>';
     }).join('') + '</tbody>';
+  var dsel = document.getElementById('mp_rdDay');
+  if(dsel){
+    var keep = dsel.value;
+    dsel.innerHTML = dates.map(function(d){return '<option value="'+d.date+'">'+d.date+' ('+d.day+') — '+mpSubjectCode4(d.sub)+'</option>';}).join('');
+    if(keep && dates.some(function(d){return d.date===keep;})) dsel.value = keep;
+  }
   var st = document.getElementById('mp_rdStatus');
   if(st) st.textContent = rows.length + ' invigilators loaded for ' + venue;
 }
@@ -8837,8 +8859,6 @@ function mpRdPrint(){
   w.document.write('<!doctype html><html><head><title>Madhyamik Room-wise Invigilator Allotment</title><style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;font-size:9pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #222;padding:4px;text-align:center}th{background:#f1f5f9}</style></head><body><h3 style="text-align:center;margin:0 0 6px;">W.B.B.S.E. MADHYAMIK PARIKSHA — ROOM-WISE ALLOTMENT OF INVIGILATORS — '+hsEscapeFormText(info.name)+' ('+hsEscapeFormText(info.code)+')</h3><table><thead><tr><th>Sl</th><th>Invigilator Name</th><th>School</th>'+dates.map(function(d){return '<th>'+d.date+'<br><small>'+d.day+'</small></th>';}).join('')+'</tr></thead><tbody>'+rows.filter(function(r){return r.n;}).map(function(r,i){return '<tr><td>'+(i+1)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.n)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.s)+'</td>'+dates.map(function(d){return '<td><b>'+hsEscapeFormText((r.d&&r.d[d.date])||'')+'</b></td>';}).join('')+'</tr>';}).join('')+'</tbody></table><scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
   w.document.close();
 }
-function mpRdPrintDeclaration(){ mpRdPrint(); }
-function mpRdPrintSpecimenSignature(){ mpRdPrint(); }
 
 function mpEntrySheetEnsureInit(){
   if(!mpReqLiveSystemState.entrySheet) mpReqLiveSystemState.entrySheet = {};
@@ -9006,7 +9026,7 @@ function mpConfRender(){
   var buildVenueRows = function(vKey){
     return (mpTrackingStateDatabase[vKey]||[]).map(function(r,i){
       var v = r.vals||[0,0,0,0,0,0,0,0];
-      var en = v[0]+v[1]+v[2]+v[3]+mpCp(r)[0]+mpCp(r)[1], ap = v[4]+v[5]+v[6]+v[7]+mpCp(r)[2]+mpCp(r)[3], ab = en - ap;
+      var en = v[0]+v[1]+v[2]+v[3]+mpCp(r)[0]+mpCp(r)[1]+mpSnEn(r), ap = v[4]+v[5]+v[6]+v[7]+mpCp(r)[2]+mpCp(r)[3]+mpSnAp(r), ab = en - ap;
       return '<tr><td>'+(i+1)+'</td><td>'+hsEscapeFormText(r.date)+'</td><td>'+hsEscapeFormText(r.day)+'</td><td style="text-align:left;">'+hsEscapeFormText(r.sub)+'</td><td>'+en+'</td><td>'+ap+'</td><td>'+ab+'</td></tr>';
     }).join('');
   };
@@ -9028,7 +9048,7 @@ function mpSbRender(){
     mpOfficialExamRoutineTimeline.map(function(d,i){
       var r1 = (mpTrackingStateDatabase.TFHS||[])[i], r2 = (mpTrackingStateDatabase.TGHS||[])[i];
       var v1 = (r1 && r1.vals)||[0,0,0,0,0,0,0,0], v2 = (r2 && r2.vals)||[0,0,0,0,0,0,0,0];
-      var p1 = v1[4]+v1[5]+v1[6]+v1[7]+mpCp(r1)[2]+mpCp(r1)[3], p2 = v2[4]+v2[5]+v2[6]+v2[7]+mpCp(r2)[2]+mpCp(r2)[3];
+      var p1 = v1[4]+v1[5]+v1[6]+v1[7]+mpCp(r1)[2]+mpCp(r1)[3]+mpSnAp(r1), p2 = v2[4]+v2[5]+v2[6]+v2[7]+mpCp(r2)[2]+mpCp(r2)[3]+mpSnAp(r2);
       return '<tr><td>'+(i+1)+'</td><td>'+d.date+'</td><td>'+d.day+'</td><td style="text-align:left;">'+d.sub+'</td><td>'+p1+'</td><td>'+p2+'</td><td><b>'+(p1+p2)+'</b></td></tr>';
     }).join('') + '</tbody></table></div>';
 }
@@ -9094,7 +9114,7 @@ cloudRunWhenReady(function(){
 var KEY='mpxReports2027';
 var LOGO_DP='data:image/png;base64,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', LOGO_F22='data:image/jpeg;base64,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';
 function MP27_ROWS(){
-  var T=[['2027-02-15','First Language (Bengali / English / Hindi etc.)'],['2027-02-16','Second Language'],['2027-02-18','History'],['2027-02-19','Geography'],['2027-02-22','Mathematics'],['2027-02-23','Physical Science'],['2027-02-24','Life Science'],['2027-02-25','Optional Elective Subjects [AG & ELEC]']];
+  var T=[['2027-02-15','First Language (Bengali / Santali)'],['2027-02-16','Second Language (English)'],['2027-02-18','History'],['2027-02-19','Geography'],['2027-02-22','Mathematics'],['2027-02-23','Physical Science'],['2027-02-24','Life Science'],['2027-02-25','Optional Elective Subjects [AG & ELEC]']];
   return T.map(function(x){var d=new Date(x[0]+'T00:00:00');d.setDate(d.getDate()+1);var nx=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
     return {date:x[0],subj:x[1],absB:'',nAbsB:0,absS:'',nAbsS:0,cn:'_ _ _ _ _ _ _ _ _ _ _ _',cnDate:nx,be:[510,58,6,3,0,0],ba:[510,58,6,3,0,0],se:[0,0,0,0,0,0],sa:[0,0,0,0,0,0]};});
 }
@@ -9117,7 +9137,7 @@ ensureCentres();
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(cfg));}catch(e){} syncCodeSpans(); }
 try{ if(typeof CLOUD_SYNC_KEYS!=='undefined' && CLOUD_SYNC_KEYS.indexOf(KEY)<0) CLOUD_SYNC_KEYS.push(KEY); }catch(e){}
 function activeKey(){ try{ return mpGetVenue(); }catch(e){ return 'TFHS'; } }
-function ensureCentres(){ cfg.rail=Object.assign({pkts:'TWO',insured:'1002',mob:'8250953306',dateOff:0},cfg.rail||{}); cfg.centres=cfg.centres||{}; if(!cfg.centres.TFHS) cfg.centres.TFHS={code:'30126',name:'TALDANGRA FULMATI HIGH SCHOOL'}; if(!cfg.centres.TGHS) cfg.centres.TGHS={code:'30127',name:"TALDANGRA GIRLS' HIGH SCHOOL"}; }
+function ensureCentres(){ try{ if(cfg.rows&&cfg.rows[0]&&/Hindi|^First Language$/.test(cfg.rows[0].subj)) cfg.rows[0].subj='First Language (Bengali / Santali)'; if(cfg.rows&&cfg.rows[1]&&cfg.rows[1].subj==='Second Language') cfg.rows[1].subj='Second Language (English)'; }catch(e){} cfg.rail=Object.assign({pkts:'TWO',insured:'1002',mob:'8250953306',dateOff:0},cfg.rail||{}); cfg.centres=cfg.centres||{}; if(!cfg.centres.TFHS) cfg.centres.TFHS={code:'30126',name:'TALDANGRA FULMATI HIGH SCHOOL'}; if(!cfg.centres.TGHS) cfg.centres.TGHS={code:'30127',name:"TALDANGRA GIRLS' HIGH SCHOOL"}; }
 function VC(){ var k=activeKey(),c=cfg.centres&&cfg.centres[k]; return String((c&&c.code)||(k==='TGHS'?'30127':'30126')); }
 window.mpxVC=function(){ return VC(); };
 function syncCodeSpans(){ try{ var vc=VC(); document.querySelectorAll('[id^="mp_centerCodeLabel"]').forEach(function(el){el.textContent=vc;});
@@ -9348,12 +9368,12 @@ function printGrant(){openDoc('Centre Grant',pgGrant(),{margin:'6mm'});}
 
 /* ================= 7. SIGNATURE SHEET ================= */
 function pgSig(){
-  var box='height:30mm;border:1px solid #000;position:relative';
+  var box='height:42mm;border:1px solid #000;position:relative';
   var o='<div class="pg">'+head(false).replace('CENTRE COMMITTEE','CENTRE COMMITTEE');
   o+='<div style="text-align:center;font:700 11pt \'Segoe UI Emoji\',Arial,sans-serif;margin-top:-2mm">Index No.U1-083* UDISE Code: 19132104401* H.S. Code: 114071* VTC Code-5006</div>';
   o+='<div style="font:italic 700 10pt Verdana,Arial,sans-serif;color:#002060;margin:2mm 0 1mm">From: Headmaster/Secretary/Administrator</div>'+memoRow('#843c0c',1,'#002060')
   +'<div class="fx" style="font:12pt \'Lucida Bright\',Georgia,serif;margin:6mm 0 0 6mm;line-height:1.25">'+ed('To\nThe Regional Officer\nRegional Council Office; Medinipur\n[West Bengal Board of Secondary Education]\nKeranitola Chawk; Medinipur,P.O. Medinipur,\nDistrict-Paschim Medinipur PIN-721101')+'</div>';
-  o+='<div style="text-align:center;font:16pt \'Bahnschrift SemiBold Condensed\',\'Arial Narrow\',Arial,sans-serif;text-decoration:underline;margin:8mm 0 10mm">Signatures of Officer in Charge &amp; Centre Secretary relating to Madhyamk Examination-'+E(cfg.year)+'</div>';
+  o+='<div style="text-align:center;font:16pt \'Bahnschrift SemiBold Condensed\',\'Arial Narrow\',Arial,sans-serif;text-decoration:underline;margin:8mm 0 10mm">Signatures of Officer in Charge &amp; Centre Secretary relating to Madhyamik Examination-'+E(cfg.year)+'</div>';
   o+='<div style="display:flex;gap:14mm;margin-top:14mm"><div style="flex:1"><div style="'+box+'">'+seal(26,'left:36mm;top:3mm')+'</div><div style="border:1px solid #000;border-top:0;text-align:center;font:700 14pt \'Lucida Bright\',Georgia,serif;padding:1mm">Officer-in-charge</div><div style="text-align:center;font-size:11pt;border-left:1px solid #000;border-right:1px solid #000;padding:1mm">'+ed(up(cfg.centre)+' MADHYAMIK PARIKSHA CENTRE')+'<br>[Centre Code: '+E(VC())+' ] </div><div style="border:1px solid #000;border-top:0;text-align:center;font:700 12pt \'Lucida Bright\',Georgia,serif;padding:1mm">'+ed(cfg.oic)+'</div></div>'
   +'<div style="flex:1"><div style="'+box+'">'+sign('margin-top:1mm')+'</div><div style="border:1px solid #000;border-top:0;text-align:center;font:700 14pt \'Lucida Bright\',Georgia,serif;padding:1mm">Centre Secretary</div><div style="text-align:center;font-size:11pt;border-left:1px solid #000;border-right:1px solid #000;padding:1mm">'+ed(up(cfg.centre)+' MADHYAMIK PARIKSHA CENTRE')+'<br>[Centre Code: '+E(VC())+' ] </div><div style="border:1px solid #000;border-top:0;text-align:center;font:700 12pt \'Lucida Bright\',Georgia,serif;padding:1mm">'+ed(cfg.cs)+'</div></div></div></div>';
   return o;
@@ -9448,7 +9468,7 @@ function renderPanel(){
   +'<button class="'+B+'" onclick="MPX.fl()">FL-Final Doc</button><button class="'+B+'" onclick="MPX.desp(\'day\')">Despatch — this day</button><button class="'+B+'" onclick="MPX.desp(\'all\')">Despatch — all days</button><button class="'+B+'" onclick="MPX.conf()">Conf Report</button>'
   +'<button class="'+B+'" onclick="MPX.f22()">Form 22</button><button class="'+B+'" onclick="MPX.grant()">Grant</button><button class="'+B+'" onclick="MPX.sig()">Signature sheet</button></div>'
   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.cover(\'all\')">COVER all (labels · railway receipts · insured · blank AS)</button><button class="'+B+'" onclick="MPX.cover(\'env\')">Envelope labels</button><button class="'+B+'" onclick="MPX.cover(\'day\')">Insured cover — this day</button><button class="'+B+'" onclick="MPX.cover(\'days\')">Insured covers — all days</button><button class="'+B+'" onclick="MPX.cover(\'rail\')">Railway receipts</button><button class="'+B+'" onclick="MPX.cover(\'blank\')">Blank AS cover</button></div>'
-  +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.rail(\'day\')">RAIL ADDRESS TAG &mdash; this day (full A4, big)</button><button class="'+B+'" onclick="MPX.rail(\'all\')">Rail tags &mdash; all days</button><button class="'+B+'" onclick="MPX.rail(\'blank\')">Blank AS tag (Howrah)</button><span style="font-size:8.5pt;color:#475569;align-self:center">Separate A4 landscape tag, text auto-fitted to fill the whole page; click any text to edit.</span></div>'
+  +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.rail(\'day\')">RAIL ADDRESS TAG &mdash; this day (full A4, big)</button><button class="'+B+'" onclick="MPX.rail(\'all\')">Rail tags &mdash; all days</button><button class="'+B+'" onclick="MPX.rail(\'blank\')">Blank AS tag (Howrah)</button><button class="btn btn-success" onclick="MPX.spec()">Specimen signatures of invigilators &mdash; this day</button><button class="'+B+'" onclick="MPX.vsup()">Venue Supervisor sheet &mdash; this day</button><span style="font-size:8.5pt;color:#475569;align-self:center">Separate A4 landscape tag, text auto-fitted to fill the whole page; click any text to edit.</span></div>'
   +'<div style="margin-top:12px;font-weight:700;color:#7c2d12">Railway Parcel Forwarding Note &amp; GST Manual Receipt form &mdash; auto-filled for each exam day</div><div class="control-deck" style="grid-template-columns:repeat(4,1fr)">'+fld('rail.pkts','Sealed packets (in words)')+fld('rail.insured','Insured for Rs.')+fld('rail.mob','Mobile no.')+fld('rail.dateOff','Form date = exam date + days (0 or 1)','number')+'</div>'
   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.forms(\'parcel\',\'day\')">Parcel Forwarding Note &mdash; this day</button><button class="'+B+'" onclick="MPX.forms(\'parcel\',\'all\')">Parcel notes &mdash; all days</button><button class="btn btn-success" onclick="MPX.forms(\'gst\',\'day\')">GST Manual form &mdash; this day</button><button class="'+B+'" onclick="MPX.forms(\'gst\',\'all\')">GST forms &mdash; all days</button></div>'
   +'<div style="margin-top:8px;font-size:8.5pt;color:#475569">Round seal and the optional <b>Signature stamp</b> (toggle in the top bar) show the Centre Code of the active centre. Every printed page is click-to-edit before printing.</div></div>'
@@ -9522,7 +9542,7 @@ var GF=[
 [203,456,297,484,6,'The Deputy Secretary (Exam)\nW.B.B.S.E. Nivedita Bhawan, Block-DJ8,\nSector-II  Karunamoyee,\nSaltlake ,Kolkata-700091.'],
 [380,369,475,392,20,'2204SE0000','N'],[444,387,527,410,20,'BANKURA','N'],[405,349,538,372,20,'19AAAGMOCIZG','N'],[186,350,257,373,20,'19 (W.B.)','N'],[413,330,498,353,20,'04 COMML','N'],[288,319,298,337,13,'\u2713'],
 [226,289,380,314,11,'17 EASTERN RAILWAY HQ FAIRLIE\nPLACE KOLKATA W.B. - 700001','N'],[184,272,295,288,14,'BANKURA 19 (W.B.)'],[141,145,173,161,14,'2.50%','N'],[148,116,180,132,14,'2.50%','N'],
-[112,593,292,607,10,'{OIC},Centre-In-charge','B'],[77,585,326,596,9,'{CENTRE} M.P. CENTRE EXAM-{YEAR} CODE-{CODE}'],[170,520,472,551,11,'{SCHOOL}\nAT&amp;P.O.-TALDANGRA,DIST-BANKURA,PIN-722152'],
+[112,593,292,607,10,'{OIC}, Officer-in-Charge','B'],[77,585,326,596,9,'{CENTRE} M.P. CENTRE EXAM-{YEAR} CODE-{CODE}'],[170,520,472,551,11,'{SCHOOL}\nAT&amp;P.O.-TALDANGRA,DIST-BANKURA,PIN-722152'],
 [462,461,471,477,12,'\u2713'],[383,504,455,518,13,'{MOB}'],[120,505,295,519,10,'highschooltaldangrafulmati@gmail.com'],[394,769,589,789,20,'CENTRE CODE:{CODE}'],[255,688,311,700,11,'{DATE}']];
 var FORM_CSS='.fpg{width:595pt;height:842pt;position:relative;overflow:hidden;page-break-after:always;margin:0 auto}.fpg:last-of-type{page-break-after:auto}.gsc{width:612pt;height:792pt;position:absolute;left:0;top:0;transform:scale(.9722);transform-origin:0 0}.bg{position:absolute;left:0;top:0;width:100%;height:100%}.fi{position:absolute;white-space:pre;color:#000;transform-origin:0 0}.fs{display:inline-block}.gbx{position:absolute;border:2pt solid #22b14c;box-sizing:border-box}';
 var FORM_FIT='(function(){function fit(){document.querySelectorAll(".fi").forEach(function(e){var s=e.firstChild,L=parseFloat(e.getAttribute("data-l"))*4/3;if(s.offsetWidth>L+1){e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*L/s.offsetWidth*0.99)+"px";}});}window.addEventListener("load",function(){fit();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit);});})();';
@@ -9549,13 +9569,29 @@ function printForms(kind,scope){
   openDoc((kind==='gst'?'Railway GST Manual Form':'Railway Parcel Forwarding Note')+' — Centre '+VC(),pages+'<scr'+'ipt>'+FORM_FIT+'</scr'+'ipt>',{margin:'0',css:FORM_CSS});
 }
 
+
+/* ================= DAY-WISE SPECIMEN SIGNATURE & VENUE SUPERVISOR SHEET (one day at a time) ================= */
+var SH_CSS='.sht{width:100%;border-collapse:collapse;table-layout:fixed}.sht td,.sht th{border:1pt solid #000;padding:0 2mm;font-size:10pt;height:9.2mm;vertical-align:middle}.sht th{background:#eee;height:auto;padding:2mm}.shp{font-family:Arial,Helvetica,sans-serif;page-break-after:auto}';
+function shDay(){return cfg.rows[Math.max(0,(+cfg.day||1)-1)];}
+function shHead(title){var r=shDay(); return '<div style="text-align:center;font-weight:700;font-size:14pt;text-decoration:underline;margin-bottom:3mm">'+title+' &mdash; MADHYAMIK EXAMINATION-'+E(cfg.year)+'</div>'
+ +'<div style="display:flex;justify-content:space-between;font-size:10.5pt;margin-bottom:3mm"><div>Centre: <b>'+ed(up(cfg.centre)+' M.P. CENTRE')+'</b> ['+ed(up(vname()))+'] &nbsp; Centre Code: <b>'+ed(VC())+'</b></div><div>Date: <b>'+ed(dmy(r.date,'-'))+'</b> &nbsp; Subject: <b>'+ed(mpShortSub(r.subj))+'</b></div></div>';}
+function shFoot(){return '<div style="display:flex;justify-content:space-between;margin-top:14mm;font-size:10.5pt"><div style="text-align:center;width:32%;border-top:1.4pt solid #000;padding-top:1mm">Venue Supervisor</div><div style="text-align:center;width:32%;border-top:1.4pt solid #000;padding-top:1mm">Centre Secretary</div><div style="text-align:center;width:32%;border-top:1.4pt solid #000;padding-top:1mm">Officer-in-Charge<br><b>'+ed(cfg.oic)+'</b></div></div>';}
+function printSpec(){
+  var rows='';for(var i=1;i<=26;i++) rows+='<tr><td style="text-align:center">'+i+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td></td><td>'+ed('')+'</td></tr>';
+  openDoc('Specimen Signature of Invigilators',shHead('SPECIMEN SIGNATURE OF INVIGILATORS')+'<table class="sht"><colgroup><col style="width:7%"><col style="width:34%"><col style="width:22%"><col style="width:25%"><col style="width:12%"></colgroup><tr><th>Sl.</th><th>Name of Invigilator (Block Letters)</th><th>Designation / School</th><th>Specimen Signature</th><th>Room No.</th></tr>'+rows+'</table>'+shFoot(),{margin:'10mm',css:SH_CSS});
+}
+function printVsup(){
+  var r=shDay(),en=sum(r.be)+sum(r.se),pr=sum(r.ba)+sum(r.sa),rows='';
+  for(var i=1;i<=16;i++) rows+='<tr><td style="text-align:center">'+i+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td></td></tr>';
+  openDoc('Venue Supervisor Sheet',shHead('VENUE SUPERVISOR SHEET')+'<div style="font-size:10.5pt;margin-bottom:2mm">Total enrolled: <b>'+ed(String(en))+'</b> &nbsp; Total present: <b>'+ed(String(pr))+'</b> &nbsp; Total absent: <b>'+ed(String(en-pr))+'</b> &nbsp;&nbsp; Venue Supervisor: <b>'+ed('')+'</b></div><table class="sht"><colgroup><col style="width:6%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:20%"><col style="width:20%"><col style="width:13%"><col style="width:14%"></colgroup><tr><th>Room</th><th>Allotted</th><th>Present</th><th>Absent</th><th>Invigilator 1</th><th>Invigilator 2</th><th>Q.P. / Script Sl. Nos.</th><th>Signature</th></tr>'+rows+'</table>'+shFoot(),{land:true,margin:'8mm',css:SH_CSS});
+}
 function setCode(v){ ensureCentres(); cfg.centres[activeKey()].code=String(v).trim(); save(); refreshStamps(); }
-function syncLedger(){ try{ var d=mpTrackingStateDatabase[activeKey()]; d.forEach(function(r,i){var x=cfg.rows[i]; if(!x) return; for(var j=0;j<4;j++){x.be[j]=r.vals[j];x.ba[j]=r.vals[4+j];} var cp=r.cp||[0,0,0,0]; x.be[4]=cp[0];x.be[5]=cp[1];x.ba[4]=cp[2];x.ba[5]=cp[3]; var n=sum(x.be)-sum(x.ba); x.nAbsB=n; if(!n) x.absB='';}); save(); renderPanel(); }catch(e){ alert('Open the Madhyamik Progress Ledger once, then try again.'); } }
+function syncLedger(){ try{ var d=mpTrackingStateDatabase[activeKey()]; d.forEach(function(r,i){var x=cfg.rows[i]; if(!x) return; for(var j=0;j<4;j++){x.be[j]=r.vals[j];x.ba[j]=r.vals[4+j];} var cp=r.cp||[0,0,0,0]; x.be[4]=cp[0];x.be[5]=cp[1];x.ba[4]=cp[2];x.ba[5]=cp[3]; var sv=r.sv||[0,0,0,0,0,0,0,0],sc=r.scp||[0,0,0,0]; for(var q=0;q<4;q++){x.se[q]=sv[q];x.sa[q]=sv[4+q];} x.se[4]=sc[0];x.se[5]=sc[1];x.sa[4]=sc[2];x.sa[5]=sc[3]; var n=sum(x.be)-sum(x.ba); x.nAbsB=n; if(!n) x.absB=''; var n2=sum(x.se)-sum(x.sa); x.nAbsS=n2; if(!n2) x.absS='';}); save(); renderPanel(); }catch(e){ alert('Open the Madhyamik Progress Ledger once, then try again.'); } }
 function resetProg(){ if(confirm('Reload the MP-27 programme with no absentees? Day-wise rows of this panel will be reset.')){ cfg.rows=MP27_ROWS(); save(); renderPanel(); } }
 var _mcs=window.mpChangeSchoolView; window.mpChangeSchoolView=function(v){ try{ window.mpSetVenue(v); }catch(e){ if(_mcs) _mcs(v); } try{renderPanel();}catch(e){} };
 var _msv=window.mpSetVenue; window.mpSetVenue=function(v){ if(_msv) _msv(v); refreshStamps(); syncCodeSpans(); };
 setTimeout(function(){ try{ if(typeof mpActiveSchool!=='undefined' && mpGetVenue()!==mpActiveSchool) window.mpSetVenue(mpGetVenue()); }catch(e){} syncCodeSpans(); },6500);
-window.MPX={all:printAll,fl:printFL,desp:printDesp,conf:printConf,f22:printF22,grant:printGrant,sig:printSig,cover:printCover,rail:printRail,forms:printForms,setCode:setCode,syncLedger:syncLedger,reset:resetProg,cfg:function(){return cfg;}};
+window.MPX={all:printAll,fl:printFL,desp:printDesp,conf:printConf,f22:printF22,grant:printGrant,sig:printSig,cover:printCover,rail:printRail,spec:printSpec,vsup:printVsup,forms:printForms,setCode:setCode,syncLedger:syncLedger,reset:resetProg,cfg:function(){return cfg;}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectPanel);else injectPanel();
 setTimeout(function(){injectPanel();syncCodeSpans();},2500);
 setTimeout(function(){injectPanel();syncCodeSpans();},6000);
