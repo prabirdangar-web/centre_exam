@@ -7182,6 +7182,7 @@ function sbOuterSheets(b){
 
 /* ================= PANEL (built once per board) ================= */
 function sbBuildPanel(b){
+  if(b!=='hs') return; /* Madhyamik is NOT OMR based - the OMR letter / OMR box labels are H.S. only */
   const pane=document.getElementById('board-'+b); if(!pane||document.getElementById(b+'-submission')) return;
   const c=sbCfg(b), d=document.createElement('div');
   d.className='tool-panel app-shell'; d.dataset.tool='submission'; d.id=b+'-submission';
@@ -7402,6 +7403,7 @@ function sbPrint(b,what){
     return a.join('');
   }
   function controls(b){
+    if(b!=='hs')return; /* OMR packing labels: H.S. only */
     const p=document.getElementById(b+'-submission'); if(!p)return;
     let x=document.getElementById('cw_'+b+'_controls'); if(x)return;
     x=document.createElement('div');x.id='cw_'+b+'_controls';x.className='control-panel no-print';
@@ -7930,21 +7932,31 @@ window.mpRdPrintDeclaration = function(){
   w.document.close();
 };
 
+/* Specimen signature of invigilators - needed ONE TIME only (not date-wise): one pooled roster of every
+   invigilator of the venue, no Room No. column, the Signature column comes last. */
 window.mpRdPrintSpecimenSignature = function(){
   mpRdLoad();
-  var v = mpGetVenue(), info = HS_VENUE_INFO[v], item = mpRdPickDate();
+  var v = mpGetVenue(), info = HS_VENUE_INFO[v], e = hsEscapeFormText;
   var year = mpTrackingStateDatabase["year"] || "2027";
-  var ro = mpRdDayRoster(v, item), rows = ro.rows.slice();
+  var rows = (mpRdDB[v].rows||[]).filter(function(r){return r.n||r.s;}).map(function(r){return {n:r.n||'', s:r.s||''};});
+  rows = hsSchoolWiseSort(rows);
+  if(!rows.length) return alert('No invigilator name / school in the Room-wise Invigilator Allotment roster for this venue.');
   var extra = Math.max(0, Math.min(40, parseInt((document.getElementById('mp_spBlank')||{}).value,10)||5));
-  for(var b=0; b<extra; b++) rows.push({n:'', s:'', rn:''});
+  for(var b=0; b<extra; b++) rows.push({n:'', s:''});
   var w = window.open('','_blank'); if(!w) return;
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>WBBSE Specimen Signature of Invigilators - ' + hsEscapeFormText(item.date) + '</title><style>' +
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>WBBSE Specimen Signature of Invigilators - ' + e(mpVenueCode(v)) + '</title><style>' +
     '@page{size:A4 portrait;margin:9mm}body{font-family:Arial,sans-serif;font-size:9pt;color:#111;margin:0}' +
     'table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #111;padding:4px 5px}th{background:#f1f5f9}thead{display:table-header-group}tr{page-break-inside:avoid}' +
     '@media print{.no-print{display:none!important}}' +
-  '</style></head><body>' + mpRdDayHeader("SPECIMEN SIGNATURE OF INVIGILATORS", info, item, year, ro.fallback) +
-    '<table><thead><tr><th style="width:6%;">Sl.</th><th style="width:30%;">Name of Invigilator</th><th style="width:30%;">School</th><th style="width:10%;">Room No.</th><th style="width:24%;">Signature</th></tr></thead><tbody>' +
-      rows.map(function(r,i){return '<tr><td style="text-align:center;height:7.5mm;">'+(i+1)+'</td><td>'+hsEscapeFormText(r.n)+'</td><td>'+hsEscapeFormText(r.s)+'</td><td style="text-align:center;font-weight:700;">'+hsEscapeFormText(r.rn)+'</td><td></td></tr>';}).join('') +
+  '</style></head><body>' +
+    '<div class="no-print" style="padding:8px 14px;background:#431407;color:#fff;display:flex;justify-content:space-between;gap:10px;"><span><b>SPECIMEN SIGNATURE OF INVIGILATORS</b> &mdash; one time for all days &mdash; ' + rows.length + ' row(s) incl. ' + extra + ' blank</span><button onclick="window.print()" style="background:#16a34a;color:#fff;border:0;padding:5px 12px;border-radius:4px;font-weight:700;cursor:pointer;">Print</button></div>' +
+    '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:5px;margin-top:6px;">' +
+      '<div style="font-size:13pt;font-weight:900;">WEST BENGAL BOARD OF SECONDARY EDUCATION</div>' +
+      '<div style="font-size:10.5pt;font-weight:800;">SPECIMEN SIGNATURE OF INVIGILATORS &mdash; MADHYAMIK PARIKSHA, ' + e(year) + '</div>' +
+      '<div style="font-size:9pt;font-weight:700;">Centre: TALDANGRA &bull; Venue: ' + e(info.name) + ' &bull; Venue Code: ' + e(mpVenueCode(v)) + '</div>' +
+    '</div>' +
+    '<table><thead><tr><th style="width:7%;">Sl.</th><th style="width:34%;">Name of Invigilator</th><th style="width:34%;">School</th><th style="width:25%;">Signature</th></tr></thead><tbody>' +
+      rows.map(function(r,i){return '<tr><td style="text-align:center;height:7.5mm;">'+(i+1)+'</td><td>'+e(r.n)+'</td><td>'+e(r.s)+'</td><td></td></tr>';}).join('') +
     '</tbody></table>' + mpSignBlock() + '</body></html>');
   w.document.close();
 };
@@ -8294,7 +8306,7 @@ try{ mpConfRender(); }catch(e){}
         '</div>',
         '<div class="hs-dailyops-card no-print">',
           '<div class="hs-dailyops-toolbar" style="grid-template-columns:2fr 1.3fr 1.6fr 1.5fr 0.8fr;">',
-            '<div class="form-group"><label>Date for Declaration / Specimen Signature</label><select id="mp_rdDay"></select></div>',
+            '<div class="form-group"><label>Date for Declaration (Specimen Signature list is one-time, not date-wise)</label><select id="mp_rdDay"></select></div>',
             '<div class="form-group"><label>Extra blank rows</label><input type="number" id="mp_spBlank" min="0" max="40" value="5"></div>',
             '<div class="form-group"><label>Venue</label><select id="mp_rdVenue" onchange="mpSetVenue(this.value);mpRdRender()"><option value="TFHS">VENUE-1 [' + mpVenueCode('TFHS') + '] — TALDANGRA FULMATI HIGH SCHOOL [H.S.]</option><option value="TGHS">VENUE-2 [' + mpVenueCode('TGHS') + '] — TALDANGRA GIRLS\' HIGH SCHOOL [H.S.]</option></select></div>',
             '<div class="form-group"><label>School Order (Print)</label><label style="text-transform:none;font-weight:600;display:flex;gap:6px;align-items:center;height:31px;"><input type="checkbox" id="mp_rdSchoolOrder" style="width:auto;" checked> School-wise, names A&rarr;Z</label></div>',
@@ -9130,7 +9142,7 @@ ensureCentres();
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(cfg));}catch(e){} syncCodeSpans(); }
 try{ if(typeof CLOUD_SYNC_KEYS!=='undefined' && CLOUD_SYNC_KEYS.indexOf(KEY)<0) CLOUD_SYNC_KEYS.push(KEY); }catch(e){}
 function activeKey(){ try{ return mpGetVenue(); }catch(e){ return 'TFHS'; } }
-function ensureCentres(){ try{ if(cfg.rows&&cfg.rows[0]&&/Hindi|^First Language$/.test(cfg.rows[0].subj)) cfg.rows[0].subj='First Language (Bengali / Santali)'; if(cfg.rows&&cfg.rows[1]&&cfg.rows[1].subj==='Second Language') cfg.rows[1].subj='Second Language (English)'; }catch(e){} cfg.rail=Object.assign({pkts:'TWO',insured:'1002',mob:'8250953306',dateOff:0},cfg.rail||{}); cfg.centres=cfg.centres||{}; if(!cfg.centres.TFHS) cfg.centres.TFHS={code:'30126',name:'TALDANGRA FULMATI HIGH SCHOOL'}; if(!cfg.centres.TGHS) cfg.centres.TGHS={code:'30127',name:"TALDANGRA GIRLS' HIGH SCHOOL"}; }
+function ensureCentres(){ try{ if(cfg.rows&&cfg.rows[0]&&/Hindi|^First Language$/.test(cfg.rows[0].subj)) cfg.rows[0].subj='First Language (Bengali / Santali)'; if(cfg.rows&&cfg.rows[1]&&cfg.rows[1].subj==='Second Language') cfg.rows[1].subj='Second Language (English)'; }catch(e){} cfg.rail=Object.assign({pkts:'TWO',insured:'1002',mob:'8250953306',dateOff:0,despDate:''},cfg.rail||{}); cfg.centres=cfg.centres||{}; if(!cfg.centres.TFHS) cfg.centres.TFHS={code:'30126',name:'TALDANGRA FULMATI HIGH SCHOOL'}; if(!cfg.centres.TGHS) cfg.centres.TGHS={code:'30127',name:"TALDANGRA GIRLS' HIGH SCHOOL"}; }
 function VC(){ var k=activeKey(),c=cfg.centres&&cfg.centres[k]; return String((c&&c.code)||(k==='TGHS'?'30127':'30126')); }
 window.mpxVC=function(){ return VC(); };
 function syncCodeSpans(){ try{ var vc=VC(); document.querySelectorAll('[id^="mp_centerCodeLabel"]').forEach(function(el){el.textContent=vc;});
@@ -9268,23 +9280,35 @@ function printConf(){openDoc('Confidential Report',pgConf());}
 /* ================= 4. COVER ALL ================= */
 var ITEMS={1:'D.R. Sheet [Examinee Attendance sheet] (2 copies)',2:'Absentee statement (2 copies)',3:'Annexure-VII (1 copy)',4:'Annexure –IV (Document regarding opening of Confidential papers)-1 Copy',5:'Confidential Report- [1 Copy]',6:'Seat Plan- [1 Copy]',7:'Invigilator duty chart with specimen signature sheet-01 copy.',8:'Centre Grant Final ( In Separate envelope)',9:'Form No 22 [01 copy] ',10:' Signature of Officer in Charge & Centre Secretary',11:'Railway Receipt [02 nos] Blank AS & Despatch Report',12:'Letter regarding Discrepency [if any]',13:'Consolidated List of Recognition Status of all Participating Schools',14:'DISPATCH REPORT'};
 function schoolAddr(){return up(vname())+'[H.S.]\nP.O TALDANGRA. DIST- BANKURA. PIN-722152';}
-function envLabel(n){
-  var alt=(+n===12), tl=up(cfg.title)+' : : '+cfg.centre+' M.P. CENTRE [ CODE  '+VC()+' ]', mid=cfg.centre+' M.P. CENTRE [ CODE  '+VC()+' ]';
-  var right=alt?'MIDNAPORE REGIONAL OFFICE\n[WEST BENGAL BOARD OF SECONDARY EDUCATION]\nKERANITOLA CHAWK, P.O. : MIDNAPORE\nDIST  : PASCHIM MEDINIPUR PIN-721101':'REGIONAL COUNCIL OFFICE; MEDINIPUR\n[WEST BENGAL BOARD OF SECONDARY EDUCATION]\nKERANITOLA CHAWK; MEDINIPUR,\nP.O. MEDINIPUR, DISTRICT-PASCHIM MEDINIPUR \nPIN-721101';
-  var NV='#0b2a6f', MR='#7c2d12';
-  return '<div style="zoom:.6;margin-bottom:9mm"><table style="width:300mm;table-layout:fixed;border:3px solid '+NV+'">'
-  +'<tr><td colspan="2" class="b c" style="position:relative;background:'+NV+';border-color:'+NV+';color:#fff;font:24pt \'Bahnschrift SemiBold SemiCondensed\',\'Arial Narrow\',Arial,sans-serif;height:36pt;padding:0 4mm 0 18mm"><img src="'+LOGO_DP+'" alt="" style="position:absolute;left:4mm;top:1.5mm;height:11mm;width:11mm;background:#fff;border-radius:50%">'+ed(up(ITEMS[n]||''))+'</td></tr>'
-  +'<tr><td colspan="2" class="b c" style="background:#e0e7ff;border-color:'+NV+';color:'+NV+';font:16pt \'Bahnschrift SemiBold SemiCondensed\',\'Arial Narrow\',Arial,sans-serif;height:21pt">'+ed(tl)+'</td></tr>'
-  +'<tr><td style="border-left:3px solid '+NV+';background:#fff7ed;color:'+MR+';font:700 16pt Calibri;text-align:center;height:22pt">[ '+n+' ]</td><td style="border-right:3px solid '+NV+';background:#eff6ff;color:'+NV+';font:14pt \'Franklin Gothic Demi Cond\',\'Arial Narrow\',Arial,sans-serif;vertical-align:top;padding-left:2mm">TO</td></tr>'
-  +'<tr><td style="border-left:3px solid '+NV+';border-bottom:3px solid '+NV+';background:#fff7ed;vertical-align:top;padding:0 2mm;height:150pt"><div style="font:700 10pt Cambria,Georgia,serif;margin-top:6pt;color:'+MR+'">From:-</div><div style="font:700 9pt Cambria,Georgia,serif">'+ed(mid)+'</div><div class="fx" style="font:700 9pt Cambria,Georgia,serif;margin-top:3pt;color:'+NV+'">'+ed(schoolAddr())+'</div><div style="font:700 14pt Cambria,Georgia,serif;margin-top:24pt;color:#dc2626">VENUE CODE :&nbsp; '+E(VC())+' .</div></td>'
-  +'<td class="fx" style="border-right:3px solid '+NV+';border-bottom:3px solid '+NV+';background:#eff6ff;vertical-align:top;padding:0 2mm;font:14pt \'Franklin Gothic Demi Cond\',\'Arial Narrow\',Arial,sans-serif">'+ed((alt?'THE REGIONAL OFFICER\n':'THE REGIONAL OFFICER\n')+right)+'</td></tr></table></div>';
+/* Centre seal (round, violet, carries the Venue Code) - used on every cover instead of the Board seal / logo */
+function cseal(mm,st){ try{ return '<span style="display:inline-block;line-height:0;transform:rotate(-9deg);'+(st||'')+'">'+window.hsCentreSealSvg(mm,'mp')+'</span>'; }catch(e){ return ''; } }
+var EV_CSS='.evpg{padding:1mm 0}.ev{width:268mm;height:91mm;margin:0 auto 5mm;border:1.1mm solid #0b2a6f;border-radius:4mm;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#fff;font-family:Calibri,Arial,sans-serif;box-shadow:inset 0 0 0 1.2mm #fff,inset 0 0 0 1.6mm #c7d2fe;page-break-inside:avoid}'
++'.ev-hd{display:flex;align-items:center;gap:6mm;padding:1.4mm 7mm;background:linear-gradient(90deg,#0b2a6f 0%,#1e3a8a 60%,#1d4ed8 100%);color:#fff}'
++'.ev-sl{flex:none;width:25mm;height:25mm;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1mm rgba(255,255,255,.35)}'
++'.ev-tt{flex:1;text-align:center;min-width:0}.ev-doc{font-weight:800;line-height:1.1;letter-spacing:.4px}.ev-sub{font:600 10pt Calibri,Arial,sans-serif;margin-top:1.4mm;letter-spacing:.5px;color:#dbeafe}'
++'.ev-no{flex:none;text-align:center;border:.5mm solid #fde68a;border-radius:3mm;padding:1.4mm 4.5mm;color:#fde68a}.ev-no small{display:block;font:700 7.5pt Arial;letter-spacing:2px}.ev-no b{font:800 22pt Georgia,serif;line-height:1.05}.ev-no b i{font:600 11pt Arial;font-style:normal;opacity:.85}'
++'.ev-bd{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}.ev-bx{padding:2mm 8mm;position:relative;overflow:hidden}'
++'.ev-from{background:linear-gradient(180deg,#fff7ed,#ffedd5);border-right:.5mm dashed #94a3b8}.ev-to{background:linear-gradient(180deg,#eff6ff,#dbeafe)}'
++'.ev-tag{display:inline-block;font:800 10.5pt Arial,sans-serif;letter-spacing:3px;color:#fff;padding:.7mm 5mm;border-radius:1.6mm;margin-bottom:1mm}.ev-from .ev-tag{background:#7c2d12}.ev-to .ev-tag{background:#0b2a6f}'
++'.ev-n{font:800 17pt Cambria,Georgia,serif;line-height:1.15}.ev-from .ev-n{color:#7c2d12}.ev-to .ev-n{color:#0b2a6f}.ev-r{font:700 11.5pt Cambria,Georgia,serif;line-height:1.3;color:#1e293b}'
++'.ev-red{font:800 13.5pt Cambria,Georgia,serif;color:#b91c1c;margin-top:1.2mm}.ev-vc{display:inline-block;margin-top:1.2mm;border:.5mm solid #b91c1c;color:#b91c1c;border-radius:2mm;padding:.6mm 4mm;font:800 13pt Arial,sans-serif;letter-spacing:1px;background:#fff}'
++'.ev-ft{flex:none;display:flex;justify-content:space-between;align-items:center;gap:6mm;padding:1.6mm 7mm;background:#f1f5f9;border-top:.4mm solid #cbd5e1;font:700 8.5pt Arial,sans-serif;color:#334155;letter-spacing:.4px}.ev-ft .hc{color:#b91c1c}';
+function evFs(t){var n=String(t||'').length;return n<=36?25:n<=56?20:n<=76?16.5:14;}
+function envLabel(i,N){
+  var t=String(ENCL[i]||'').replace(/\s+/g,' ').trim(), sub=up(cfg.title)+'  ::  '+up(cfg.centre)+' M.P. CENTRE  [ VENUE CODE '+VC()+' ]';
+  return '<div class="ev"><div class="ev-hd"><div class="ev-sl">'+cseal(22.5)+'</div><div class="ev-tt"><div class="ev-doc" style="font-size:'+evFs(t)+'pt">'+ed(up(t))+'</div><div class="ev-sub">'+ed(sub)+'</div></div>'
+  +'<div class="ev-no"><small>ENVELOPE</small><b>'+(i+1)+'<i> / '+N+'</i></b></div></div>'
+  +'<div class="ev-bd"><div class="ev-bx ev-from"><span class="ev-tag">FROM</span><div class="ev-n">'+ed(proper(cfg.oic))+'</div><div class="ev-r">'+ed('Officer-In-Charge')+'</div>'
+  +'<div class="ev-red">'+ed(up(cfg.centre)+' M.P. CENTRE-'+cfg.year)+'</div><div class="ev-r" style="margin-top:1mm">'+ed(schoolAddr())+'</div><span class="ev-vc">VENUE CODE : '+E(VC())+'</span></div>'
+  +'<div class="ev-bx ev-to"><span class="ev-tag">TO</span><div class="ev-n">'+ed('THE REGIONAL OFFICER')+'</div><div class="ev-r" style="margin-top:.8mm">'+ed('REGIONAL COUNCIL OFFICE, MEDINIPUR\n[WEST BENGAL BOARD OF SECONDARY EDUCATION]\nKERANITOLA CHAWK, P.O. MEDINIPUR\nDIST. PASCHIM MEDINIPUR – PIN 721101')+'</div></div></div>'
+  +'<div class="ev-ft"><span>SEALED ENVELOPE &bull; DOCUMENT '+(i+1)+' OF '+N+' &bull; <span class="hc">HANDLE WITH CARE</span></span><span>OFFICER-IN-CHARGE / CENTRE SECRETARY &mdash; SIGNATURE &amp; SEAL</span></div></div>';
 }
-function pgEnv(){return '<div class="pg">'+cfg.env.map(envLabel).join('')+'</div>';}
+function pgEnv(){ var N=ENCL.length,o=''; for(var i=0;i<N;i+=2) o+='<div class="pg land evpg">'+envLabel(i,N)+(i+1<N?envLabel(i+1,N):'')+'</div>'; return o; }
 function insuredBlock(o){
   var T='\'Bernard MT Condensed\',\'Arial Narrow\',Impact,sans-serif', NV='#0b2a6f', MR='#7c2d12', BD='3px solid '+NV, BL='border-left:'+BD+';', BR='border-right:'+BD+';';
   return '<div style="zoom:.82;width:300mm;margin:0 auto"><table style="width:100%;table-layout:fixed;border:3px solid '+NV+';font-family:'+T+';font-weight:700">'
   +'<colgroup><col style="width:50%"><col style="width:50%"></colgroup>'
-  +'<tr><td colspan="2" class="b c" style="position:relative;background:#fff1f2;border-color:'+NV+';font-size:48pt;color:#b91c1c;text-decoration:underline;height:108pt;line-height:1.05;padding:0 6mm 0 46mm"><img src="'+LOGO_DP+'" alt="WBBSE" style="position:absolute;left:10mm;top:50%;margin-top:-16mm;width:32mm;height:32mm;border-radius:50%">INSURED FOR Rs.501/- ONLY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ['+E(VC())+']</td></tr>'
+  +'<tr><td colspan="2" class="b c" style="position:relative;background:#fff1f2;border-color:'+NV+';font-size:48pt;color:#b91c1c;text-decoration:underline;height:108pt;line-height:1.05;padding:0 6mm 0 46mm"><span style="position:absolute;left:10mm;top:50%;margin-top:-16mm;line-height:0">'+cseal(32)+'</span>INSURED FOR Rs.501/- ONLY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ['+E(VC())+']</td></tr>'
   +'<tr><td class="b c" style="background:#e0e7ff;border-color:'+NV+';font:22pt \'Rockwell Extra Bold\',Georgia,serif;text-decoration:underline;color:'+NV+';height:60pt">'+ed(o.subject)+'</td><td class="b c" style="background:#e0e7ff;border-color:'+NV+';font-size:48pt;text-decoration:underline;color:'+NV+'">'+ed(o.date)+'</td></tr>'
   +'<tr><td style="'+BL+'background:#fff7ed;font-size:36pt;font-weight:400;color:'+MR+';height:48pt;vertical-align:top">From:-</td><td style="'+BR+'background:#eff6ff;font-size:36pt;font-weight:400;color:'+NV+';vertical-align:top">TO:-</td></tr>'
   +'<tr><td style="'+BL+'background:#fff7ed;font-size:36pt;height:44pt;vertical-align:top">'+E(cfg.oic)+'</td><td style="'+BR+'background:#eff6ff;font-size:36pt;font-weight:400;vertical-align:top">'+ed(o.to1)+'</td></tr>'
@@ -9294,6 +9318,7 @@ function insuredBlock(o){
   +'<tr><td class="b c" style="background:'+NV+';border-color:'+NV+';color:#fff;font-size:48pt;height:61pt">BOOKED&nbsp; TO </td><td class="b c" style="background:'+NV+';border-color:'+NV+';color:#fde68a;font-size:36pt">'+ed(o.booked)+'</td></tr></table></div>';
 }
 function pgInsured(i){var r=cfg.rows[i];return '<div class="pg land" style="padding-top:6mm">'+insuredBlock({subject:'SUBJECT : '+up(r.subj),date:'DATE : '+dmy(r.date,'-'),to1:'THE REGIONAL OFFICER',to2:'MIDNAPORE REGIONAL OFFICE',to3:'[WEST BENGAL BOARD OF SECONDARY EDUCATION]',to4:'KERANITOLA CHAWK, \nP.O. : MIDNAPORE\nDIST  : PASCHIM MEDINIPUR PIN-721101',booked:cfg.bookedTo})+'</div>';}
+function pgInsuredOnce(){return '<div class="pg land" style="padding-top:6mm">'+insuredBlock({subject:'SUBJECT : ANSWER SCRIPTS OF M.P.[S.E.]-'+cfg.year+'\n(ALL SUBJECTS)',date:'DATE : '+railOnceDate(),to1:'THE REGIONAL OFFICER',to2:'MIDNAPORE REGIONAL OFFICE',to3:'[WEST BENGAL BOARD OF SECONDARY EDUCATION]',to4:'KERANITOLA CHAWK, \nP.O. : MIDNAPORE\nDIST  : PASCHIM MEDINIPUR PIN-721101',booked:cfg.bookedTo})+'</div>';}
 function pgBlank(){return '<div class="pg land" style="padding-top:6mm">'+insuredBlock({subject:'BLANK ANSWER SCRIPTS\nOF M.P.[S.E.]-'+cfg.year,date:'DATE : '+dmy(cfg.blankDate,'-'),to1:'THE DEPUTY SECRETARY (EXAM) W.B.B.S.E.',to2:'[WEST BENGAL BOARD OF SECONDARY EDUCATION]',to3:'NIVEDITA BHAWAN, BLOCK-DJ8,\nSECTOR-II  KARUNAMOYEE, \nSALTLAKE , KOLKATA-700091.',to4:'',booked:'HOWRAH   RAIL STATION'})+'</div>';}
 function railOne(){
   var ttl=up(cfg.title)+' : : '+cfg.centre+' M.P. CENTRE [ CODE  '+VC()+' ]';
@@ -9304,11 +9329,11 @@ function railOne(){
 function pgRail(){return '<div class="pg" style="padding-top:8mm">'+railOne()+railOne()+railOne()+'</div>';}
 function printCover(what){
   var cur=(+cfg.day||1)-1, all=cfg.rows.map(function(_,i){return i;});
-  var pages={env:pgEnv(),rail:pgRail(),day:pgInsured(cur),days:all.map(pgInsured).join(''),blank:pgBlank()};
-  var body=what==='all'?pages.env+pages.day+pages.rail+pages.blank:pages[what];
-  var land=(what==='day'||what==='days'||what==='blank');
-  if(what==='all'){body=pages.env+pages.rail+pages.day+pages.blank;}
-  openDoc('COVER all',body,{land:land||what==='all',css:'.pg:not(.land){width:194mm}'});
+  var pages={env:pgEnv(),rail:pgRail(),once:pgInsuredOnce(),day:pgInsured(cur),days:all.map(pgInsured).join(''),blank:pgBlank()};
+  /* COVER all = envelope labels (every document of the forwarding letter, From/To + Centre seal) + railway receipts
+     + ONE insured cover for the answer scripts (one time, not date-wise) + blank answer-script cover */
+  var body=what==='all'?pages.env+pages.rail+pages.once+pages.blank:pages[what];
+  openDoc('COVER all',body,{land:what!=='rail',css:'.pg:not(.land){width:194mm}'+EV_CSS});
 }
 
 /* ================= 5. FORM-22 ================= */
@@ -9463,10 +9488,10 @@ function renderPanel(){
   +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-success" onclick="MPX.all()">Print ALL (FL · Despatch · Conf · Form22 · Grant · Signature)</button>'
   +'<button class="'+B+'" onclick="MPX.fl()">FL-Final Doc</button><button class="'+B+'" onclick="MPX.desp(\'day\')">Despatch — this day</button><button class="'+B+'" onclick="MPX.desp(\'all\')">Despatch — all days</button><button class="'+B+'" onclick="MPX.conf()">Conf Report</button>'
   +'<button class="'+B+'" onclick="MPX.f22()">Form 22</button><button class="'+B+'" onclick="MPX.grant()">Grant</button><button class="'+B+'" onclick="MPX.sig()">Signature sheet</button></div>'
-  +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.cover(\'all\')">COVER all (labels · railway receipts · insured · blank AS)</button><button class="'+B+'" onclick="MPX.cover(\'env\')">Envelope labels</button><button class="'+B+'" onclick="MPX.cover(\'day\')">Insured cover — this day</button><button class="'+B+'" onclick="MPX.cover(\'days\')">Insured covers — all days</button><button class="'+B+'" onclick="MPX.cover(\'rail\')">Railway receipts</button><button class="'+B+'" onclick="MPX.cover(\'blank\')">Blank AS cover</button></div>'
-  +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.rail(\'day\')">RAIL ADDRESS TAG &mdash; this day (full A4, big)</button><button class="'+B+'" onclick="MPX.rail(\'all\')">Rail tags &mdash; all days</button><button class="'+B+'" onclick="MPX.rail(\'blank\')">Blank AS tag (Howrah)</button><button class="btn btn-success" onclick="MPX.spec()">Specimen signatures of invigilators &mdash; this day</button><button class="'+B+'" onclick="MPX.vsup()">Venue Supervisor sheet &mdash; this day</button><span style="font-size:8.5pt;color:#475569;align-self:center">Separate A4 landscape tag, text auto-fitted to fill the whole page; click any text to edit.</span></div>'
-  +'<div style="margin-top:12px;font-weight:700;color:#7c2d12">Railway Parcel Forwarding Note &amp; GST Manual Receipt form &mdash; auto-filled for each exam day</div><div class="control-deck" style="grid-template-columns:repeat(4,1fr)">'+fld('rail.pkts','Sealed packets (in words)')+fld('rail.insured','Insured for Rs.')+fld('rail.mob','Mobile no.')+fld('rail.dateOff','Form date = exam date + days (0 or 1)','number')+'</div>'
-  +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.forms(\'parcel\',\'day\')">Parcel Forwarding Note &mdash; this day</button><button class="'+B+'" onclick="MPX.forms(\'parcel\',\'all\')">Parcel notes &mdash; all days</button><button class="btn btn-success" onclick="MPX.forms(\'gst\',\'day\')">GST Manual form &mdash; this day</button><button class="'+B+'" onclick="MPX.forms(\'gst\',\'all\')">GST forms &mdash; all days</button></div>'
+  +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.cover(\'all\')">COVER all (labels · railway receipts · insured · blank AS)</button><button class="'+B+'" onclick="MPX.cover(\'env\')">Envelope labels — every document of the forwarding letter (From / To, Centre seal)</button><button class="'+B+'" onclick="MPX.cover(\'once\')">Insured cover — Answer Scripts (one time)</button><button class="'+B+'" onclick="MPX.cover(\'rail\')">Railway receipts</button><button class="'+B+'" onclick="MPX.cover(\'blank\')">Blank AS cover</button></div>'
+  +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.rail(\'once\')">RAIL ADDRESS TAG &mdash; Answer Scripts (one time, full A4, big)</button><button class="'+B+'" onclick="MPX.rail(\'blank\')">Blank AS tag (Howrah)</button><button class="btn btn-success" onclick="MPX.spec()">Specimen signatures of invigilators &mdash; one time</button><button class="'+B+'" onclick="MPX.vsup()">Venue Supervisor sheet &mdash; this day</button><span style="font-size:8.5pt;color:#475569;align-self:center">Separate A4 landscape tag, text auto-fitted to fill the whole page; click any text to edit.</span></div>'
+  +'<div style="margin-top:12px;font-weight:700;color:#7c2d12">Railway Parcel Forwarding Note &amp; GST Manual Receipt form &mdash; Answer Scripts sent ONE time (not date-wise)</div><div class="control-deck" style="grid-template-columns:repeat(4,1fr)">'+fld('rail.pkts','Sealed packets (in words)')+fld('rail.insured','Insured for Rs.')+fld('rail.mob','Mobile no.')+fld('rail.dateOff','Form date = last exam date + days (0 or 1)','number')+fld('rail.despDate','Despatch date (blank = automatic)','date')+'</div>'
+  +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-success" onclick="MPX.forms(\'parcel\',\'once\')">Parcel Forwarding Note &mdash; one time</button><button class="btn btn-success" onclick="MPX.forms(\'gst\',\'once\')">GST Manual form &mdash; one time</button></div>'
   +'<div style="margin-top:8px;font-size:8.5pt;color:#475569">Round seal and the optional <b>Signature stamp</b> (toggle in the top bar) show the Venue Code of the active centre. Every printed page is click-to-edit before printing.</div></div>'
   +'<div class="table-container no-print" style="padding:16px"><h3 style="margin:0 0 6px">Form 22 stock table &nbsp;(Total Received / Used / Damaged / Balance: C\'16, F\'4, Graph, Envelops, Top Sheet, Despatch Rep., Pkts, Remarks)</h3><div style="overflow:auto"><table style="font-size:8.5pt">'+f22H+'</table></div></div>'
   +'<div class="table-container no-print" style="padding:16px"><h3 style="margin:0 0 6px">Grant — transfers &amp; bank details</h3><div style="font-size:8.5pt;margin-bottom:6px">Transferred TO centre (M, F, Comp M, Comp F): '+[0,1,2,3].map(function(j){return sm('grant.tin.'+j,'46px');}).join(' ')+' &nbsp;&nbsp; Transferred FROM centre: '+[0,1,2,3].map(function(j){return sm('grant.tout.'+j,'46px');}).join(' ')+'</div>'
@@ -9517,6 +9542,7 @@ function printRail(scope){
   var REG=[['THE REGIONAL OFFICER',62],['MIDNAPORE REGIONAL OFFICE',62],['[WEST BENGAL BOARD OF SECONDARY EDUCATION]',46],['KERANITOLA CHAWK,',40],['P.O. : MIDNAPORE',40],['DIST  : PASCHIM MEDINIPUR PIN-721101',40]];
   function day(i){var r=cfg.rows[i];return railTagPage({subject:'SUBJECT : '+up(r.subj),date:'DATE : '+dmy(r.date,'-'),to:REG,booked:cfg.bookedTo});}
   if(scope==='blank') pages.push(railTagPage({subject:'BLANK ANSWER SCRIPTS OF M.P.[S.E.]-'+cfg.year,date:'DATE : '+dmy(cfg.blankDate,'-'),to:[['THE DEPUTY SECRETARY (EXAM)',58],['W.B.B.S.E.',58],['[WEST BENGAL BOARD OF SECONDARY EDUCATION]',44],['NIVEDITA BHAWAN, BLOCK-DJ8,',40],['SECTOR-II  KARUNAMOYEE,',40],['SALTLAKE , KOLKATA-700091.',40]],booked:'HOWRAH   RAIL STATION'}));
+  else if(scope==='once') pages.push(railTagPage({subject:'ANSWER SCRIPTS OF M.P.[S.E.]-'+cfg.year+' (ALL SUBJECTS)',date:'DATE : '+railOnceDate(),to:REG,booked:cfg.bookedTo}));
   else if(scope==='all') cfg.rows.forEach(function(r,i){pages.push(day(i));});
   else pages.push(day(Math.max(0,(+cfg.day||1)-1)));
   openDoc('Rail Address Tag — Centre '+VC(),pages.join('')+S,{land:true,margin:'6mm',css:RAIL_CSS});
@@ -9547,6 +9573,7 @@ function railTok(s,d){
   var M={DATE:d,CODE:VC(),MOB:cfg.rail.mob,OIC:up(cfg.oic),CENTRE:up(cfg.centre),SCH1:up(s1),SCH2:'HIGH SCHOOL [H,S,]',SCHOOL:up(nm)+' (H.S.)',PKTS:cfg.rail.pkts,INS:cfg.rail.insured,YEAR:cfg.year};
   return s.replace(/\{(\w+)\}/g,function(_,k){return (k==='SCHOOL')?M[k].replace(/&/g,'&amp;'):E(M[k]);});
 }
+function railOnceDate(){ return cfg.rail.despDate?dmy(cfg.rail.despDate,'-'):railDate(cfg.rows[cfg.rows.length-1]); }
 function railDate(r){ var d=pd(r.date)||new Date(); d.setDate(d.getDate()+(+cfg.rail.dateOff||0)); return p2(d.getDate())+'-'+p2(d.getMonth()+1)+'-'+d.getFullYear(); }
 function fieldHtml(f,rot,d,H){
   var x0=f[0],y0=f[1],x1=f[2],y1=f[3],fs=f[4],w=x1-x0,h=y1-y0,top=H-y1,txt=railTok(f[5],d),n=txt.split('\n').length,fam=f[6];
@@ -9555,13 +9582,15 @@ function fieldHtml(f,rot,d,H){
   var pos=rot?('left:'+x0+'pt;top:'+(top+h)+'pt;transform:rotate(-90deg);'):('left:'+x0+'pt;top:'+top+'pt;');
   return '<div class="fi" data-l="'+L+'" style="'+pos+'width:'+L+'pt;height:'+M+'pt;font:'+fs+'pt/'+lh+'pt '+ff+'"><span class="fs ed" contenteditable="true" spellcheck="false">'+txt+'</span></div>';
 }
-function parcelPage(r){ var d=railDate(r);
+function parcelPage(r,dd){ var d=dd||railDate(r);
   return '<div class="fpg"><img class="bg" src="'+MPX_IMG.parcel+'">'+PBOX.map(function(b){return '<div class="gbx" style="left:'+b[0]+'pt;top:'+(842-b[3])+'pt;width:'+(b[2]-b[0])+'pt;height:'+(b[3]-b[1])+'pt"></div>';}).join('')+PF.map(function(f){return fieldHtml(f,true,d,842);}).join('')+'</div>'; }
-function gstPage(r){ var d=railDate(r);
+function gstPage(r,dd){ var d=dd||railDate(r);
   return '<div class="fpg"><div class="gsc"><img class="bg" src="'+MPX_IMG.gst+'">'+GF.map(function(f){return fieldHtml(f,false,d,792);}).join('')+'</div></div>'; }
 function printForms(kind,scope){
-  var idx=(scope==='all')?cfg.rows.map(function(_,i){return i;}):[Math.max(0,(+cfg.day||1)-1)];
-  var pages=idx.map(function(i){return kind==='gst'?gstPage(cfg.rows[i]):parcelPage(cfg.rows[i]);}).join('');
+  var pages;
+  if(scope==='once'){ var od=railOnceDate(), lr=cfg.rows[cfg.rows.length-1]; pages=(kind==='gst'?gstPage(lr,od):parcelPage(lr,od)); }
+  else { var idx=(scope==='all')?cfg.rows.map(function(_,i){return i;}):[Math.max(0,(+cfg.day||1)-1)];
+  pages=idx.map(function(i){return kind==='gst'?gstPage(cfg.rows[i]):parcelPage(cfg.rows[i]);}).join(''); }
   openDoc((kind==='gst'?'Railway GST Manual Form':'Railway Parcel Forwarding Note')+' — Centre '+VC(),pages+'<scr'+'ipt>'+FORM_FIT+'</scr'+'ipt>',{margin:'0',css:FORM_CSS});
 }
 
@@ -9572,10 +9601,7 @@ function shDay(){return cfg.rows[Math.max(0,(+cfg.day||1)-1)];}
 function shHead(title){var r=shDay(); return '<div style="text-align:center;font-weight:700;font-size:14pt;text-decoration:underline;margin-bottom:3mm">'+title+' &mdash; MADHYAMIK EXAMINATION-'+E(cfg.year)+'</div>'
  +'<div style="display:flex;justify-content:space-between;font-size:10.5pt;margin-bottom:3mm"><div>Centre: <b>'+ed(up(cfg.centre)+' M.P. CENTRE')+'</b> ['+ed(up(vname()))+'] &nbsp; Venue Code: <b>'+ed(VC())+'</b></div><div>Date: <b>'+ed(dmy(r.date,'-'))+'</b> &nbsp; Subject: <b>'+ed(mpShortSub(r.subj))+'</b></div></div>';}
 function shFoot(){return '<div style="display:flex;justify-content:space-between;margin-top:14mm;font-size:10.5pt"><div style="text-align:center;width:32%;border-top:1.4pt solid #000;padding-top:1mm">Venue Supervisor</div><div style="text-align:center;width:32%;border-top:1.4pt solid #000;padding-top:1mm">Centre Secretary</div><div style="text-align:center;width:32%;border-top:1.4pt solid #000;padding-top:1mm">Officer-in-Charge<br><b>'+ed(cfg.oic)+'</b></div></div>';}
-function printSpec(){
-  var rows='';for(var i=1;i<=26;i++) rows+='<tr><td style="text-align:center">'+i+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td></td><td>'+ed('')+'</td></tr>';
-  openDoc('Specimen Signature of Invigilators',shHead('SPECIMEN SIGNATURE OF INVIGILATORS')+'<table class="sht"><colgroup><col style="width:7%"><col style="width:34%"><col style="width:22%"><col style="width:25%"><col style="width:12%"></colgroup><tr><th>Sl.</th><th>Name of Invigilator (Block Letters)</th><th>Designation / School</th><th>Specimen Signature</th><th>Room No.</th></tr>'+rows+'</table>'+shFoot(),{margin:'10mm',css:SH_CSS});
-}
+function printSpec(){ try{ window.mpRdPrintSpecimenSignature(); }catch(err){ alert('Open Madhyamik > Room-wise Invigilator Allotment once, then try again.'); } }
 function printVsup(){
   var r=shDay(),en=sum(r.be)+sum(r.se),pr=sum(r.ba)+sum(r.sa),rows='';
   for(var i=1;i<=16;i++) rows+='<tr><td style="text-align:center">'+i+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td>'+ed('')+'</td><td></td></tr>';
