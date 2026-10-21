@@ -9120,6 +9120,7 @@ cloudRunWhenReady(function(){
 'use strict';
 var KEY='mpxReports2027';
 var LOGO_DP=MP_WBBSE_LOGO_SVG;
+var LOGO_F22=LOGO_DP; /* Form 22 header logo (was never defined, which broke Form 22 and Print ALL) */
 function MP27_ROWS(){
   var T=[['2027-02-15','First Language (Bengali / Santali)'],['2027-02-16','Second Language (English)'],['2027-02-18','History'],['2027-02-19','Geography'],['2027-02-22','Mathematics'],['2027-02-23','Physical Science'],['2027-02-24','Life Science'],['2027-02-25','Optional Elective Subjects [AG & ELEC]']];
   return T.map(function(x){var d=new Date(x[0]+'T00:00:00');d.setDate(d.getDate()+1);var nx=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
